@@ -283,7 +283,8 @@ export default function App(){
       {id:"sound",label:"Sound & Sensory",icon:"🔊"},
       {id:"privacy",label:"Privacy & Compliance",icon:"🛡️"},
       {id:"strategy",label:"Strategic Insights",icon:"💡"},
-      {id:"cmo",label:"CMO Playbook",icon:"📋"}
+      {id:"cmo",label:"CMO Playbook",icon:"📋"},
+      {id:"methodology",label:"Methodology & Glossary",icon:"📖"}
     ];
 
     return(
@@ -617,6 +618,224 @@ export default function App(){
               </div>
             </div>
           )}
+
+          {/* ===== METHODOLOGY & GLOSSARY ===== */}
+          {tab==="methodology"&&(<>
+            {/* HOW IT WORKS */}
+            <Card style={{marginBottom:24}}>
+              <CardTitle dot={C.gold}>How the Brain Encoder Works</CardTitle>
+              <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:20}}>The Brain Encoder uses a three-stage analysis pipeline to predict how the human brain responds to advertising creatives. It is grounded in peer-reviewed neuroscience and advertising effectiveness research.</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
+                <div style={{background:C.s2,borderRadius:12,padding:24,borderTop:`4px solid ${C.cyan}`}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.cyan,fontFamily:"'JetBrains Mono',monospace",marginBottom:8}}>STAGE 1</div>
+                  <div style={{fontSize:17,fontWeight:700,marginBottom:10}}>Visual Signal Extraction</div>
+                  <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>Key frames are extracted from the uploaded creative at optimal intervals. For video ads, first and last frames are captured to analyze hook and closing elements. For static ads, the full image is processed. Frames are normalized to a standard resolution for consistent analysis.</p>
+                </div>
+                <div style={{background:C.s2,borderRadius:12,padding:24,borderTop:`4px solid ${C.purple}`}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.purple,fontFamily:"'JetBrains Mono',monospace",marginBottom:8}}>STAGE 2</div>
+                  <div style={{fontSize:17,fontWeight:700,marginBottom:10}}>Neural Activation Prediction</div>
+                  <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>Frames are analyzed using a multimodal AI vision model trained on advertising effectiveness research. The model evaluates each frame against 17 performance dimensions derived from peer-reviewed neuroscience and advertising science.</p>
+                </div>
+                <div style={{background:C.s2,borderRadius:12,padding:24,borderTop:`4px solid ${C.green}`}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.green,fontFamily:"'JetBrains Mono',monospace",marginBottom:8}}>STAGE 3</div>
+                  <div style={{fontSize:17,fontWeight:700,marginBottom:10}}>Platform-Specific Optimization</div>
+                  <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>Each creative is scored against 15 media platforms, accounting for sound-on vs sound-off environments, format suitability, skip behavior, algorithmic distribution signals (hold rate, share velocity, save rate), and audience attention characteristics.</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* SCIENTIFIC FOUNDATIONS */}
+            <Card style={{marginBottom:24}}>
+              <CardTitle dot={C.purple}>Scientific Foundations</CardTitle>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+                {[
+                  ["Kahneman's Dual-Process Theory (2011)","System 1 (fast, intuitive, emotional) vs System 2 (slow, deliberate, rational) processing. Ads that trigger System 1 hold attention; ads that force System 2 cause scroll-away. The Brain Encoder scores the System 1/System 2 balance, with 65-75 as the optimal zone."],
+                  ["Byron Sharp — How Brands Grow (2010)","Distinctive Brand Assets theory. Brand recall scoring evaluates how many distinctive elements (logo, color, packaging, sonic cues, characters) are present and visible throughout the creative."],
+                  ["Ehrenberg-Bass Institute Research","Mental and Physical Availability frameworks. The Brain Encoder evaluates whether the creative builds mental availability through emotional association and category entry points."],
+                  ["Nelson-Field Attention Research (2020)","Active vs passive attention measurement. The attention curve predicts where active attention peaks and where it degrades to passive background processing."],
+                  ["Damasio's Somatic Marker Hypothesis","Emotional tagging of memories. The emotional peak score predicts whether the creative creates a somatic marker that aids future brand retrieval."],
+                  ["Weber-Fechner Law of Sensory Adaptation","Ad fatigue prediction based on stimulus repetition. The ad fatigue risk score estimates how quickly repeated exposure will cause the creative to lose effectiveness."]
+                ].map(([title,desc],i)=>(
+                  <div key={i} style={{background:C.s2,borderRadius:10,padding:20}}>
+                    <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:8}}>{title}</div>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* CORE METRICS GLOSSARY */}
+            <Card style={{marginBottom:24}}>
+              <CardTitle dot={C.cyan}>Core Metrics — Definitions</CardTitle>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 6px",fontSize:13}}>
+                  <thead>
+                    <tr style={{textAlign:"left"}}>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1}}>METRIC</th>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1}}>DEFINITION</th>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1,width:120}}>GOOD SCORE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ["Viral Potential","Aggregate shareability prediction combining emotional triggers, novelty, pattern interrupts, and identity signaling value.","70+ organic; 50+ paid"],
+                      ["Hook Strength","First 1-2 second stopping power. Evaluates visual salience, motion, human face presence, color contrast, and pattern interrupt.","75+ feed; 60+ pre-roll"],
+                      ["Hold Rate","Predicted % of viewers who watch through to the end. Based on scene variety, pacing, narrative tension, and cognitive load balance.","65+ for 15s; 55+ for 30s"],
+                      ["Emotional Peak","Intensity of the strongest emotional activation point. Higher peaks correlate with memory encoding and sharing behavior.","70+ = memorable"],
+                      ["Brand Recall","Post-exposure brand memory probability. Evaluates logo frequency, product visibility, distinctive brand assets, celebrity association.","80+ = category-leading"],
+                      ["Memory Encoding","Long-term memory formation probability. Requires co-activation of visual cortex + amygdala + hippocampus. High attention but low memory encoding = \"watched but forgotten.\"","70+ = strong retention"],
+                      ["Sound-Off Survival","Performance without audio. Critical for Meta Feed, Instagram, LinkedIn where 80%+ consumption is sound-off.","70+ for social-first"],
+                      ["Creative Efficiency","Message delivery per second of runtime. Over-dense = cognitive overload; under-dense = wasted media spend.","65-80 optimal range"],
+                      ["Share Intent","Probability the viewer shares. Four triggers: identity signaling, social currency, emotional contagion, utility.","65+ = organic potential"]
+                    ].map(([m,d,g],i)=>(
+                      <tr key={i} style={{background:i%2===0?C.s2:"transparent"}}>
+                        <td style={{padding:"12px 14px",fontWeight:700,color:C.text,borderRadius:"8px 0 0 8px",whiteSpace:"nowrap"}}>{m}</td>
+                        <td style={{padding:"12px 14px",color:C.dim,lineHeight:1.6}}>{d}</td>
+                        <td style={{padding:"12px 14px",color:C.green,fontWeight:600,fontFamily:"'JetBrains Mono',monospace",fontSize:12,borderRadius:"0 8px 8px 0"}}>{g}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            {/* INTELLIGENCE METRICS */}
+            <Card style={{marginBottom:24}}>
+              <CardTitle dot={C.orange}>Intelligence Metrics — Definitions</CardTitle>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 6px",fontSize:13}}>
+                  <thead>
+                    <tr style={{textAlign:"left"}}>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1}}>METRIC</th>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1}}>DEFINITION</th>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1,width:140}}>INTERPRETATION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ["Ad Fatigue Risk","How quickly the creative loses effectiveness with repeated exposure. High-stimulus, low-narrative creatives burn faster.","Lower = better. ≤30 = long runway"],
+                      ["Cultural Resonance","Fit with target market's cultural context. Local references, representation, language, setting appropriateness.","70+ for market-specific"],
+                      ["System 1 vs System 2","Balance between emotional/intuitive (S1) and rational/effortful (S2) processing.","65-75 = golden zone"],
+                      ["Celebrity/Talent Index","If celebrity present: recognition lift vs engagement lift. A celeb who boosts recognition but not engagement is an expensive talking head.","0 = no celeb; 70+ = earning fee"],
+                      ["1P Data Opportunity","Whether the creative has data collection touchpoints: QR codes, URLs, hashtags, scan mechanics, sign-up CTAs.","Higher = more capture"],
+                      ["Brand Safety","Risk of brand safety issues: sensitive content adjacency, controversial elements, negative brand association.","85+ = brand-safe"],
+                      ["Regulatory Compliance","Compliance with FSSAI, ASCI, DPDP Act 2023. Visible disclaimers, health claim substantiation, data transparency.","80+ = compliant"],
+                      ["Carbon Signal","Whether the creative signals sustainability, green credentials, or carbon awareness. 0 if absent.","Context-dependent"]
+                    ].map(([m,d,g],i)=>(
+                      <tr key={i} style={{background:i%2===0?C.s2:"transparent"}}>
+                        <td style={{padding:"12px 14px",fontWeight:700,color:C.text,borderRadius:"8px 0 0 8px",whiteSpace:"nowrap"}}>{m}</td>
+                        <td style={{padding:"12px 14px",color:C.dim,lineHeight:1.6}}>{d}</td>
+                        <td style={{padding:"12px 14px",color:C.amber,fontWeight:600,fontFamily:"'JetBrains Mono',monospace",fontSize:12,borderRadius:"0 8px 8px 0"}}>{g}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            {/* NEURAL ACTIVATION REGIONS */}
+            <Card style={{marginBottom:24}}>
+              <CardTitle dot={C.pink}>Neural Activation Regions — What They Mean</CardTitle>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                {[
+                  ["🧠 Visual Cortex","High visual complexity, color contrast, and stimulus density. The viewer's eyes are engaged."],
+                  ["🤔 Prefrontal Cortex","Rational processing: claims, prices, comparisons. System 2 mode. High activation without emotional co-activation = scroll-away risk."],
+                  ["❤️ Amygdala","Emotional processing: fear, joy, surprise, desire. Essential for memory encoding. The ad is making the viewer feel something."],
+                  ["💾 Hippocampus","Memory formation predicted. Co-activation with amygdala = \"emotional memory\" (the strongest kind for brand retrieval)."],
+                  ["🔊 Auditory Cortex","Sound processing active. Low activation on video = visually led creative (good for sound-off platforms)."],
+                  ["🤝 Mirror Neurons","Empathizing with on-screen humans. Activated by facial expressions, body language, human interaction. Key driver of share intent."],
+                  ["🎯 Nucleus Accumbens","Brain's reward center. Activated by anticipation, desire, prospect of reward. Promotions and contests trigger this region."],
+                  ["⚡ Anterior Cingulate","Conflict monitoring and error detection. Pattern interrupts activate this region, driving involuntary attention."]
+                ].map(([title,desc],i)=>(
+                  <div key={i} style={{background:C.s2,borderRadius:10,padding:18}}>
+                    <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:6}}>{title}</div>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* PLATFORM SCORING */}
+            <Card style={{marginBottom:24}}>
+              <CardTitle dot={C.blue}>Platform Scores — What Each Evaluates</CardTitle>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 6px",fontSize:13}}>
+                  <thead>
+                    <tr style={{textAlign:"left"}}>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1}}>PLATFORM</th>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1}}>KEY FACTORS</th>
+                      <th style={{padding:"10px 14px",color:C.dim,fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,letterSpacing:1,width:200}}>WHAT 80+ MEANS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ["YouTube Pre-Roll 6s","Must deliver brand ID within skip window","Brand identified before skip"],
+                      ["YouTube Pre-Roll 15s","Hook + hold through non-skip duration","High completion rate predicted"],
+                      ["YouTube InStream","Full narrative engagement for longer formats","Sustained storytelling attention"],
+                      ["Instagram Reels","Vertical-native, sound-optional, high energy","Feels native to Reels"],
+                      ["Instagram Stories","Full-screen vertical, swipe-away risk","Stops the swipe in first frame"],
+                      ["Instagram Feed","Square/landscape, sound-off dominant","Works without audio"],
+                      ["Meta Feed","Mixed-format, autoplay with sound off","Grabs attention in crowded feed"],
+                      ["TikTok","Native feel critical; over-produced = instant skip","Doesn't feel like an ad"],
+                      ["LinkedIn Feed","Professional context, B2B suitable","Appropriate for business audience"],
+                      ["Twitter/X","Fast scroll, text-led platform","First frame carries the message"],
+                      ["TV Broadcast","Sound-on, lean-back, full attention","Classic TV ad effectiveness"],
+                      ["CTV/OTT","Big screen, sound-on, often non-skippable","Production quality holds up"],
+                      ["DOOH","No sound, 3-5 second glance time","Message readable in a glance"],
+                      ["Programmatic Display","Banner context, low attention environment","Key message in first frame"]
+                    ].map(([p,k,w],i)=>(
+                      <tr key={i} style={{background:i%2===0?C.s2:"transparent"}}>
+                        <td style={{padding:"10px 14px",fontWeight:700,color:C.text,borderRadius:"8px 0 0 8px",whiteSpace:"nowrap",fontSize:12}}>{p}</td>
+                        <td style={{padding:"10px 14px",color:C.dim,lineHeight:1.5}}>{k}</td>
+                        <td style={{padding:"10px 14px",color:C.green,fontSize:12,fontWeight:600,borderRadius:"0 8px 8px 0"}}>{w}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            {/* COMPETITIVE BENCHMARK */}
+            <Card style={{marginBottom:24}}>
+              <CardTitle dot={C.gold}>Competitive Benchmark Positions</CardTitle>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12}}>
+                {[
+                  ["Category Leader","Top 10%",C.green],
+                  ["Above Average","Top 25%",C.cyan],
+                  ["Average","Middle 50%",C.amber],
+                  ["Below Average","Bottom 25%",C.red]
+                ].map(([title,desc,color],i)=>(
+                  <div key={i} style={{background:C.s2,borderRadius:10,padding:20,textAlign:"center",borderTop:`4px solid ${color}`}}>
+                    <div style={{fontSize:15,fontWeight:700,color:color,marginBottom:6}}>{title}</div>
+                    <div style={{fontSize:13,color:C.dim}}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{fontSize:13,color:C.muted,marginTop:16,lineHeight:1.6,fontStyle:"italic"}}>Note: Category benchmarks are estimated from the AI model's training on advertising effectiveness literature and should be treated as directional, not absolute.</p>
+            </Card>
+
+            {/* LIMITATIONS */}
+            <Card>
+              <CardTitle dot={C.red}>Limitations & Disclaimers</CardTitle>
+              <div style={{display:"grid",gap:12}}>
+                {[
+                  ["Predictive, Not Measured","The Brain Encoder predicts neural activation from visual analysis. It does not measure actual brain activity via fMRI, EEG, or eye tracking. Scores should be treated as pre-screening intelligence, not substitutes for in-market measurement."],
+                  ["Audio Analysis is Inferred","The current version analyzes video frames (visual data only). Audio characteristics (voiceover, music, sound effects) are inferred from visual cues (subtitles, text overlays, mouth movement) rather than directly processed."],
+                  ["Frame Sampling","The platform analyzes 2-3 key frames, not every frame. For longer videos, some scenes may not be directly evaluated. The AI interpolates between sampled frames based on visual context."],
+                  ["Cultural Calibration","Scores are calibrated for the Indian market by default. Other markets may require adjustment of cultural resonance and regulatory compliance scoring."],
+                  ["No In-Market Guarantee","Real-world performance depends on exogenous variables: media weight, targeting, competitive activity, seasonality, platform algorithm changes, and consumer context. The Brain Encoder scores the creative in isolation."]
+                ].map(([title,desc],i)=>(
+                  <div key={i} style={{background:C.s2,borderRadius:10,padding:18,display:"flex",gap:14,alignItems:"flex-start"}}>
+                    <span style={{fontSize:18,flexShrink:0,marginTop:2}}>{["⚠️","🔇","🖼️","🌍","📊"][i]}</span>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:700,color:C.amber,marginBottom:4}}>{title}</div>
+                      <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </>)}
         </div>
 
         {/* FOOTER */}

@@ -63,12 +63,12 @@ function extractFrames(file){
     const v=document.createElement("video");v.preload="auto";v.muted=true;v.src=URL.createObjectURL(file);
     v.onloadedmetadata=()=>{
       const dur=v.duration,canvas=document.createElement("canvas");
-      canvas.width=640;canvas.height=360;const ctx=canvas.getContext("2d");
-      const n=Math.min(8,Math.max(4,Math.ceil(dur/3)));
+      canvas.width=320;canvas.height=180;const ctx=canvas.getContext("2d");
+      const n=Math.min(2,Math.max(1,Math.ceil(dur/10)));
       const times=Array.from({length:n},(_,i)=>(dur/n)*i+0.3);
       const frames=[];let idx=0;
       const next=()=>{if(idx>=times.length){URL.revokeObjectURL(v.src);resolve({frames,duration:dur,width:v.videoWidth,height:v.videoHeight,isImage:false});return}v.currentTime=Math.min(times[idx],dur-0.1)};
-      v.onseeked=()=>{ctx.drawImage(v,0,0,canvas.width,canvas.height);frames.push(canvas.toDataURL("image/jpeg",0.55).split(",")[1]);idx++;next()};
+      v.onseeked=()=>{ctx.drawImage(v,0,0,canvas.width,canvas.height);frames.push(canvas.toDataURL("image/jpeg",0.3).split(",")[1]);idx++;next()};
       v.onerror=()=>reject(new Error("Cannot read video"));next();
     };
   });
@@ -106,8 +106,10 @@ export default function App(){
         headers:{"Content-Type":"application/json",...(form.password?{Authorization:`Bearer ${form.password}`}:{})},
         body:JSON.stringify({frames:frameData.frames,metadata:{...form,...frameData}})
       });
-      const data=await resp.json();
-      if(!resp.ok||!data.success)throw new Error(data.error||"Analysis failed");
+      const respText=await resp.text();
+      let data;
+      try{data=JSON.parse(respText)}catch(e){throw new Error("Server returned: "+respText.substring(0,100))}
+      if(!resp.ok||!data.success)throw new Error(data.error||data.details||"Analysis failed");
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));
       setResults(data.analysis);setStage("results");setTab("summary");

@@ -1,6 +1,6 @@
 // netlify/functions/analyze.js
-// ADVantage Insights Brain Encoder - Netlify Serverless Function
-// CommonJS format - DO NOT use import/export syntax
+// ADVantage Insights Brain Encoder
+// Optimized for Netlify free tier (10s timeout)
 
 exports.handler = async function(event, context) {
   var headers = {
@@ -10,7 +10,6 @@ exports.handler = async function(event, context) {
     "Content-Type": "application/json"
   };
 
-  // Handle CORS preflight
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers: headers, body: "" };
   }
@@ -19,17 +18,11 @@ exports.handler = async function(event, context) {
     return { statusCode: 405, headers: headers, body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
-  // Check API key
   var ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_API_KEY) {
-    return {
-      statusCode: 500,
-      headers: headers,
-      body: JSON.stringify({ error: "ANTHROPIC_API_KEY not set. Add it in Netlify Site Configuration > Environment Variables." })
-    };
+    return { statusCode: 500, headers: headers, body: JSON.stringify({ error: "ANTHROPIC_API_KEY not set." }) };
   }
 
-  // Optional password
   var ACCESS_PASSWORD = process.env.ACCESS_PASSWORD;
   if (ACCESS_PASSWORD) {
     var authHeader = event.headers["authorization"] || event.headers["Authorization"] || "";
@@ -38,98 +31,52 @@ exports.handler = async function(event, context) {
     }
   }
 
-  // Parse request body
   var body;
-  try {
-    body = JSON.parse(event.body);
-  } catch (e) {
+  try { body = JSON.parse(event.body); } catch (e) {
     return { statusCode: 400, headers: headers, body: JSON.stringify({ error: "Invalid request body" }) };
   }
 
-  var frames = body.frames;
+  var frames = body.frames || [];
   var metadata = body.metadata || {};
 
-  if (!frames || !frames.length) {
+  if (!frames.length) {
     return { statusCode: 400, headers: headers, body: JSON.stringify({ error: "No frames provided." }) };
   }
 
-  // Build image content for Claude
-  var imageContent = [];
-  for (var i = 0; i < frames.length; i++) {
-    imageContent.push({
-      type: "image",
-      source: { type: "base64", media_type: "image/jpeg", data: frames[i] }
-    });
+  // Limit to 2 frames max for speed
+  if (frames.length > 2) {
+    frames = [frames[0], frames[frames.length - 1]];
   }
 
-  var isImage = metadata.isImage || false;
-  var duration = metadata.duration || 0;
-  var durationStr = isImage ? "static" : duration.toFixed(1) + "s";
+  var imageContent = frames.map(function(f) {
+    return { type: "image", source: { type: "base64", media_type: "image/jpeg", data: f } };
+  });
 
-  var systemPrompt = [
-    "You are the ADVantage Insights Brain Encoder. Analyze frames from advertising creatives.",
-    "CRITICAL: Return ONLY valid JSON. No markdown fences, no backticks, no preamble text.",
-    "",
-    "Creative: " + (frames.length) + " frames from a " + (isImage ? "display ad" : "video ad (" + durationStr + ")"),
-    "Brand: " + (metadata.brand || "Unknown"),
-    "Client: " + (metadata.client || "Unknown"),
-    "Campaign: " + (metadata.campaign || "Unknown"),
-    "Agency: " + (metadata.agency || "Unknown"),
-    "Type: " + (metadata.type || "video"),
-    "Industry: " + (metadata.industry || "Not specified"),
-    "Audience: " + (metadata.audience || "Not specified"),
-    "Market: " + (metadata.market || "India"),
-    "",
-    "Return this JSON (all INT values 0-100):",
-    "{",
-    "  \"viral_potential\": INT,",
-    "  \"hook_strength\": INT,",
-    "  \"hold_rate\": INT,",
-    "  \"emotional_peak\": INT,",
-    "  \"brand_recall\": INT,",
-    "  \"memory_encoding\": INT,",
-    "  \"sound_off_survival\": INT,",
-    "  \"creative_efficiency\": INT,",
-    "  \"share_intent\": INT,",
-    "  \"ad_fatigue_risk\": INT,",
-    "  \"cultural_resonance\": INT,",
-    "  \"system1_vs_system2\": INT,",
-    "  \"first_party_data_opportunity\": INT,",
-    "  \"celebrity_talent_index\": INT,",
-    "  \"brand_safety\": INT,",
-    "  \"regulatory_compliance\": INT,",
-    "  \"carbon_signal\": INT,",
-    "  \"score_notes\": { \"viral_potential\": \"note\", \"hook_strength\": \"note\", \"hold_rate\": \"note\", \"emotional_peak\": \"note\", \"brand_recall\": \"note\", \"memory_encoding\": \"note\", \"sound_off_survival\": \"note\", \"creative_efficiency\": \"note\", \"share_intent\": \"note\" },",
-    "  \"attention_curve\": [20 integers],",
-    "  \"emotion_curve\": [20 integers],",
-    "  \"emotion_types_curve\": { \"joy\": [20 ints], \"surprise\": [20 ints], \"trust\": [20 ints], \"fear\": [20 ints], \"desire\": [20 ints], \"curiosity\": [20 ints] },",
-    "  \"brain_regions\": { \"visual_cortex\": INT, \"prefrontal_cortex\": INT, \"amygdala\": INT, \"hippocampus\": INT, \"auditory_cortex\": INT, \"mirror_neurons\": INT, \"nucleus_accumbens\": INT, \"anterior_cingulate\": INT },",
-    "  \"cognitive_channel_load\": { \"visual\": INT, \"auditory\": INT, \"motion\": INT, \"text_overlay\": INT, \"brand_elements\": INT, \"human_faces\": INT, \"color_saturation\": INT },",
-    "  \"platform_scores\": { \"youtube_preroll_6s\": INT, \"youtube_preroll_15s\": INT, \"youtube_instream\": INT, \"instagram_reels\": INT, \"instagram_stories\": INT, \"instagram_feed\": INT, \"meta_feed\": INT, \"meta_stories\": INT, \"tiktok\": INT, \"linkedin_feed\": INT, \"twitter_x\": INT, \"tv_broadcast\": INT, \"ctv_ott\": INT, \"dooh\": INT, \"programmatic_display\": INT },",
-    "  \"scenes\": [{ \"ts\": \"0:00-3:00\", \"name\": \"Name\", \"desc\": \"3-4 sentences\", \"attention\": INT, \"emotion\": INT, \"system_mode\": \"system1|system2|mixed\", \"cognitive_load\": \"low|medium|high|overload\", \"risk_flag\": \"none|drop_zone|ad_avoidance|cognitive_overload\", \"badges\": [\"Badge1\", \"Badge2\"] }],",
-    "  \"insights\": [{ \"num\": \"01\", \"title\": \"Title\", \"body\": \"4-6 sentence analysis using advertising science (System 1/2, attention economics, memory encoding, Byron Sharp).\", \"verdict\": \"One sentence action\", \"vtype\": \"risk|win|tip|watch\" }],",
-    "  \"cmo_actions\": [{ \"num\": \"01\", \"title\": \"Title\", \"body\": \"3-4 sentence recommendation.\", \"priority\": \"critical|high|medium|low\", \"impact\": \"Predicted improvement\", \"effort\": \"easy|medium|hard\" }],",
-    "  \"competitive_context\": { \"category_avg_viral\": INT, \"category_avg_hook\": INT, \"category_avg_hold\": INT, \"category_avg_recall\": INT, \"position\": \"above_average|average|below_average|category_leader\", \"benchmark_note\": \"One sentence\" },",
-    "  \"sound_analysis\": { \"sound_dependency\": INT, \"music_effectiveness\": INT, \"voiceover_clarity\": INT, \"sound_off_text_quality\": INT, \"asmr_trigger\": INT, \"sonic_branding\": INT, \"sound_note\": \"2-3 sentences\" },",
-    "  \"privacy_and_data_audit\": { \"data_collection_present\": BOOL, \"consent_mechanism_visible\": BOOL, \"qr_code_present\": BOOL, \"url_cta_present\": BOOL, \"hashtag_present\": BOOL, \"regulatory_disclaimers_visible\": BOOL, \"dpdp_compliance_risk\": \"low|medium|high\", \"privacy_note\": \"2-3 sentences\" },",
-    "  \"creative_summary\": \"4-5 sentence summary\",",
-    "  \"headline_verdict\": \"One powerful sentence\",",
-    "  \"overall_grade\": \"A+|A|A-|B+|B|B-|C+|C|C-|D|F\"",
-    "}",
-    "",
-    "Provide 5-7 scenes, 5-7 insights, 5-7 cmo_actions. Be specific and critical. Do not mention Publicis Media."
-  ].join("\n");
+  var meta = metadata;
+  var prompt = "You analyze ad creatives. Return ONLY valid JSON, no markdown, no backticks.\n\n"
+    + "Creative: " + frames.length + " frames, " + (meta.brand||"Unknown") + ", " + (meta.type||"video") + ", " + (meta.industry||"") + ", " + (meta.market||"India") + "\n\n"
+    + "Return JSON with these exact keys (all numbers 0-100):\n"
+    + '{"viral_potential":N,"hook_strength":N,"hold_rate":N,"emotional_peak":N,"brand_recall":N,'
+    + '"memory_encoding":N,"sound_off_survival":N,"creative_efficiency":N,"share_intent":N,'
+    + '"ad_fatigue_risk":N,"cultural_resonance":N,"system1_vs_system2":N,'
+    + '"first_party_data_opportunity":N,"celebrity_talent_index":N,"brand_safety":N,'
+    + '"regulatory_compliance":N,"carbon_signal":N,'
+    + '"score_notes":{"viral_potential":"note","hook_strength":"note","hold_rate":"note","emotional_peak":"note","brand_recall":"note","memory_encoding":"note","sound_off_survival":"note","creative_efficiency":"note","share_intent":"note"},'
+    + '"attention_curve":[20 ints],"emotion_curve":[20 ints],'
+    + '"emotion_types_curve":{"joy":[20],"surprise":[20],"trust":[20],"fear":[20],"desire":[20],"curiosity":[20]},'
+    + '"brain_regions":{"visual_cortex":N,"prefrontal_cortex":N,"amygdala":N,"hippocampus":N,"auditory_cortex":N,"mirror_neurons":N,"nucleus_accumbens":N,"anterior_cingulate":N},'
+    + '"cognitive_channel_load":{"visual":N,"auditory":N,"motion":N,"text_overlay":N,"brand_elements":N,"human_faces":N,"color_saturation":N},'
+    + '"platform_scores":{"youtube_preroll_6s":N,"youtube_preroll_15s":N,"youtube_instream":N,"instagram_reels":N,"instagram_stories":N,"instagram_feed":N,"meta_feed":N,"meta_stories":N,"tiktok":N,"linkedin_feed":N,"twitter_x":N,"tv_broadcast":N,"ctv_ott":N,"dooh":N,"programmatic_display":N},'
+    + '"scenes":[{"ts":"0:00-3:00","name":"Name","desc":"Analysis","attention":N,"emotion":N,"system_mode":"system1","cognitive_load":"medium","risk_flag":"none","badges":["B1"]}],'
+    + '"insights":[{"num":"01","title":"T","body":"Analysis text","verdict":"Action","vtype":"risk"}],'
+    + '"cmo_actions":[{"num":"01","title":"T","body":"Recommendation","priority":"high","impact":"Impact","effort":"medium"}],'
+    + '"competitive_context":{"category_avg_viral":N,"category_avg_hook":N,"category_avg_hold":N,"category_avg_recall":N,"position":"average","benchmark_note":"Note"},'
+    + '"sound_analysis":{"sound_dependency":N,"music_effectiveness":N,"voiceover_clarity":N,"sound_off_text_quality":N,"asmr_trigger":N,"sonic_branding":N,"sound_note":"Note"},'
+    + '"privacy_and_data_audit":{"data_collection_present":false,"consent_mechanism_visible":false,"qr_code_present":false,"url_cta_present":false,"hashtag_present":false,"regulatory_disclaimers_visible":false,"dpdp_compliance_risk":"low","privacy_note":"Note"},'
+    + '"creative_summary":"Summary","headline_verdict":"Verdict","overall_grade":"B"}\n\n'
+    + "Provide 4-5 scenes, 4-5 insights, 4-5 cmo_actions. Be specific. No Publicis Media mentions.";
 
-  var userMessage = "Analyze these " + frames.length + " frames from the " + (metadata.type || "video") + " creative for " + (metadata.brand || "this brand") + ". Return ONLY the JSON object.";
-
-  // Add notes if provided
-  if (metadata.notes) {
-    userMessage += " Context: " + metadata.notes;
-  }
-
-  // Build messages array
-  var messagesContent = imageContent.slice();
-  messagesContent.push({ type: "text", text: userMessage });
+  var userMsg = "Analyze this " + (meta.type||"video") + " ad for " + (meta.brand||"brand") + ". " + (meta.notes||"") + " Return ONLY JSON.";
 
   try {
     var response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -140,69 +87,35 @@ exports.handler = async function(event, context) {
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 8000,
-        system: systemPrompt,
-        messages: [{ role: "user", content: messagesContent }]
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 4000,
+        system: prompt,
+        messages: [{ role: "user", content: imageContent.concat([{ type: "text", text: userMsg }]) }]
       })
     });
 
     if (!response.ok) {
       var errBody = await response.text();
-      return {
-        statusCode: response.status,
-        headers: headers,
-        body: JSON.stringify({
-          error: "Anthropic API returned status " + response.status,
-          details: errBody.substring(0, 500)
-        })
-      };
+      return { statusCode: response.status, headers: headers, body: JSON.stringify({ error: "API error " + response.status, details: errBody.substring(0, 300) }) };
     }
 
     var data = await response.json();
-
-    // Extract text from response
-    var textContent = "";
-    if (data.content && Array.isArray(data.content)) {
+    var text = "";
+    if (data.content) {
       for (var j = 0; j < data.content.length; j++) {
-        if (data.content[j].text) {
-          textContent += data.content[j].text;
-        }
+        if (data.content[j].text) text += data.content[j].text;
       }
     }
 
-    // Clean and parse JSON
-    var clean = textContent.replace(/```json/g, "").replace(/```/g, "").trim();
-
+    var clean = text.replace(/```json/g, "").replace(/```/g, "").trim();
     var parsed;
-    try {
-      parsed = JSON.parse(clean);
-    } catch (parseErr) {
-      return {
-        statusCode: 500,
-        headers: headers,
-        body: JSON.stringify({
-          error: "AI returned invalid JSON. Try again.",
-          preview: clean.substring(0, 200)
-        })
-      };
+    try { parsed = JSON.parse(clean); } catch (e) {
+      return { statusCode: 500, headers: headers, body: JSON.stringify({ error: "Invalid JSON from AI", preview: clean.substring(0, 200) }) };
     }
 
-    return {
-      statusCode: 200,
-      headers: headers,
-      body: JSON.stringify({
-        success: true,
-        analysis: parsed,
-        usage: data.usage
-      })
-    };
+    return { statusCode: 200, headers: headers, body: JSON.stringify({ success: true, analysis: parsed, usage: data.usage }) };
 
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers: headers,
-      body: JSON.stringify({ error: "Function error: " + err.message })
-    };
+    return { statusCode: 500, headers: headers, body: JSON.stringify({ error: "Error: " + err.message }) };
   }
 };

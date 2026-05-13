@@ -101,7 +101,7 @@ export default function App(){
       const frameData=await extractFrames(file);
       for(let i=1;i<msgs.length;i++){setProgressMsg(msgs[i]);setProgress(10+Math.round((i/msgs.length)*80));await new Promise(r=>setTimeout(r,700))}
       // Call backend
-      const resp=await fetch("/.netlify/functions/analyze",{
+      const resp=await fetch("/api/analyze",{
         method:"POST",
         headers:{"Content-Type":"application/json",...(form.password?{Authorization:`Bearer ${form.password}`}:{})},
         body:JSON.stringify({frames:frameData.frames,metadata:{...form,...frameData}})

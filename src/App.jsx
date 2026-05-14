@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { TabTakeaway } from "./Takeaways";
 
 // ============================================================
 // DESIGN TOKENS
@@ -941,6 +942,7 @@ export default function App(){
               </div>
             </Card>
           </>)}
+        <TabTakeaway tab={tab} r={r}/>
         </div>
 
         {/* FOOTER */}

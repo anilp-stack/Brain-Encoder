@@ -46,6 +46,103 @@ function BarMetric({label,value,color,maxW}){
   );
 }
 
+function Takeaway({icon,title,items,color}){
+  const c=color||C.cyan;
+  return(
+    <div style={{background:C.s1,border:"1px solid "+c+"33",borderRadius:14,padding:28,marginTop:24,borderLeft:"4px solid "+c}}>
+      <div style={{fontSize:15,fontWeight:700,color:c,marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:20}}>{icon||"💡"}</span>{title||"Key Takeaway"}
+      </div>
+      {items.map(function(item,i){return(
+        <div key={i} style={{display:"flex",gap:12,marginBottom:i<items.length-1?12:0,alignItems:"flex-start"}}>
+          <span style={{color:c,fontWeight:800,fontSize:14,marginTop:2,flexShrink:0}}>{item.type==="do"?"✅":item.type==="fix"?"🔧":item.type==="warn"?"⚠️":item.type==="win"?"🏆":"→"}</span>
+          <span style={{fontSize:14,color:C.dim,lineHeight:1.7}}><b style={{color:C.text}}>{item.label}</b> {item.text}</span>
+        </div>
+      )})}
+    </div>
+  );
+}
+
+function getTakeaways(r){
+  var t={};
+  // SUMMARY
+  t.summary=[];
+  if((r.viral_potential||0)>=70)t.summary.push({type:"win",label:"Strong viral potential.",text:"This creative has organic shareability. Prioritize it for social-first distribution."});
+  else t.summary.push({type:"fix",label:"Viral potential is below 70.",text:"Add a pattern interrupt, emotional spike, or relatable hook to increase shareability."});
+  if((r.hold_rate||0)<60)t.summary.push({type:"warn",label:"Hold rate is critical.",text:"More than "+(100-(r.hold_rate||0))+"% of viewers will drop off before the end. Re-edit to compress the weakest section by 30%."});
+  if((r.sound_off_survival||0)<60)t.summary.push({type:"fix",label:"Sound-off survival is low.",text:"Add bold kinetic text overlays for Meta/Instagram. 80%+ of social consumption is sound-off."});
+  if((r.brand_recall||0)>=80)t.summary.push({type:"win",label:"Excellent brand recall.",text:"Distinctive brand assets are well-placed. This creative will be remembered."});
+  else t.summary.push({type:"fix",label:"Brand recall needs work.",text:"Increase logo visibility, add product shot earlier, or strengthen distinctive brand assets."});
+  if((r.memory_encoding||0)<65)t.summary.push({type:"warn",label:"Risk of 'watched but forgotten'.",text:"High attention but low memory encoding means viewers see it but won't remember it. Add an emotional anchor moment."});
+
+  // NEURAL
+  t.neural=[];
+  var br=r.brain_regions||{};
+  if((br.amygdala||0)<50)t.neural.push({type:"fix",label:"Amygdala activation is low.",text:"The creative isn't triggering emotional processing. Add surprise, humor, tension, or human vulnerability."});
+  else t.neural.push({type:"win",label:"Strong emotional activation.",text:"The amygdala is engaged, which is the prerequisite for memory encoding and sharing behavior."});
+  if((br.prefrontal_cortex||0)>70&&(br.amygdala||0)<60)t.neural.push({type:"warn",label:"Over-indexing on rational processing.",text:"High prefrontal + low amygdala = the viewer is thinking, not feeling. This is where scroll-away happens. Lead with emotion."});
+  if((br.mirror_neurons||0)>=65)t.neural.push({type:"win",label:"Mirror neurons active.",text:"Viewers are empathizing with on-screen characters. This drives share intent and emotional contagion."});
+  else t.neural.push({type:"fix",label:"Low mirror neuron activation.",text:"Add close-up facial expressions, human-to-human interaction, or relatable body language to trigger empathy."});
+  var s1s2=r.system1_vs_system2||50;
+  if(s1s2>=65&&s1s2<=75)t.neural.push({type:"win",label:"System 1/2 balance is in the optimal zone (65-75).",text:"The creative leads with emotion and layers in enough rational messaging for comprehension."});
+  else if(s1s2<65)t.neural.push({type:"fix",label:"Over-indexing on System 2 (rational).",text:"The ad is making viewers think too hard. Reduce claim density in the first half. Lead with a feeling, not a fact."});
+  else t.neural.push({type:"warn",label:"Over-indexing on System 1 (emotional).",text:"Strong emotion but the rational message may not land. Add one clear product claim or benefit statement."});
+
+  // ATTENTION
+  t.attention=[];
+  var attn=r.attention_curve||[];
+  if(attn.length>0){
+    var peak=Math.max.apply(null,attn);var low=Math.min.apply(null,attn);var peakIdx=attn.indexOf(peak);var lowIdx=attn.indexOf(low);
+    t.attention.push({type:"do",label:"Peak attention at ~"+peakIdx+"s ("+peak+"%).",text:"This is your strongest moment. Consider using this frame as the thumbnail or hero image for static placements."});
+    if(low<50)t.attention.push({type:"warn",label:"Attention drops to "+low+"% at ~"+lowIdx+"s.",text:"This is your drop zone. Viewers leave here. Options: cut this section, add a visual pattern interrupt, or compress it by 50%."});
+    var drops=0;for(var i=1;i<attn.length;i++){if(attn[i]<attn[i-1]-10)drops++}
+    if(drops>2)t.attention.push({type:"fix",label:drops+" significant attention drops detected.",text:"Multiple drops indicate pacing issues. The creative needs more consistent visual variety or faster scene changes."});
+    var avg=Math.round(attn.reduce(function(a,b){return a+b},0)/attn.length);
+    t.attention.push({type:avg>=65?"win":"warn",label:"Average attention: "+avg+"%.",text:avg>=65?"Above the 60% threshold for effective ad recall.":"Below the 60% threshold. Consider a shorter cut (15s instead of 20s) to maintain higher average attention."});
+  }
+
+  // EMOTION
+  t.emotion=[];
+  if((r.emotional_peak||0)>=70)t.emotion.push({type:"win",label:"Strong emotional peak ("+r.emotional_peak+"/100).",text:"This creative triggers genuine emotion, which is the single strongest predictor of sharing behavior and long-term recall."});
+  else t.emotion.push({type:"fix",label:"Emotional peak is moderate ("+r.emotional_peak+"/100).",text:"Add a moment of surprise, joy, tension, or vulnerability. The viewer needs to FEEL something to remember the ad."});
+  if((r.share_intent||0)>=65)t.emotion.push({type:"win",label:"High share intent.",text:"Viewers will want to share this. Optimize for easy sharing: add hashtags, keep under 30s for social, make the first frame self-explanatory."});
+  else t.emotion.push({type:"fix",label:"Share intent is below 65.",text:"Add one of these sharing triggers: identity signaling, social currency, emotional contagion, or practical utility."});
+
+  // SCENES
+  t.scenes=[];
+  t.scenes.push({type:"do",label:"Use scene-level data for re-edits.",text:"Look at each scene's attention and emotion scores. Keep scenes scoring above 70. Cut or rework scenes below 50."});
+  t.scenes.push({type:"do",label:"Check System mode transitions.",text:"Frequent System 1 → System 2 shifts cause cognitive fatigue. If three consecutive scenes switch modes, the viewer's brain is overworking."});
+  t.scenes.push({type:"do",label:"Watch for 'drop_zone' and 'ad_avoidance' flags.",text:"Any scene flagged as a drop zone is where viewers leave. This is your #1 re-edit priority."});
+
+  // PLATFORMS
+  t.platforms=[];
+  var ps=r.platform_scores||{};
+  var best="";var bestV=0;var worst="";var worstV=100;
+  for(var k in ps){if(ps[k]>bestV){bestV=ps[k];best=k}if(ps[k]<worstV){worstV=ps[k];worst=k}}
+  if(best)t.platforms.push({type:"win",label:"Best platform: "+best.replace(/_/g," ")+" ("+bestV+"/100).",text:"Prioritize media spend here. This creative is optimized for this environment."});
+  if(worst)t.platforms.push({type:"warn",label:"Weakest platform: "+worst.replace(/_/g," ")+" ("+worstV+"/100).",text:"Do not run this creative on "+worst.replace(/_/g," ")+" without a format-specific re-edit."});
+  if((ps.instagram_reels||0)<60)t.platforms.push({type:"fix",label:"Low Reels score.",text:"Reels needs vertical-native, high-energy, sound-optional content. Create a separate 15s vertical cut for this placement."});
+  if((ps.tv_broadcast||0)>=80&&(ps.instagram_reels||0)<70)t.platforms.push({type:"do",label:"This is a TV-first creative.",text:"It was designed for lean-back, sound-on viewing. For social, create a separate feed-first version with text overlays and faster pacing."});
+
+  // SOUND
+  t.sound=[];
+  var snd=r.sound_analysis||{};
+  if((snd.sound_dependency||0)>70)t.sound.push({type:"warn",label:"High sound dependency ("+snd.sound_dependency+"/100).",text:"This creative relies heavily on audio. On social platforms (80%+ sound-off), it will underperform. Create a sound-off variant with kinetic text."});
+  else t.sound.push({type:"win",label:"Low sound dependency.",text:"This creative works well without audio. It's ready for sound-off social environments."});
+  if((r.sound_off_survival||0)<50)t.sound.push({type:"fix",label:"Sound-off survival is critical ("+r.sound_off_survival+"/100).",text:"Action: Add bold text overlays for the key message, ensure subtitles are high-contrast, and make the visual story self-explanatory without voiceover."});
+
+  // PRIVACY
+  t.privacy=[];
+  var priv=r.privacy_and_data_audit||{};
+  if(priv.qr_code_present)t.privacy.push({type:"warn",label:"QR code detected.",text:"Ensure the QR landing page has DPDP-compliant consent before collecting any personal data. The creative itself should not promise more than the landing page delivers."});
+  if(!priv.url_cta_present&&!priv.qr_code_present&&!priv.hashtag_present)t.privacy.push({type:"fix",label:"No digital conversion path.",text:"The creative has no QR code, URL, or hashtag. Every viewer who wants to act has zero guided next step. Add a search CTA or 'available on...' badge to the endframe."});
+  if(priv.dpdp_compliance_risk==="high")t.privacy.push({type:"warn",label:"High DPDP compliance risk.",text:"This creative contains data collection elements without visible consent mechanisms. Review with your legal/privacy team before programmatic distribution."});
+  else t.privacy.push({type:"win",label:"DPDP compliance risk is "+priv.dpdp_compliance_risk+".",text:"No major regulatory flags detected. Standard compliance posture."});
+  if(!priv.regulatory_disclaimers_visible)t.privacy.push({type:"fix",label:"No regulatory disclaimers visible.",text:"If this creative makes health, financial, or comparative claims, add visible disclaimers. When run in programmatic, cropped formats may lose fine-print disclaimers entirely."});
+
+  return t;
+}
+
 function makePath(arr,x1,x2,yT,yB){
   const s=(x2-x1)/(arr.length-1);
   return arr.map((v,i)=>`${i===0?"M":"L"}${x1+i*s},${yB-((v/100)*(yB-yT))}`).join(" ");
@@ -376,6 +473,7 @@ export default function App(){
                 <span style={{fontSize:14,color:C.dim}}>{comp.benchmark_note}</span>
               </div>
             </Card>}
+          <Takeaway icon="📋" title="What This Means for You" color={C.gold} items={getTakeaways(r).summary}/>
           </>)}
 
           {/* ===== NEURAL MAP ===== */}
@@ -403,6 +501,7 @@ export default function App(){
               </div>
               <div style={{textAlign:"center",marginTop:12,fontSize:13,color:C.dim}}>Score: {s1s2}/100 — {s1s2>=65&&s1s2<=75?"Optimal zone (65-75)":s1s2>75?"Over-indexing on emotion — add rational proof points":"Over-indexing on rational — add emotional triggers"}</div>
             </Card>
+          <Takeaway icon="🧠" title="Neural Map — What to Do" color={C.purple} items={getTakeaways(r).neural}/>
           </>)}
 
           {/* ===== ATTENTION ECONOMICS ===== */}
@@ -441,6 +540,7 @@ export default function App(){
                 })}
               </Card>
             </div>
+            <Takeaway icon="👁" title="Attention Economics — Actions" color={C.amber} items={getTakeaways(r).attention}/>
           </>)}
 
           {/* ===== EMOTIONAL ARCHITECTURE ===== */}
@@ -484,6 +584,7 @@ export default function App(){
                 </p>
               </Card>
             </div>
+            <Takeaway icon="❤️" title="Emotional Architecture — Actions" color={C.pink} items={getTakeaways(r).emotion}/>
           </>)}
 
           {/* ===== SCENE INTELLIGENCE ===== */}
@@ -511,6 +612,7 @@ export default function App(){
             </div>
           )}
 
+            <Takeaway icon="🎬" title="Scene Intelligence — How to Use This" color={C.teal} items={getTakeaways(r).scenes}/>
           {/* ===== PLATFORM SCORES ===== */}
           {tab==="platforms"&&(
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
@@ -522,6 +624,7 @@ export default function App(){
                 </Card>
               )}
             </div>
+            <Takeaway icon="📱" title="Platform Strategy — Where to Run This" color={C.blue} items={getTakeaways(r).platforms}/>
           )}
 
           {/* ===== SOUND & SENSORY ===== */}
@@ -542,6 +645,7 @@ export default function App(){
                 </div>
               </Card>
             </div>
+            <Takeaway icon="🔊" title="Sound Strategy — Actions" color={C.purple} items={getTakeaways(r).sound}/>
           )}
 
           {/* ===== PRIVACY & COMPLIANCE ===== */}
@@ -577,6 +681,7 @@ export default function App(){
                 </div>
               </Card>
             </div>
+            <Takeaway icon="🛡️" title="Privacy & Compliance — Actions" color={C.amber} items={getTakeaways(r).privacy}/>
           )}
 
           {/* ===== STRATEGIC INSIGHTS ===== */}

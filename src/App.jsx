@@ -844,12 +844,12 @@ export default function App(){
     const r=results;
     const attn=r.attention_curve||Array(20).fill(50);
     const emot=r.emotion_curve||Array(20).fill(40);
-    const emotTypes=r.emotion_types_curve||{};
+    const emotTypes=r.emotion_types||r.emotion_types_curve||{};
     const br=r.brain_regions||{};
-    const cl=r.cognitive_channel_load||r.channel_load||{};
+    const cl=r.cognitive_channels||r.cognitive_channel_load||r.channel_load||{};
     const ps=r.platform_scores||{};
     const sc=r.scenes||[];
-    const ins=r.insights||[];
+    const ins=r.strategic_insights||r.insights||[];
     const cmo=r.cmo_actions||[];
     const snd=r.sound_analysis||{};
     const priv=r.privacy_and_data_audit||r.privacy||{};

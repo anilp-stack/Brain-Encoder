@@ -5,6 +5,10 @@
 [build.environment]
   NODE_VERSION = "18"
 
+[[edge_functions]]
+  path = "/api/analyze"
+  function = "analyze"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

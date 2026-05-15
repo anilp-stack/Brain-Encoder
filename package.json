@@ -1,15 +1,17 @@
 {
   "name": "advantage-insights-brain-encoder",
   "version": "1.0.0",
+  "description": "ADVantage Insights Brain Encoder Platform — AI-Powered Creative Intelligence",
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
+    "jspdf": "^4.2.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@supabase/supabase-js": "^2.45.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

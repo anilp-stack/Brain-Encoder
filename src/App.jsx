@@ -1061,7 +1061,7 @@ export default function App() {
       const { frames, duration, isImage } = await extractFrames(file);
       const payload = { frames, metadata: { ...formData, duration, isImage } };
 
-      const resp = await fetch("/.netlify/functions/analyze", {
+      const resp = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

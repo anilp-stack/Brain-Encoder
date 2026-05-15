@@ -15,12 +15,7 @@ export async function handler(event) {
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_API_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: "ANTHROPIC_API_KEY not set." }) };
 
-  const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD;
-  if (ACCESS_PASSWORD) {
-    const auth = event.headers.authorization;
-    if (!auth || auth !== `Bearer ${ACCESS_PASSWORD}`)
-      return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid access code." }) };
-  }
+  // Password check disabled — enable when platform goes public
 
   try {
     const body = JSON.parse(event.body);

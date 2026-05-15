@@ -172,5 +172,3 @@ Return this exact JSON structure (ALL fields required, INT = 0-100):
     );
   }
 }
-
-export const config = { path: "/api/analyze" };

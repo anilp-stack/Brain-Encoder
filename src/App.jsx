@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { generateBrainEncoderPDF } from "./generatePDF";
 
 // ============================================================
 // DESIGN TOKENS — Premium Consultancy Edition
@@ -51,6 +52,7 @@ const Icon = {
   cmo:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   glossary:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
   new:     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  dl:      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
   tm:      null,
 };
 
@@ -107,7 +109,7 @@ const NAV_TABS = [
   {id:"methodology",label:"Methodology",      icon:Icon.glossary},
 ];
 
-function Sidebar({tab, setTab, grade: gr, brand, onNew}){
+function Sidebar({tab, setTab, grade: gr, brand, onNew, onDownload, downloading}){
   const gc = gr==="A+"||gr==="A"||gr==="A-" ? C.green : gr?.startsWith("B") ? C.amber : gr?.startsWith("C") ? C.gold : C.red;
   return(
     <div style={{
@@ -164,6 +166,21 @@ function Sidebar({tab, setTab, grade: gr, brand, onNew}){
 
       {/* New Analysis button */}
       <div style={{padding:"16px 20px",borderTop:`1px solid ${C.border}`}}>
+        {onDownload && (
+          <button onClick={onDownload} disabled={downloading}
+            style={{
+              width:"100%", background: downloading ? `${C.gold}22` : `linear-gradient(135deg,${C.gold},${C.goldD})`,
+              border:"none", borderRadius:10,
+              padding:"11px 14px", color: downloading ? C.gold : C.bg,
+              fontSize:12, fontWeight:800, cursor: downloading ? "wait" : "pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+              fontFamily:"'DM Sans',sans-serif", letterSpacing:0.3,
+              marginBottom:10, transition:"all 0.2s",
+              boxShadow: downloading ? "none" : `0 4px 16px ${C.gold}30`,
+            }}>
+            {Icon.dl} {downloading ? "Generating PDF..." : "Download PDF Report"}
+          </button>
+        )}
         <button onClick={onNew}
           style={{
             width:"100%", background:`linear-gradient(135deg,${C.gold}22,${C.gold}0a)`,
@@ -607,6 +624,7 @@ export default function App(){
   const [results,setResults]=useState(null);
   const [error,setError]=useState(null);
   const [tab,setTab]=useState("summary");
+  const [downloading,setDownloading]=useState(false);
   const fileRef=useRef(null);
 
   const handleFile=(e)=>{
@@ -881,6 +899,13 @@ export default function App(){
           grade={r.overall_grade}
           brand={form.brand}
           onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);}}
+          downloading={downloading}
+          onDownload={async()=>{
+            setDownloading(true);
+            try{ await generateBrainEncoderPDF(r, form); }
+            catch(e){ alert("PDF generation failed: "+e.message); }
+            finally{ setDownloading(false); }
+          }}
         />
 
         {/* ── MAIN CONTENT ── */}

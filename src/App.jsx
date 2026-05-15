@@ -1,51 +1,185 @@
 import { useState, useRef, useCallback } from "react";
 
 // ============================================================
-// DESIGN TOKENS
+// DESIGN TOKENS — Premium Consultancy Edition
+// Palette: Deep Onyx · Champagne Gold · Malachite · Slate
 // ============================================================
 const C = {
-  bg:"#08080d",s1:"#0e0e18",s2:"#161624",s3:"#1e1e30",
-  border:"#2a2a42",text:"#eaeaf4",dim:"#7a7a9e",muted:"#50506e",
-  gold:"#d4a853",cyan:"#00c8ff",blue:"#3a7bd5",green:"#2ecc71",
-  red:"#e74c3c",amber:"#f1c40f",orange:"#e67e22",purple:"#9b59b6",
-  pink:"#e91e8a",teal:"#1abc9c",lime:"#a3e635",rose:"#f43f5e"
+  // Surfaces
+  bg:"#060810",s1:"#0a0d1e",s2:"#0f1228",s3:"#141730",
+  // Borders
+  border:"#1c2040",border2:"#252850",
+  // Text
+  text:"#f0f0f8",dim:"#8890b0",muted:"#454870",
+  // Brand accents
+  gold:"#c9a84c",goldL:"#e8c97a",goldD:"#8a6f2e",
+  // Signal colours
+  cyan:"#00d4b8",blue:"#4f8ef7",green:"#22d472",
+  red:"#f05a6a",amber:"#f5a623",orange:"#e8793a",
+  purple:"#9b7fea",pink:"#e84393",teal:"#00b8a9",
+  rose:"#f43f5e",lime:"#84cc16",sky:"#38bdf8",
+  // Sidebar
+  sideW: 220,
 };
 const hex=(v)=>v>=80?C.green:v>=60?C.amber:v>=40?C.orange:C.red;
 const grade=(v)=>v>=90?"A+":v>=85?"A":v>=80?"A-":v>=75?"B+":v>=70?"B":v>=65?"B-":v>=60?"C+":v>=55?"C":v>=50?"C-":v>=40?"D":"F";
 
 // ============================================================
-// SHARED COMPONENTS
+// SHARED COMPONENTS — Premium Edition
 // ============================================================
+
+// Google Fonts injection
+if(typeof document !== "undefined" && !document.getElementById("be-fonts")){
+  const l = document.createElement("link");
+  l.id = "be-fonts";
+  l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap";
+  document.head.appendChild(l);
+}
+
+// SVG Icons — no emojis
+const Icon = {
+  summary: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+  neural:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M12 11l-5 6M12 11l5 6"/></svg>,
+  attn:    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  emotion: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
+  scene:   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/></svg>,
+  platform:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,
+  sound:   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>,
+  privacy: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  strategy:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+  cmo:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  glossary:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+  new:     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  tm:      null,
+};
+
 function Card({children,style,...p}){
-  return <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:14,padding:28,...style}} {...p}>{children}</div>;
+  return <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:28,...style}} {...p}>{children}</div>;
 }
 function CardTitle({dot,children}){
-  return <div style={{fontSize:16,fontWeight:700,marginBottom:20,display:"flex",alignItems:"center",gap:10}}>{dot&&<span style={{width:12,height:12,borderRadius:3,background:dot,display:"inline-block"}}/>}{children}</div>;
+  return <div style={{fontSize:13,fontWeight:700,letterSpacing:1.5,color:dot||C.gold,textTransform:"uppercase",marginBottom:20,fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",gap:8}}>
+    <span style={{width:3,height:16,borderRadius:2,background:dot||C.gold,display:"inline-block"}}/>
+    {children}
+  </div>;
 }
 
 function ScoreCard({label,value,note,pct}){
   const c=hex(value);
   return(
-    <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 20px",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:0,left:0,right:0,height:4,background:c}}/>
-      <div style={{fontSize:11,fontWeight:700,letterSpacing:2,color:C.dim,textTransform:"uppercase",marginBottom:8,fontFamily:"'JetBrains Mono',monospace"}}>{label}</div>
-      <div style={{fontSize:40,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:c,lineHeight:1}}>{value}</div>
-      <div style={{fontSize:12,color:C.dim,marginTop:8,lineHeight:1.4}}>{note}</div>
-      <div style={{height:5,borderRadius:3,background:C.s3,marginTop:14,overflow:"hidden"}}>
-        <div style={{height:"100%",borderRadius:3,background:c,width:`${pct||value}%`,transition:"width 1.5s"}}/>
+    <div style={{background:`linear-gradient(135deg,${C.s2},${C.s1})`,border:`1px solid ${C.border}`,borderRadius:16,padding:"22px 20px",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${c},${c}88)`}}/>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:C.muted,textTransform:"uppercase",marginBottom:8,fontFamily:"'DM Mono',monospace"}}>{label}</div>
+      <div style={{fontSize:42,fontWeight:700,fontFamily:"'DM Mono',monospace",color:c,lineHeight:1}}>{value}</div>
+      <div style={{fontSize:11,color:C.dim,marginTop:8,lineHeight:1.5,minHeight:16}}>{note}</div>
+      <div style={{height:4,borderRadius:2,background:C.s3,marginTop:14,overflow:"hidden"}}>
+        <div style={{height:"100%",borderRadius:2,background:`linear-gradient(90deg,${c}aa,${c})`,width:`${pct||value}%`,transition:"width 1.5s ease"}}/>
       </div>
     </div>
   );
 }
 
 function BarMetric({label,value,color,maxW}){
+  const c=color||hex(value);
   return(
-    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-      <div style={{width:maxW||140,fontSize:13,fontWeight:600,color:C.dim,textTransform:"capitalize",flexShrink:0}}>{label}</div>
-      <div style={{flex:1,height:10,borderRadius:5,background:C.s3,overflow:"hidden"}}>
-        <div style={{height:"100%",borderRadius:5,background:color||hex(value),opacity:.75,width:`${value}%`,transition:"width 1s"}}/>
+    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:11}}>
+      <div style={{width:maxW||140,fontSize:12,fontWeight:600,color:C.dim,textTransform:"capitalize",flexShrink:0,fontFamily:"'DM Sans',sans-serif"}}>{label.replace(/_/g," ")}</div>
+      <div style={{flex:1,height:8,borderRadius:4,background:C.s3,overflow:"hidden"}}>
+        <div style={{height:"100%",borderRadius:4,background:`linear-gradient(90deg,${c}77,${c})`,width:`${value}%`,transition:"width 1s ease"}}/>
       </div>
-      <div style={{width:44,fontSize:15,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:color||hex(value),textAlign:"right"}}>{value}</div>
+      <div style={{width:40,fontSize:13,fontWeight:700,fontFamily:"'DM Mono',monospace",color:c,textAlign:"right"}}>{value}</div>
+    </div>
+  );
+}
+
+// Vertical Sidebar Nav
+const NAV_TABS = [
+  {id:"summary",  label:"Executive Summary", icon:Icon.summary},
+  {id:"neural",   label:"Neural Map",         icon:Icon.neural},
+  {id:"attention",label:"Attention",          icon:Icon.attn},
+  {id:"emotion",  label:"Emotional Arch.",    icon:Icon.emotion},
+  {id:"scenes",   label:"Scene Intelligence", icon:Icon.scene},
+  {id:"platforms",label:"Platform Scores",    icon:Icon.platform},
+  {id:"sound",    label:"Sound & Sensory",    icon:Icon.sound},
+  {id:"privacy",  label:"Privacy & Compliance",icon:Icon.privacy},
+  {id:"strategy", label:"Strategic Insights", icon:Icon.strategy},
+  {id:"cmo",      label:"CMO Playbook",       icon:Icon.cmo},
+  {id:"methodology",label:"Methodology",      icon:Icon.glossary},
+];
+
+function Sidebar({tab, setTab, grade: gr, brand, onNew}){
+  const gc = gr==="A+"||gr==="A"||gr==="A-" ? C.green : gr?.startsWith("B") ? C.amber : gr?.startsWith("C") ? C.gold : C.red;
+  return(
+    <div style={{
+      width:C.sideW, minWidth:C.sideW, background:C.s1,
+      borderRight:`1px solid ${C.border}`, height:"100vh",
+      position:"sticky", top:0, display:"flex", flexDirection:"column",
+      overflowY:"auto", flexShrink:0, zIndex:50,
+      fontFamily:"'DM Sans',sans-serif",
+    }}>
+      {/* Brand header */}
+      <div style={{padding:"24px 20px 20px", borderBottom:`1px solid ${C.border}`}}>
+        <div style={{fontSize:8,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:6,fontFamily:"'DM Mono',monospace"}}>
+          ADVantage Insights<sup style={{fontSize:6,color:C.gold,verticalAlign:"super"}}>TM</sup>
+        </div>
+        <div style={{fontSize:16,fontWeight:700,color:C.text,letterSpacing:-0.3,lineHeight:1.2,fontFamily:"'Playfair Display',serif"}}>
+          Brain Encoder<sup style={{fontSize:8,color:C.gold,verticalAlign:"super"}}>TM</sup>
+        </div>
+        {gr && (
+          <div style={{marginTop:14,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:8,padding:"4px 12px",fontSize:14,fontWeight:800,color:gc,fontFamily:"'DM Mono',monospace",letterSpacing:1}}>
+              {gr}
+            </div>
+            {brand && <div style={{fontSize:11,color:C.dim,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:100}}>{brand}</div>}
+          </div>
+        )}
+      </div>
+
+      {/* Nav items */}
+      <nav style={{flex:1,padding:"10px 0"}}>
+        {NAV_TABS.map(n=>{
+          const active = tab===n.id;
+          return(
+            <button key={n.id} onClick={()=>setTab(n.id)}
+              style={{
+                width:"100%", display:"flex", alignItems:"center", gap:10,
+                padding:"10px 20px",
+                background: active ? `${C.gold}12` : "transparent",
+                borderLeft: `3px solid ${active ? C.gold : "transparent"}`,
+                borderLeft:`3px solid ${active?C.gold:"transparent"}`,
+                borderRight:"none",borderTop:"none",borderBottom:"none",
+                cursor:"pointer", textAlign:"left",
+                color: active ? C.gold : C.dim,
+                fontSize:12, fontWeight: active ? 700 : 500,
+                transition:"all 0.15s ease",
+                fontFamily:"'DM Sans',sans-serif",
+                letterSpacing:0.2,
+              }}>
+              <span style={{display:"flex",opacity:active?1:0.55,flexShrink:0}}>{n.icon}</span>
+              <span style={{lineHeight:1.3}}>{n.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* New Analysis button */}
+      <div style={{padding:"16px 20px",borderTop:`1px solid ${C.border}`}}>
+        <button onClick={onNew}
+          style={{
+            width:"100%", background:`linear-gradient(135deg,${C.gold}22,${C.gold}0a)`,
+            border:`1px solid ${C.gold}44`, borderRadius:10,
+            padding:"10px 14px", color:C.gold, fontSize:12,
+            fontWeight:700, cursor:"pointer", display:"flex",
+            alignItems:"center", justifyContent:"center", gap:6,
+            fontFamily:"'DM Sans',sans-serif", letterSpacing:0.3,
+            transition:"all 0.2s",
+          }}>
+          {Icon.new} New Analysis
+        </button>
+        <div style={{marginTop:12,fontSize:9,color:C.muted,textAlign:"center",fontFamily:"'DM Mono',monospace",letterSpacing:1}}>
+          NEURAL CREATIVE INTELLIGENCE
+        </div>
+      </div>
     </div>
   );
 }
@@ -541,25 +675,54 @@ export default function App(){
   // ============================================================
   if(stage==="landing"){
     return(
-      <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40,textAlign:"center"}}>
-        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"radial-gradient(ellipse at 50% 20%, rgba(0,200,255,0.06) 0%, transparent 60%)",pointerEvents:"none"}}/>
-        <div style={{fontSize:13,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:20,position:"relative"}}>ADVantage Insights</div>
-        <h1 style={{fontSize:56,fontWeight:200,lineHeight:1.1,maxWidth:750,marginBottom:16,position:"relative"}}>
-          Brain <span style={{fontWeight:800,background:`linear-gradient(135deg,${C.cyan},${C.blue})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Encoder</span> Platform
+      <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",fontFamily:"'DM Sans',sans-serif",position:"relative",overflow:"hidden"}}>
+        {/* Ambient background */}
+        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 70%)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40%",background:"radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,212,184,0.04) 0%, transparent 70%)",pointerEvents:"none"}}/>
+
+        {/* Logo wordmark */}
+        <div style={{marginBottom:40,position:"relative"}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:10,fontFamily:"'DM Mono',monospace"}}>
+            ADVantage Insights<sup style={{fontSize:7,color:C.gold,verticalAlign:"super",marginLeft:1}}>TM</sup>
+          </div>
+          <div style={{width:40,height:1,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`,margin:"0 auto"}}/>
+        </div>
+
+        <h1 style={{fontSize:clamp(42,6,72),fontWeight:800,lineHeight:1.0,maxWidth:700,marginBottom:12,position:"relative",fontFamily:"'Playfair Display',serif",letterSpacing:-1,color:C.text}}>
+          Brain Encoder<sup style={{fontSize:16,color:C.gold,verticalAlign:"super",fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>TM</sup>
         </h1>
-        <p style={{fontSize:18,color:C.dim,maxWidth:580,lineHeight:1.7,marginBottom:44,position:"relative"}}>
-          Upload any video ad, display creative, or social content. Get a full neural creative analysis with 17 performance metrics, attention curves, emotional mapping, scene intelligence, platform scoring, and strategic recommendations.
+        <div style={{fontSize:16,fontWeight:600,color:C.gold,letterSpacing:2,textTransform:"uppercase",marginBottom:28,fontFamily:"'DM Mono',monospace"}}>
+          Neural Creative Intelligence Platform
+        </div>
+        <p style={{fontSize:17,color:C.dim,maxWidth:560,lineHeight:1.8,marginBottom:48,position:"relative",fontWeight:400}}>
+          Upload any video ad, display creative, or social content. Receive a complete neural performance report — 17 metrics, 15 platform scores, scene intelligence, and a CMO action playbook.
         </p>
-        <button onClick={()=>setStage("form")} style={{background:`linear-gradient(135deg,${C.cyan},${C.blue})`,color:"white",border:"none",padding:"18px 56px",borderRadius:12,fontSize:17,fontWeight:700,cursor:"pointer",letterSpacing:.5,position:"relative",boxShadow:"0 4px 24px rgba(0,200,255,0.3)"}}>
+
+        <button onClick={()=>setStage("form")}
+          style={{
+            background:`linear-gradient(135deg,${C.gold},${C.goldD})`,
+            color:C.bg,border:"none",padding:"18px 56px",borderRadius:12,
+            fontSize:16,fontWeight:800,cursor:"pointer",letterSpacing:0.5,
+            position:"relative",boxShadow:`0 8px 32px ${C.gold}40`,
+            fontFamily:"'DM Sans',sans-serif",transition:"all 0.2s",
+            marginBottom:56,
+          }}>
           Start Analysis →
         </button>
-        <div style={{marginTop:56,display:"flex",gap:28,color:C.dim,fontSize:13,flexWrap:"wrap",justifyContent:"center",position:"relative"}}>
-          {["🧠 17 Neural Metrics","📊 Attention & Emotion Curves","🎯 15 Platform Scores","🔬 Scene Intelligence","🛡️ Privacy & Compliance","📋 CMO Playbook"].map(t=>
-            <span key={t} style={{padding:"8px 16px",background:C.s2,borderRadius:8,border:`1px solid ${C.border}`}}>{t}</span>
-          )}
+
+        {/* Feature tags — no emojis */}
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:48,maxWidth:680}}>
+          {["17 Neural Metrics","15 Platform Scores","Attention Heatmap","Scene Intelligence","Privacy & DPDP","CMO Playbook","No Duration Limit","System 1 / System 2"].map(t=>(
+            <span key={t} style={{padding:"7px 14px",background:C.s2,borderRadius:100,border:`1px solid ${C.border2}`,fontSize:11,fontWeight:600,color:C.dim,letterSpacing:0.3,fontFamily:"'DM Sans',sans-serif"}}>
+              {t}
+            </span>
+          ))}
         </div>
-        <div style={{position:"relative",marginTop:72,display:"flex",gap:48,color:C.muted,fontSize:12}}>
-          <span>Beyond Higgsfield</span><span>·</span><span>No 15s Limit</span><span>·</span><span>Full Explainability</span><span>·</span><span>Platform-Specific</span>
+
+        <div style={{display:"flex",gap:40,color:C.muted,fontSize:11,fontFamily:"'DM Mono',monospace",letterSpacing:1.5,textTransform:"uppercase"}}>
+          <span>Full Explainability</span><span style={{color:C.border}}>·</span>
+          <span>Platform-Specific</span><span style={{color:C.border}}>·</span>
+          <span>No Duration Cap</span>
         </div>
       </div>
     );
@@ -709,37 +872,47 @@ export default function App(){
     ];
 
     return(
-      <div style={{minHeight:"100vh",background:C.bg}}>
-        {/* HEADER */}
-        <div style={{background:C.s1,padding:"32px 48px 24px",borderBottom:`1px solid ${C.border}`}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
-            <span style={{fontSize:11,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase"}}>ADVantage Insights</span>
-            <span style={{padding:"3px 12px",borderRadius:4,background:"rgba(0,200,255,0.1)",color:C.cyan,fontSize:11,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>BRAIN ENCODER</span>
-            {r.overall_grade&&<span style={{marginLeft:8,padding:"4px 14px",borderRadius:6,background:hex(r.overall_grade==="A+"||r.overall_grade==="A"?90:r.overall_grade?.startsWith("B")?70:50),color:C.bg,fontSize:13,fontWeight:800,fontFamily:"'JetBrains Mono',monospace"}}>GRADE: {r.overall_grade}</span>}
-          </div>
-          <h1 style={{fontSize:32,fontWeight:200,lineHeight:1.2,marginBottom:6}}>
-            {form.brand} — <span style={{fontWeight:700}}>{form.campaign||"Creative Analysis"}</span>
-          </h1>
-          {r.headline_verdict&&<p style={{fontSize:15,color:C.gold,fontWeight:500,marginBottom:8,maxWidth:800,lineHeight:1.5}}>"{r.headline_verdict}"</p>}
-          <p style={{fontSize:13,color:C.dim,maxWidth:900,lineHeight:1.6}}>{r.creative_summary||""}</p>
-          <div style={{marginTop:10,fontSize:12,color:C.muted,fontFamily:"'JetBrains Mono',monospace"}}>
-            {form.client&&`Client: ${form.client} · `}{form.agency&&`Agency: ${form.agency} · `}Type: {form.type} · {form.industry} · {form.market} · {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
-          </div>
-        </div>
+      <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'DM Sans',sans-serif"}}>
 
-        {/* TABS */}
-        <div style={{background:C.s1,borderBottom:`1px solid ${C.border}`,padding:"0 48px",display:"flex",gap:0,position:"sticky",top:0,zIndex:100,overflowX:"auto"}}>
-          {allTabs.map(t=>
-            <div key={t.id} onClick={()=>setTab(t.id)} style={{padding:"14px 18px",fontSize:13,fontWeight:600,color:tab===t.id?C.cyan:C.dim,borderBottom:`3px solid ${tab===t.id?C.cyan:"transparent"}`,cursor:"pointer",whiteSpace:"nowrap",transition:"all .15s",display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:14}}>{t.icon}</span>{t.label}
+        {/* ── LEFT SIDEBAR ── */}
+        <Sidebar
+          tab={tab}
+          setTab={setTab}
+          grade={r.overall_grade}
+          brand={form.brand}
+          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);}}
+        />
+
+        {/* ── MAIN CONTENT ── */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflowY:"auto"}}>
+
+          {/* Top header bar */}
+          <div style={{background:C.s1,borderBottom:`1px solid ${C.border}`,padding:"20px 36px",position:"sticky",top:0,zIndex:40}}>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:16}}>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:5,fontFamily:"'DM Mono',monospace"}}>
+                  {form.industry||""}{form.market?` · ${form.market}`:""}{form.type?` · ${form.type}`:""} · {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
+                </div>
+                <h1 style={{fontSize:22,fontWeight:800,color:C.text,margin:0,letterSpacing:-0.5,fontFamily:"'Playfair Display',serif",lineHeight:1.2}}>
+                  {form.brand}{form.campaign?<span style={{fontWeight:400,color:C.dim}}> — {form.campaign}</span>:""}
+                </h1>
+                {r.headline_verdict&&<div style={{fontSize:13,color:C.gold,marginTop:6,fontStyle:"italic",opacity:0.9}}>"{r.headline_verdict}"</div>}
+              </div>
+              {r.overall_grade&&(()=>{
+                const gc=r.overall_grade==="A+"||r.overall_grade==="A"||r.overall_grade==="A-"?C.green:r.overall_grade?.startsWith("B")?C.amber:r.overall_grade?.startsWith("C")?C.gold:C.red;
+                return(
+                  <div style={{flexShrink:0,background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:12,padding:"10px 20px",textAlign:"center"}}>
+                    <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:3}}>Grade</div>
+                    <div style={{fontSize:24,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
+                  </div>
+                );
+              })()}
             </div>
-          )}
-          <div style={{marginLeft:"auto",padding:"12px 0"}}>
-            <button onClick={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);}} style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${C.border}`,background:"transparent",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>+ New</button>
           </div>
-        </div>
 
-        <div style={{padding:"36px 48px",maxWidth:1440,margin:"0 auto"}}>
+          {/* Tab content */}
+          <div style={{padding:"32px 36px",maxWidth:1300,width:"100%",boxSizing:"border-box"}}>
+
 
           {/* ===== EXECUTIVE SUMMARY ===== */}
           {tab==="summary"&&(<>
@@ -1161,14 +1334,18 @@ export default function App(){
             </Card>
           </>)}
 
-        </div>
+          </div>
 
-        {/* FOOTER */}
-        <div style={{padding:"24px 48px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:11,color:C.muted,fontFamily:"'JetBrains Mono',monospace",marginTop:32}}>
-          ADVantage Insights · Brain Encoder Platform · AI-Powered Creative Intelligence · {new Date().getFullYear()}
-        </div>
+          {/* FOOTER */}
+          <div style={{padding:"20px 36px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:1,marginTop:"auto"}}>
+            ADVantage Insights™ · Brain Encoder Platform™ · Neural Creative Intelligence · {new Date().getFullYear()}
+          </div>
+        </div>{/* end main content */}
       </div>
     );
   }
   return null;
 }
+
+// Helper: responsive font clamp
+function clamp(base, vw, max){ return `clamp(${base}px, ${vw}vw, ${max}px)`; }

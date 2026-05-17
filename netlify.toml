@@ -13,6 +13,14 @@
   path = "/api/analyze-rich"
   function = "analyze-rich"
 
+# API routes must NOT be caught by the SPA redirect
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+  force = false
+
+# SPA catch-all — MUST come last
 [[redirects]]
   from = "/*"
   to = "/index.html"

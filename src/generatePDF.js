@@ -24,13 +24,20 @@ export async function generateBrainEncoderPDF(results, form) {
   const PURPLE  = [155, 127, 234];
   const ROSE    = [244,  63,  94];
 
-  const scoreColor = (v) =>
-    v >= 80 ? GREEN : v >= 60 ? AMBER : v >= 40 ? ORANGE : RED;
+  const scoreColor = (v) => {
+    const n = parseInt(v) || 0;
+    return n >= 80 ? GREEN : n >= 60 ? AMBER : n >= 40 ? ORANGE : RED;
+  };
 
-  const gradeColor = (g) =>
-    g && (g.startsWith("A")) ? GREEN :
-    g && (g.startsWith("B")) ? AMBER :
-    g && (g.startsWith("C")) ? ORANGE : RED;
+  const gradeColor = (g) => {
+    if (!g) return AMBER;
+    return g.startsWith("A") ? GREEN : g.startsWith("B") ? AMBER : g.startsWith("C") ? ORANGE : RED;
+  };
+
+  const safe = (v, fallback = 0) => {
+    const n = parseInt(v);
+    return isNaN(n) ? fallback : Math.max(0, Math.min(100, n));
+  };
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   doc.setProperties({
@@ -120,7 +127,8 @@ export async function generateBrainEncoderPDF(results, form) {
   }
 
   function scoreBlock(x, y, label, value, w = 44, h = 28) {
-    const c = scoreColor(value);
+    const v = safe(value);
+    const c = scoreColor(v);
     card(x, y, w, h, [12, 16, 35]);
     topAccent(x, y, w, c);
     doc.setFontSize(7);
@@ -130,15 +138,17 @@ export async function generateBrainEncoderPDF(results, form) {
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...c);
-    doc.text(String(value), x + w / 2, y + 21, { align: "center" });
+    doc.text(String(v), x + w / 2, y + 21, { align: "center" });
     // mini bar
     doc.setFillColor(...BORDER);
     doc.roundedRect(x + 4, y + 23, w - 8, 2, 1, 1, "F");
     doc.setFillColor(...c);
-    doc.roundedRect(x + 4, y + 23, (w - 8) * (value / 100), 2, 1, 1, "F");
+    doc.roundedRect(x + 4, y + 23, (w - 8) * (v / 100), 2, 1, 1, "F");
   }
 
   function barRow(x, y, label, value, color, labelW = 50) {
+    const v = safe(value);
+    const c = color || scoreColor(v);
     doc.setFontSize(7.5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...DIM);
@@ -147,12 +157,12 @@ export async function generateBrainEncoderPDF(results, form) {
     const barW = W - x - labelW - 20;
     doc.setFillColor(...BORDER);
     doc.roundedRect(barX, y, barW, 5, 2, 2, "F");
-    doc.setFillColor(...color);
-    doc.roundedRect(barX, y, barW * (value / 100), 5, 2, 2, "F");
+    doc.setFillColor(...c);
+    doc.roundedRect(barX, y, barW * (v / 100), 5, 2, 2, "F");
     doc.setFontSize(7.5);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...color);
-    doc.text(String(value), barX + barW + 3, y + 4);
+    doc.setTextColor(...c);
+    doc.text(String(v), barX + barW + 3, y + 4);
   }
 
   function wrapText(text, x, y, maxW, lineH = 4.5, maxLines = 10) {
@@ -356,30 +366,29 @@ export async function generateBrainEncoderPDF(results, form) {
   y += 10;
 
   const metrics = [
-    ["Viral Potential",    r.viral_potential],
-    ["Hook Strength",      r.hook_strength],
-    ["Hold Rate",          r.hold_rate],
-    ["Emotional Peak",     r.emotional_peak],
-    ["Brand Recall",       r.brand_recall],
-    ["Memory Encoding",    r.memory_encoding],
-    ["Sound-Off Survival", r.sound_off_survival],
-    ["Share Intent",       r.share_intent],
-    ["Creative Efficiency",r.creative_efficiency],
-    ["Ad Fatigue Risk",    r.ad_fatigue_risk],
-    ["Cultural Resonance", r.cultural_resonance],
-    ["Celebrity Index",    r.celebrity_talent_index],
-    ["Brand Safety",       r.brand_safety],
-    ["Regulatory",         r.regulatory_compliance],
-    ["1P Data Opp.",       r.first_party_data_opportunity],
-    ["Carbon Signal",      r.carbon_signal],
-    ["System 1 vs 2",      r.system1_vs_system2],
+    ["Viral Potential",    safe(r.viral_potential)],
+    ["Hook Strength",      safe(r.hook_strength)],
+    ["Hold Rate",          safe(r.hold_rate)],
+    ["Emotional Peak",     safe(r.emotional_peak)],
+    ["Brand Recall",       safe(r.brand_recall)],
+    ["Memory Encoding",    safe(r.memory_encoding)],
+    ["Sound-Off Survival", safe(r.sound_off_survival)],
+    ["Share Intent",       safe(r.share_intent)],
+    ["Creative Efficiency",safe(r.creative_efficiency)],
+    ["Ad Fatigue Risk",    safe(r.ad_fatigue_risk)],
+    ["Cultural Resonance", safe(r.cultural_resonance)],
+    ["Celebrity Index",    safe(r.celebrity_talent_index)],
+    ["Brand Safety",       safe(r.brand_safety)],
+    ["Regulatory",         safe(r.regulatory_compliance)],
+    ["1P Data Opp.",       safe(r.first_party_data_opportunity)],
+    ["Carbon Signal",      safe(r.carbon_signal)],
+    ["System 1 vs 2",      safe(r.system1_vs_system2)],
   ];
 
   // Grid: 4 cols × 5 rows (last one alone)
   const cols = 4;
   const bw = (W - 20 - (cols - 1) * 4) / cols;
   metrics.forEach(([lbl, val], i) => {
-    if (val === undefined) return;
     const col = i % cols;
     const row = Math.floor(i / cols);
     scoreBlock(10 + col * (bw + 4), y + row * 33, lbl, val, bw, 29);
@@ -470,9 +479,9 @@ export async function generateBrainEncoderPDF(results, form) {
   const avg = attn.length ? Math.round(attn.reduce((a, b) => a + b, 0) / attn.length) : 0;
 
   const aStats = [
-    ["Peak Attention", `${peak}% at ~${pkI}s`, scoreColor(peak)],
-    ["Lowest Point", `${low}%`, scoreColor(low)],
-    ["Average Attention", `${avg}%`, scoreColor(avg)],
+    ["Peak Attention", `${safe(peak)}% at ~${pkI}s`, scoreColor(safe(peak))],
+    ["Lowest Point", `${safe(low)}%`, scoreColor(safe(low))],
+    ["Average Attention", `${safe(avg)}%`, scoreColor(safe(avg))],
   ];
   const asw = (W - 20 - 8) / 3;
   aStats.forEach(([lbl, val, col], i) => {
@@ -584,7 +593,7 @@ export async function generateBrainEncoderPDF(results, form) {
     ctv_ott: "CTV / OTT", dooh: "DOOH", programmatic_display: "Programmatic"
   };
 
-  const platEntries = Object.entries(ps).sort((a, b) => b[1] - a[1]);
+  const platEntries = Object.entries(ps).map(([k,v]) => [k, safe(v)]).sort((a, b) => b[1] - a[1]);
   const pcols = 5, pw2 = (W - 20 - (pcols - 1) * 3) / pcols;
   platEntries.forEach(([k, v], i) => {
     const pc = i % pcols;
@@ -731,8 +740,8 @@ export async function generateBrainEncoderPDF(results, form) {
   // Sound-Off Survival big number
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...scoreColor(r.sound_off_survival || 0));
-  doc.text(String(r.sound_off_survival || 0), W - 24, y + 32);
+  doc.setTextColor(...scoreColor(safe(r.sound_off_survival)));
+  doc.text(String(safe(r.sound_off_survival)), W - 24, y + 32);
   doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...DIM);

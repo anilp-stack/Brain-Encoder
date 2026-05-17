@@ -6,8 +6,12 @@
   NODE_VERSION = "18"
 
 [[edge_functions]]
-  path = "/api/analyze"
-  function = "analyze"
+  path = "/api/analyze-fast"
+  function = "analyze-fast"
+
+[[edge_functions]]
+  path = "/api/analyze-rich"
+  function = "analyze-rich"
 
 [[redirects]]
   from = "/*"

@@ -643,48 +643,82 @@ export default function App(){
   const handleAnalyze=useCallback(async()=>{
     if(!file||!form.brand)return;
     setStage("analyzing");setProgress(0);setError(null);
-    const msgs=[
-      "Reading creative file...",
-      "Extracting visual signals from frames...",
-      "Mapping predicted neural activation zones...",
-      "Scoring hook strength, hold rate, memory encoding...",
-      "Analyzing emotional architecture & valence curves...",
-      "Running platform-specific performance predictions...",
-      "Auditing regulatory compliance & privacy signals...",
-      "Building scene-level intelligence breakdown...",
-      "Generating strategic insights & CMO playbook...",
-      "Assembling final Brain Encoder report..."
-    ];
+
     try{
-      setProgressMsg(msgs[0]);setProgress(5);
+      // Step 1: Extract frames
+      setProgressMsg("Reading creative file...");setProgress(5);
       const frameData=await extractFrames(file);
-      for(let i=1;i<msgs.length;i++){
-        setProgressMsg(msgs[i]);
-        setProgress(10+Math.round((i/msgs.length)*80));
-        await new Promise(r=>setTimeout(r,700));
-      }
-      const resp=await fetch("/api/analyze",{
+      const payload={ frames:frameData.frames, metadata:{...form,...frameData} };
+
+      // Step 2: Fire BOTH calls in parallel
+      setProgressMsg("Extracting visual signals...");setProgress(12);
+
+      const fastPromise=fetch("/api/analyze-fast",{
         method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          ...(form.password?{Authorization:`Bearer ${form.password}`}:{})
-        },
-        body:JSON.stringify({
-          frames:frameData.frames,
-          metadata:{...form,...frameData}
-        })
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
       });
-      const respText=await resp.text();
-      let data;
-      try{data=JSON.parse(respText);}catch(e){
-        throw new Error("Server returned: "+respText.substring(0,100));
+
+      const richPromise=fetch("/api/analyze-rich",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+
+      // Step 3: Show progress while both run
+      const progressMsgs=[
+        [20,"Mapping neural activation zones..."],
+        [32,"Scoring 17 performance metrics..."],
+        [44,"Running platform-specific predictions..."],
+        [56,"Auditing privacy & compliance signals..."],
+        [66,"Building scene-level intelligence..."],
+        [76,"Generating strategic insights..."],
+        [86,"Writing CMO playbook..."],
+        [93,"Assembling final report..."],
+      ];
+      let msgIdx=0;
+      const ticker=setInterval(()=>{
+        if(msgIdx<progressMsgs.length){
+          setProgress(progressMsgs[msgIdx][0]);
+          setProgressMsg(progressMsgs[msgIdx][1]);
+          msgIdx++;
+        }
+      },1800);
+
+      // Step 4: Await fast result first
+      let fastData, richData;
+      try{
+        const fastResp=await fastPromise;
+        const fastText=await fastResp.text();
+        let fd;
+        try{fd=JSON.parse(fastText);}catch(e){throw new Error("Fast analysis failed: "+fastText.substring(0,100));}
+        if(!fastResp.ok||!fd.success){throw new Error(fd.error||"Metrics analysis failed");}
+        fastData=fd.analysis;
+        setProgressMsg("Metrics computed. Generating insights...");setProgress(72);
+
+        // Step 5: Await rich result (now send fastData as context too)
+        const richResp=await richPromise;
+        const richText=await richResp.text();
+        let rd;
+        try{rd=JSON.parse(richText);}catch(e){throw new Error("Insights generation failed: "+richText.substring(0,100));}
+        if(!richResp.ok||!rd.success){throw new Error(rd.error||"Insights analysis failed");}
+        richData=rd.richData;
+      }finally{
+        clearInterval(ticker);
       }
-      if(!resp.ok||!data.success){
-        throw new Error(data.error||data.details||"Analysis failed");
-      }
+
+      // Step 6: Merge results
+      const combined={
+        ...fastData,
+        scenes: richData?.scenes||[],
+        strategic_insights: richData?.strategic_insights||[],
+        cmo_actions: richData?.cmo_actions||[],
+      };
+
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));
-      setResults(data.analysis);setStage("results");setTab("summary");
+      setResults(combined);setStage("results");setTab("summary");
+
     }catch(e){setError(e.message);setStage("form");}
   },[file,form]);
 

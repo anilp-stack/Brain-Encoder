@@ -696,18 +696,25 @@ export default function App(){
         fastData=fd.analysis;
         setProgressMsg("Metrics computed. Generating insights...");setProgress(72);
 
-        // Step 5: Await rich result (now send fastData as context too)
-        const richResp=await richPromise;
-        const richText=await richResp.text();
-        let rd;
-        try{rd=JSON.parse(richText);}catch(e){throw new Error("Insights generation failed: "+richText.substring(0,100));}
-        if(!richResp.ok||!rd.success){throw new Error(rd.error||"Insights analysis failed");}
-        richData=rd.richData;
+        // Step 5: Await rich result — but don't fail if it times out
+        try{
+          const richResp=await richPromise;
+          const richText=await richResp.text();
+          let rd;
+          try{rd=JSON.parse(richText);}catch(e){ rd=null; }
+          if(richResp.ok&&rd?.success){
+            richData=rd.richData;
+          }else{
+            console.warn("Rich analysis failed, showing metrics only:", rd?.error||"timeout");
+          }
+        }catch(richErr){
+          console.warn("Rich analysis timed out, showing metrics only");
+        }
       }finally{
         clearInterval(ticker);
       }
 
-      // Step 6: Merge results
+      // Step 6: Merge results — metrics always show, insights may be empty
       const combined={
         ...fastData,
         scenes: richData?.scenes||[],

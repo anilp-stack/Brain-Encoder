@@ -456,6 +456,7 @@ export default function App(){
   const [error,setError]=useState(null);
   const [tab,setTab]=useState("summary");
   const [downloading,setDownloading]=useState(false);
+  const [gradeTooltipVisible,setGradeTooltipVisible]=useState(false); // FIX: moved to top level
   const fileRef=useRef(null);
 
   const handleFile=(e)=>{
@@ -732,9 +733,6 @@ export default function App(){
       { length: Math.floor(attn.length / heatmapLabelStep) + 1 },
       (_, i) => Math.min(i * heatmapLabelStep, attn.length)
     );
-
-    // FIX 2: grade tooltip state
-    const [gradeTooltipVisible, setGradeTooltipVisible] = useState(false);
 
     return(
       <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'DM Sans',sans-serif"}}>

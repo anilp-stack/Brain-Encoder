@@ -147,7 +147,6 @@ function Sidebar({tab, setTab, grade: gr, brand, onNew, onDownload, downloading}
                 width:"100%", display:"flex", alignItems:"center", gap:10,
                 padding:"10px 20px",
                 background: active ? `${C.gold}12` : "transparent",
-                borderLeft: `3px solid ${active ? C.gold : "transparent"}`,
                 borderLeft:`3px solid ${active?C.gold:"transparent"}`,
                 borderRight:"none",borderTop:"none",borderBottom:"none",
                 cursor:"pointer", textAlign:"left",
@@ -261,108 +260,48 @@ function getTakeaways(r){
   // SUMMARY
   t.summary=[];
   if((r.viral_potential||0)>=70){
-    t.summary.push({
-      type:"win",
-      label:"Strong viral potential.",
-      text:"This creative has organic shareability. Prioritize for social-first distribution."
-    });
+    t.summary.push({type:"win",label:"Strong viral potential.",text:"This creative has organic shareability. Prioritize for social-first distribution."});
   }else{
-    t.summary.push({
-      type:"fix",
-      label:"Viral potential is below 70.",
-      text:"Add a pattern interrupt, emotional spike, or relatable hook to increase shareability."
-    });
+    t.summary.push({type:"fix",label:"Viral potential is below 70.",text:"Add a pattern interrupt, emotional spike, or relatable hook to increase shareability."});
   }
   if((r.hold_rate||0)<60){
-    t.summary.push({
-      type:"warn",
-      label:"Hold rate is critical.",
-      text:"More than "+(100-(r.hold_rate||0))+"% of viewers will drop off. Re-edit to compress the weakest section by 30%."
-    });
+    t.summary.push({type:"warn",label:"Hold rate is critical.",text:"More than "+(100-(r.hold_rate||0))+"% of viewers will drop off. Re-edit to compress the weakest section by 30%."});
   }
   if((r.sound_off_survival||0)<60){
-    t.summary.push({
-      type:"fix",
-      label:"Sound-off survival is low.",
-      text:"Add bold kinetic text overlays for Meta/Instagram. 80%+ of social consumption is sound-off."
-    });
+    t.summary.push({type:"fix",label:"Sound-off survival is low.",text:"Add bold kinetic text overlays for Meta/Instagram. 80%+ of social consumption is sound-off."});
   }
   if((r.brand_recall||0)>=80){
-    t.summary.push({
-      type:"win",
-      label:"Excellent brand recall.",
-      text:"Distinctive brand assets are well-placed. This creative will be remembered."
-    });
+    t.summary.push({type:"win",label:"Excellent brand recall.",text:"Distinctive brand assets are well-placed. This creative will be remembered."});
   }else{
-    t.summary.push({
-      type:"fix",
-      label:"Brand recall needs work.",
-      text:"Increase logo visibility, add product shot earlier, or strengthen distinctive brand assets."
-    });
+    t.summary.push({type:"fix",label:"Brand recall needs work.",text:"Increase logo visibility, add product shot earlier, or strengthen distinctive brand assets."});
   }
   if((r.memory_encoding||0)<65){
-    t.summary.push({
-      type:"warn",
-      label:"Risk of 'watched but forgotten'.",
-      text:"High attention but low memory encoding means viewers see it but won't remember it. Add an emotional anchor moment."
-    });
+    t.summary.push({type:"warn",label:"Risk of 'watched but forgotten'.",text:"High attention but low memory encoding means viewers see it but won't remember it. Add an emotional anchor moment."});
   }
 
   // NEURAL
   t.neural=[];
   var br=r.brain_regions||{};
   if((br.amygdala||0)<50){
-    t.neural.push({
-      type:"fix",
-      label:"Amygdala activation is low.",
-      text:"The creative isn't triggering emotional processing. Add surprise, humor, tension, or human vulnerability."
-    });
+    t.neural.push({type:"fix",label:"Amygdala activation is low.",text:"The creative isn't triggering emotional processing. Add surprise, humor, tension, or human vulnerability."});
   }else{
-    t.neural.push({
-      type:"win",
-      label:"Strong emotional activation.",
-      text:"The amygdala is engaged, which is the prerequisite for memory encoding and sharing behavior."
-    });
+    t.neural.push({type:"win",label:"Strong emotional activation.",text:"The amygdala is engaged, which is the prerequisite for memory encoding and sharing behavior."});
   }
   if((br.prefrontal_cortex||0)>70&&(br.amygdala||0)<60){
-    t.neural.push({
-      type:"warn",
-      label:"Over-indexing on rational processing.",
-      text:"High prefrontal + low amygdala = the viewer is thinking, not feeling. Lead with emotion."
-    });
+    t.neural.push({type:"warn",label:"Over-indexing on rational processing.",text:"High prefrontal + low amygdala = the viewer is thinking, not feeling. Lead with emotion."});
   }
   if((br.mirror_neurons||0)>=65){
-    t.neural.push({
-      type:"win",
-      label:"Mirror neurons active.",
-      text:"Viewers are empathizing with on-screen characters. This drives share intent and emotional contagion."
-    });
+    t.neural.push({type:"win",label:"Mirror neurons active.",text:"Viewers are empathizing with on-screen characters. This drives share intent and emotional contagion."});
   }else{
-    t.neural.push({
-      type:"fix",
-      label:"Low mirror neuron activation.",
-      text:"Add close-up facial expressions, human-to-human interaction, or relatable body language to trigger empathy."
-    });
+    t.neural.push({type:"fix",label:"Low mirror neuron activation.",text:"Add close-up facial expressions, human-to-human interaction, or relatable body language to trigger empathy."});
   }
   var s1s2=r.system1_vs_system2||50;
   if(s1s2>=65&&s1s2<=75){
-    t.neural.push({
-      type:"win",
-      label:"System 1/2 balance is in the optimal zone (65-75).",
-      text:"The creative leads with emotion and layers in enough rational messaging."
-    });
+    t.neural.push({type:"win",label:"System 1/2 balance is in the optimal zone (65-75).",text:"The creative leads with emotion and layers in enough rational messaging."});
   }else if(s1s2<65){
-    t.neural.push({
-      type:"fix",
-      label:"Over-indexing on System 2 (rational).",
-      text:"Reduce claim density in the first half. Lead with a feeling, not a fact."
-    });
+    t.neural.push({type:"fix",label:"Over-indexing on System 2 (rational).",text:"Reduce claim density in the first half. Lead with a feeling, not a fact."});
   }else{
-    t.neural.push({
-      type:"warn",
-      label:"Over-indexing on System 1 (emotional).",
-      text:"Strong emotion but the rational message may not land. Add one clear product claim."
-    });
+    t.neural.push({type:"warn",label:"Over-indexing on System 1 (emotional).",text:"Strong emotion but the rational message may not land. Add one clear product claim."});
   }
 
   // ATTENTION
@@ -373,187 +312,69 @@ function getTakeaways(r){
     var low=Math.min.apply(null,attn);
     var peakIdx=attn.indexOf(peak);
     var lowIdx=attn.indexOf(low);
-    t.attention.push({
-      type:"do",
-      label:"Peak attention at ~"+peakIdx+"s ("+peak+"%).",
-      text:"This is your strongest moment. Use this frame as the thumbnail for static placements."
-    });
+    t.attention.push({type:"do",label:"Peak attention at ~"+peakIdx+"s ("+peak+"%).",text:"This is your strongest moment. Use this frame as the thumbnail for static placements."});
     if(low<50){
-      t.attention.push({
-        type:"warn",
-        label:"Attention drops to "+low+"% at ~"+lowIdx+"s.",
-        text:"This is your drop zone. Cut this section, add a visual pattern interrupt, or compress it by 50%."
-      });
+      t.attention.push({type:"warn",label:"Attention drops to "+low+"% at ~"+lowIdx+"s.",text:"This is your drop zone. Cut this section, add a visual pattern interrupt, or compress it by 50%."});
     }
     var drops=0;
-    for(var i=1;i<attn.length;i++){
-      if(attn[i]<attn[i-1]-10)drops++;
-    }
+    for(var i=1;i<attn.length;i++){if(attn[i]<attn[i-1]-10)drops++;}
     if(drops>2){
-      t.attention.push({
-        type:"fix",
-        label:drops+" significant attention drops detected.",
-        text:"Multiple drops indicate pacing issues. The creative needs more consistent visual variety."
-      });
+      t.attention.push({type:"fix",label:drops+" significant attention drops detected.",text:"Multiple drops indicate pacing issues. The creative needs more consistent visual variety."});
     }
-    var avg=Math.round(
-      attn.reduce(function(a,b){return a+b;},0)/attn.length
-    );
-    t.attention.push({
-      type:avg>=65?"win":"warn",
-      label:"Average attention: "+avg+"%.",
-      text:avg>=65
-        ?"Above the 60% threshold for effective ad recall."
-        :"Below the 60% threshold. Consider a shorter cut."
-    });
+    var avg=Math.round(attn.reduce(function(a,b){return a+b;},0)/attn.length);
+    t.attention.push({type:avg>=65?"win":"warn",label:"Average attention: "+avg+"%.",text:avg>=65?"Above the 60% threshold for effective ad recall.":"Below the 60% threshold. Consider a shorter cut."});
   }
 
   // EMOTION
   t.emotion=[];
   if((r.emotional_peak||0)>=70){
-    t.emotion.push({
-      type:"win",
-      label:"Strong emotional peak ("+r.emotional_peak+"/100).",
-      text:"This creative triggers genuine emotion, the single strongest predictor of sharing and long-term recall."
-    });
+    t.emotion.push({type:"win",label:"Strong emotional peak ("+r.emotional_peak+"/100).",text:"This creative triggers genuine emotion, the single strongest predictor of sharing and long-term recall."});
   }else{
-    t.emotion.push({
-      type:"fix",
-      label:"Emotional peak is moderate ("+r.emotional_peak+"/100).",
-      text:"Add a moment of surprise, joy, tension, or vulnerability. The viewer needs to FEEL something."
-    });
+    t.emotion.push({type:"fix",label:"Emotional peak is moderate ("+r.emotional_peak+"/100).",text:"Add a moment of surprise, joy, tension, or vulnerability. The viewer needs to FEEL something."});
   }
   if((r.share_intent||0)>=65){
-    t.emotion.push({
-      type:"win",
-      label:"High share intent.",
-      text:"Viewers will want to share this. Optimize for easy sharing: hashtags, under 30s, clear first frame."
-    });
+    t.emotion.push({type:"win",label:"High share intent.",text:"Viewers will want to share this. Optimize for easy sharing: hashtags, under 30s, clear first frame."});
   }else{
-    t.emotion.push({
-      type:"fix",
-      label:"Share intent is below 65.",
-      text:"Add one sharing trigger: identity signaling, social currency, emotional contagion, or practical utility."
-    });
+    t.emotion.push({type:"fix",label:"Share intent is below 65.",text:"Add one sharing trigger: identity signaling, social currency, emotional contagion, or practical utility."});
   }
 
   // SCENES
   t.scenes=[];
-  t.scenes.push({
-    type:"do",
-    label:"Use scene-level data for re-edits.",
-    text:"Keep scenes scoring above 70. Cut or rework scenes below 50."
-  });
-  t.scenes.push({
-    type:"do",
-    label:"Check System mode transitions.",
-    text:"Frequent System 1 to System 2 shifts cause cognitive fatigue."
-  });
-  t.scenes.push({
-    type:"do",
-    label:"Watch for drop_zone and ad_avoidance flags.",
-    text:"Any scene flagged as a drop zone is where viewers leave. This is your #1 re-edit priority."
-  });
+  t.scenes.push({type:"do",label:"Use scene-level data for re-edits.",text:"Keep scenes scoring above 70. Cut or rework scenes below 50."});
+  t.scenes.push({type:"do",label:"Check System mode transitions.",text:"Frequent System 1 to System 2 shifts cause cognitive fatigue."});
+  t.scenes.push({type:"do",label:"Watch for drop_zone and ad_avoidance flags.",text:"Any scene flagged as a drop zone is where viewers leave. This is your #1 re-edit priority."});
 
   // PLATFORMS
   t.platforms=[];
   var ps=r.platform_scores||{};
-  var best="";var bestV=0;
-  var worst="";var worstV=100;
-  for(var k in ps){
-    if(ps[k]>bestV){bestV=ps[k];best=k;}
-    if(ps[k]<worstV){worstV=ps[k];worst=k;}
-  }
-  if(best){
-    t.platforms.push({
-      type:"win",
-      label:"Best platform: "+best.replace(/_/g," ")+" ("+bestV+"/100).",
-      text:"Prioritize media spend here. This creative is optimized for this environment."
-    });
-  }
-  if(worst){
-    t.platforms.push({
-      type:"warn",
-      label:"Weakest platform: "+worst.replace(/_/g," ")+" ("+worstV+"/100).",
-      text:"Do not run this creative on "+worst.replace(/_/g," ")+" without a format-specific re-edit."
-    });
-  }
-  if((ps.instagram_reels||0)<60){
-    t.platforms.push({
-      type:"fix",
-      label:"Low Reels score.",
-      text:"Reels needs vertical-native, high-energy, sound-optional content. Create a separate 15s vertical cut."
-    });
-  }
-  if((ps.tv_broadcast||0)>=80&&(ps.instagram_reels||0)<70){
-    t.platforms.push({
-      type:"do",
-      label:"This is a TV-first creative.",
-      text:"For social, create a separate feed-first version with text overlays and faster pacing."
-    });
-  }
+  var best="";var bestV=0;var worst="";var worstV=100;
+  for(var k in ps){if(ps[k]>bestV){bestV=ps[k];best=k;}if(ps[k]<worstV){worstV=ps[k];worst=k;}}
+  if(best){t.platforms.push({type:"win",label:"Best platform: "+best.replace(/_/g," ")+" ("+bestV+"/100).",text:"Prioritize media spend here. This creative is optimized for this environment."});}
+  if(worst){t.platforms.push({type:"warn",label:"Weakest platform: "+worst.replace(/_/g," ")+" ("+worstV+"/100).",text:"Do not run this creative on "+worst.replace(/_/g," ")+" without a format-specific re-edit."});}
+  if((ps.instagram_reels||0)<60){t.platforms.push({type:"fix",label:"Low Reels score.",text:"Reels needs vertical-native, high-energy, sound-optional content. Create a separate 15s vertical cut."});}
+  if((ps.tv_broadcast||0)>=80&&(ps.instagram_reels||0)<70){t.platforms.push({type:"do",label:"This is a TV-first creative.",text:"For social, create a separate feed-first version with text overlays and faster pacing."});}
 
   // SOUND
   t.sound=[];
   var snd=r.sound_analysis||{};
   if((snd.sound_dependency||0)>70){
-    t.sound.push({
-      type:"warn",
-      label:"High sound dependency ("+snd.sound_dependency+"/100).",
-      text:"This creative relies heavily on audio. On social (80%+ sound-off), it will underperform."
-    });
+    t.sound.push({type:"warn",label:"High sound dependency ("+snd.sound_dependency+"/100).",text:"This creative relies heavily on audio. On social (80%+ sound-off), it will underperform."});
   }else{
-    t.sound.push({
-      type:"win",
-      label:"Low sound dependency.",
-      text:"This creative works well without audio. Ready for sound-off social environments."
-    });
+    t.sound.push({type:"win",label:"Low sound dependency.",text:"This creative works well without audio. Ready for sound-off social environments."});
   }
-  if((r.sound_off_survival||0)<50){
-    t.sound.push({
-      type:"fix",
-      label:"Sound-off survival is critical ("+r.sound_off_survival+"/100).",
-      text:"Add bold text overlays for the key message, ensure subtitles are high-contrast."
-    });
-  }
+  if((r.sound_off_survival||0)<50){t.sound.push({type:"fix",label:"Sound-off survival is critical ("+r.sound_off_survival+"/100).",text:"Add bold text overlays for the key message, ensure subtitles are high-contrast."});}
 
   // PRIVACY
   t.privacy=[];
   var priv=r.privacy_and_data_audit||{};
-  if(priv.qr_code_present){
-    t.privacy.push({
-      type:"warn",
-      label:"QR code detected.",
-      text:"Ensure the QR landing page has DPDP-compliant consent before collecting personal data."
-    });
-  }
-  if(!priv.url_cta_present&&!priv.qr_code_present&&!priv.hashtag_present){
-    t.privacy.push({
-      type:"fix",
-      label:"No digital conversion path.",
-      text:"No QR code, URL, or hashtag. Add a search CTA or 'available on...' badge to the endframe."
-    });
-  }
+  if(priv.qr_code_present){t.privacy.push({type:"warn",label:"QR code detected.",text:"Ensure the QR landing page has DPDP-compliant consent before collecting personal data."});}
+  if(!priv.url_cta_present&&!priv.qr_code_present&&!priv.hashtag_present){t.privacy.push({type:"fix",label:"No digital conversion path.",text:"No QR code, URL, or hashtag. Add a search CTA or 'available on...' badge to the endframe."});}
   if(priv.dpdp_compliance_risk==="high"){
-    t.privacy.push({
-      type:"warn",
-      label:"High DPDP compliance risk.",
-      text:"This creative contains data collection elements without visible consent. Review with legal."
-    });
+    t.privacy.push({type:"warn",label:"High DPDP compliance risk.",text:"This creative contains data collection elements without visible consent. Review with legal."});
   }else{
-    t.privacy.push({
-      type:"win",
-      label:"DPDP compliance risk is "+(priv.dpdp_compliance_risk||"low")+".",
-      text:"No major regulatory flags detected. Standard compliance posture."
-    });
+    t.privacy.push({type:"win",label:"DPDP compliance risk is "+(priv.dpdp_compliance_risk||"low")+".",text:"No major regulatory flags detected. Standard compliance posture."});
   }
-  if(!priv.regulatory_disclaimers_visible){
-    t.privacy.push({
-      type:"fix",
-      label:"No regulatory disclaimers visible.",
-      text:"If this creative makes health, financial, or comparative claims, add visible disclaimers."
-    });
-  }
+  if(!priv.regulatory_disclaimers_visible){t.privacy.push({type:"fix",label:"No regulatory disclaimers visible.",text:"If this creative makes health, financial, or comparative claims, add visible disclaimers."});}
 
   return t;
 }
@@ -570,13 +391,13 @@ function makeArea(arr,x1,x2,yT,yB){
 }
 
 // ============================================================
-// FRAME EXTRACTION
+// FRAME EXTRACTION — FIX 1: capture video duration
 // ============================================================
 function extractFrames(file){
   if(file.type.startsWith("image/")){
     return new Promise(r=>{
       const rd=new FileReader();
-      rd.onload=e=>r({frames:[e.target.result.split(",")[1]],duration:0,width:0,height:0,isImage:true});
+      rd.onload=e=>r({frames:[e.target.result.split(",")[1]],duration:0,duration_seconds:0,video_duration:0,width:0,height:0,isImage:true});
       rd.readAsDataURL(file);
     });
   }
@@ -586,6 +407,8 @@ function extractFrames(file){
     v.src=URL.createObjectURL(file);
     v.onloadedmetadata=()=>{
       const dur=v.duration;
+      // FIX 1: capture actual duration in seconds (rounded)
+      const durSeconds=Math.round(dur);
       const canvas=document.createElement("canvas");
       canvas.width=320;canvas.height=180;
       const ctx=canvas.getContext("2d");
@@ -595,7 +418,15 @@ function extractFrames(file){
       const next=()=>{
         if(idx>=times.length){
           URL.revokeObjectURL(v.src);
-          resolve({frames,duration:dur,width:v.videoWidth,height:v.videoHeight,isImage:false});
+          resolve({
+            frames,
+            duration:dur,
+            duration_seconds:durSeconds,   // FIX 1: pass to API
+            video_duration:durSeconds,     // FIX 1: belt and suspenders
+            width:v.videoWidth,
+            height:v.videoHeight,
+            isImage:false
+          });
           return;
         }
         v.currentTime=Math.min(times[idx],dur-0.1);
@@ -645,12 +476,11 @@ export default function App(){
     setStage("analyzing");setProgress(0);setError(null);
 
     try{
-      // Step 1: Extract frames
       setProgressMsg("Reading creative file...");setProgress(5);
       const frameData=await extractFrames(file);
+      // FIX 1: duration_seconds and video_duration are now in frameData
       const payload={ frames:frameData.frames, metadata:{...form,...frameData} };
 
-      // Step 2: Fire BOTH calls in parallel
       setProgressMsg("Extracting visual signals...");setProgress(12);
 
       const fastPromise=fetch("/api/analyze-fast",{
@@ -665,7 +495,6 @@ export default function App(){
         body:JSON.stringify(payload)
       });
 
-      // Step 3: Show progress while both run
       const progressMsgs=[
         [20,"Mapping neural activation zones..."],
         [32,"Scoring 17 performance metrics..."],
@@ -685,7 +514,6 @@ export default function App(){
         }
       },1800);
 
-      // Step 4: Await fast result first
       let fastData, richData;
       try{
         const fastResp=await fastPromise;
@@ -696,7 +524,6 @@ export default function App(){
         fastData=fd.analysis;
         setProgressMsg("Metrics computed. Generating insights...");setProgress(72);
 
-        // Step 5: Await rich result — but don't fail if it times out
         try{
           const richResp=await richPromise;
           const richText=await richResp.text();
@@ -714,7 +541,6 @@ export default function App(){
         clearInterval(ticker);
       }
 
-      // Step 6: Merge results — metrics always show, insights may be empty
       const combined={
         ...fastData,
         scenes: richData?.scenes||[],
@@ -735,18 +561,14 @@ export default function App(){
   if(stage==="landing"){
     return(
       <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",fontFamily:"'DM Sans',sans-serif",position:"relative",overflow:"hidden"}}>
-        {/* Ambient background */}
         <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 70%)",pointerEvents:"none"}}/>
         <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40%",background:"radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,212,184,0.04) 0%, transparent 70%)",pointerEvents:"none"}}/>
-
-        {/* Logo wordmark */}
         <div style={{marginBottom:40,position:"relative"}}>
           <div style={{fontSize:10,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:10,fontFamily:"'DM Mono',monospace"}}>
             ADVantage Insights<sup style={{fontSize:7,color:C.gold,verticalAlign:"super",marginLeft:1}}>TM</sup>
           </div>
           <div style={{width:40,height:1,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`,margin:"0 auto"}}/>
         </div>
-
         <h1 style={{fontSize:clamp(42,6,72),fontWeight:800,lineHeight:1.0,maxWidth:700,marginBottom:12,position:"relative",fontFamily:"'Playfair Display',serif",letterSpacing:-1,color:C.text}}>
           Brain Encoder<sup style={{fontSize:16,color:C.gold,verticalAlign:"super",fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>TM</sup>
         </h1>
@@ -756,28 +578,15 @@ export default function App(){
         <p style={{fontSize:17,color:C.dim,maxWidth:560,lineHeight:1.8,marginBottom:48,position:"relative",fontWeight:400}}>
           Upload any video ad, display creative, or social content. Receive a complete neural performance report — 17 metrics, 15 platform scores, scene intelligence, and a CMO action playbook.
         </p>
-
         <button onClick={()=>setStage("form")}
-          style={{
-            background:`linear-gradient(135deg,${C.gold},${C.goldD})`,
-            color:C.bg,border:"none",padding:"18px 56px",borderRadius:12,
-            fontSize:16,fontWeight:800,cursor:"pointer",letterSpacing:0.5,
-            position:"relative",boxShadow:`0 8px 32px ${C.gold}40`,
-            fontFamily:"'DM Sans',sans-serif",transition:"all 0.2s",
-            marginBottom:56,
-          }}>
+          style={{background:`linear-gradient(135deg,${C.gold},${C.goldD})`,color:C.bg,border:"none",padding:"18px 56px",borderRadius:12,fontSize:16,fontWeight:800,cursor:"pointer",letterSpacing:0.5,position:"relative",boxShadow:`0 8px 32px ${C.gold}40`,fontFamily:"'DM Sans',sans-serif",transition:"all 0.2s",marginBottom:56}}>
           Start Analysis →
         </button>
-
-        {/* Feature tags — no emojis */}
         <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:48,maxWidth:680}}>
           {["17 Neural Metrics","15 Platform Scores","Attention Heatmap","Scene Intelligence","Privacy & DPDP","CMO Playbook","No Duration Limit","System 1 / System 2"].map(t=>(
-            <span key={t} style={{padding:"7px 14px",background:C.s2,borderRadius:100,border:`1px solid ${C.border2}`,fontSize:11,fontWeight:600,color:C.dim,letterSpacing:0.3,fontFamily:"'DM Sans',sans-serif"}}>
-              {t}
-            </span>
+            <span key={t} style={{padding:"7px 14px",background:C.s2,borderRadius:100,border:`1px solid ${C.border2}`,fontSize:11,fontWeight:600,color:C.dim,letterSpacing:0.3,fontFamily:"'DM Sans',sans-serif"}}>{t}</span>
           ))}
         </div>
-
         <div style={{display:"flex",gap:40,color:C.muted,fontSize:11,fontFamily:"'DM Mono',monospace",letterSpacing:1.5,textTransform:"uppercase"}}>
           <span>Full Explainability</span><span style={{color:C.border}}>·</span>
           <span>Platform-Specific</span><span style={{color:C.border}}>·</span>
@@ -805,7 +614,6 @@ export default function App(){
           <h2 style={{fontSize:34,fontWeight:200,marginBottom:6}}>Upload <span style={{fontWeight:700}}>Creative</span></h2>
           <p style={{color:C.dim,fontSize:15,marginBottom:32}}>Fill in the brief and upload your creative for analysis.</p>
           {error&&<div style={{padding:"14px 18px",borderRadius:10,background:"rgba(231,76,60,0.12)",color:C.red,fontSize:14,marginBottom:20,border:`1px solid ${C.red}`}}>{error}</div>}
-
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
             <div><label style={lbl}>Brand Name *</label><input placeholder="e.g. Dabur, Nestlé, Coca-Cola" style={inp} value={form.brand} onChange={e=>u("brand",e.target.value)}/></div>
             <div><label style={lbl}>Client / Advertiser</label><input placeholder="e.g. Dabur India Ltd" style={inp} value={form.client} onChange={e=>u("client",e.target.value)}/></div>
@@ -839,7 +647,6 @@ export default function App(){
             <label style={lbl}>Additional Notes / Brief</label>
             <textarea placeholder="Any context for the analysis: objectives, KPIs, competitive context, specific questions..." style={{...inp,height:80,resize:"vertical"}} value={form.notes} onChange={e=>u("notes",e.target.value)}/>
           </div>
-
           <div style={{marginBottom:18}}>
             <label style={lbl}>Upload Creative *</label>
             <div onClick={()=>fileRef.current?.click()} style={{border:`2px dashed ${file?C.cyan:C.border}`,borderRadius:14,padding:file?20:44,textAlign:"center",cursor:"pointer",background:file?"rgba(0,200,255,0.03)":C.s1,transition:"all .2s"}}>
@@ -863,12 +670,10 @@ export default function App(){
             </div>
             <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleFile} style={{display:"none"}}/>
           </div>
-
           <div style={{marginBottom:24}}>
             <label style={lbl}>Access Code (if required)</label>
             <input type="password" placeholder="Leave blank if open access" style={{...inp,maxWidth:300}} value={form.password} onChange={e=>u("password",e.target.value)}/>
           </div>
-
           <button onClick={handleAnalyze} disabled={!file||!form.brand} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:`linear-gradient(135deg,${C.cyan},${C.blue})`,color:(!file||!form.brand)?C.dim:"white",fontSize:17,fontWeight:700,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":"0 4px 20px rgba(0,200,255,0.25)"}}>
             🧠 Run Brain Encoder Analysis
           </button>
@@ -901,8 +706,12 @@ export default function App(){
   // ============================================================
   if(stage==="results"&&results){
     const r=results;
-    const attn=r.attention_curve||Array(20).fill(50);
-    const emot=r.emotion_curve||Array(20).fill(40);
+
+    // FIX 1: get actual video duration from result or fall back gracefully
+    const videoDuration = r.video_duration_seconds || r.duration_seconds || 20;
+
+    const attn=r.attention_curve||Array(videoDuration).fill(50);
+    const emot=r.emotion_curve||Array(videoDuration).fill(40);
     const emotTypes=r.emotion_types||r.emotion_types_curve||{};
     const br=r.brain_regions||{};
     const cl=r.cognitive_channels||r.cognitive_channel_load||r.channel_load||{};
@@ -916,19 +725,16 @@ export default function App(){
     const s1s2=r.system1_vs_system2||60;
     const tw=getTakeaways(r);
 
-    const allTabs=[
-      {id:"summary",label:"Executive Summary",icon:"📊"},
-      {id:"neural",label:"Neural Map",icon:"🧠"},
-      {id:"attention",label:"Attention Economics",icon:"👁"},
-      {id:"emotion",label:"Emotional Architecture",icon:"❤️"},
-      {id:"scenes",label:"Scene Intelligence",icon:"🎬"},
-      {id:"platforms",label:"Platform Scores",icon:"📱"},
-      {id:"sound",label:"Sound & Sensory",icon:"🔊"},
-      {id:"privacy",label:"Privacy & Compliance",icon:"🛡️"},
-      {id:"strategy",label:"Strategic Insights",icon:"💡"},
-      {id:"cmo",label:"CMO Playbook",icon:"📋"},
-      {id:"methodology",label:"Methodology & Glossary",icon:"📖"}
-    ];
+    // FIX 1: dynamic heatmap label spacing — max 12 labels regardless of duration
+    const heatmapLabelCount = Math.min(attn.length, 12);
+    const heatmapLabelStep  = Math.ceil(attn.length / heatmapLabelCount);
+    const heatmapLabels = Array.from(
+      { length: Math.floor(attn.length / heatmapLabelStep) + 1 },
+      (_, i) => Math.min(i * heatmapLabelStep, attn.length)
+    );
+
+    // FIX 2: grade tooltip state
+    const [gradeTooltipVisible, setGradeTooltipVisible] = useState(false);
 
     return(
       <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'DM Sans',sans-serif"}}>
@@ -964,12 +770,55 @@ export default function App(){
                 </h1>
                 {r.headline_verdict&&<div style={{fontSize:13,color:C.gold,marginTop:6,fontStyle:"italic",opacity:0.9}}>"{r.headline_verdict}"</div>}
               </div>
+
+              {/* FIX 2: Grade badge with hover tooltip */}
               {r.overall_grade&&(()=>{
                 const gc=r.overall_grade==="A+"||r.overall_grade==="A"||r.overall_grade==="A-"?C.green:r.overall_grade?.startsWith("B")?C.amber:r.overall_grade?.startsWith("C")?C.gold:C.red;
                 return(
-                  <div style={{flexShrink:0,background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:12,padding:"10px 20px",textAlign:"center"}}>
-                    <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:3}}>Grade</div>
-                    <div style={{fontSize:24,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
+                  <div style={{flexShrink:0,position:"relative"}}
+                    onMouseEnter={()=>setGradeTooltipVisible(true)}
+                    onMouseLeave={()=>setGradeTooltipVisible(false)}
+                  >
+                    <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:12,padding:"10px 20px",textAlign:"center",cursor:"help"}}>
+                      <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:3}}>Grade</div>
+                      <div style={{fontSize:24,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
+                      <div style={{fontSize:8,color:C.muted,marginTop:4,letterSpacing:0.5}}>hover for scale</div>
+                    </div>
+
+                    {/* Tooltip */}
+                    {gradeTooltipVisible&&(
+                      <div style={{
+                        position:"absolute",top:"calc(100% + 8px)",right:0,
+                        width:270,background:"#0d0d1f",
+                        border:`1px solid ${C.border2}`,borderRadius:12,
+                        padding:"16px 18px",zIndex:200,
+                        boxShadow:"0 8px 40px rgba(0,0,0,0.7)",
+                      }}>
+                        <div style={{fontSize:9,fontWeight:700,letterSpacing:2,color:C.gold,marginBottom:12,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>
+                          Grade Scale
+                        </div>
+                        {[
+                          {g:"A+", range:"90–100", c:C.green},
+                          {g:"A",  range:"85–89",  c:C.green},
+                          {g:"A−", range:"80–84",  c:C.cyan},
+                          {g:"B+", range:"75–79",  c:C.amber},
+                          {g:"B",  range:"70–74",  c:C.amber},
+                          {g:"B−", range:"65–69",  c:C.orange},
+                          {g:"C+", range:"60–64",  c:C.orange},
+                          {g:"C",  range:"55–59",  c:C.red},
+                          {g:"D/F",range:"Below 55",c:C.red},
+                        ].map(({g,range,c})=>(
+                          <div key={g} style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+                            <span style={{fontWeight:800,fontSize:12,color:c,minWidth:28,fontFamily:"'DM Mono',monospace"}}>{g}</span>
+                            <div style={{flex:1,height:3,borderRadius:2,background:c,opacity:0.5}}/>
+                            <span style={{fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",minWidth:64,textAlign:"right"}}>{range}</span>
+                          </div>
+                        ))}
+                        <div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:9,color:C.muted,lineHeight:1.7}}>
+                          Composite: Memory 20% · Brand Recall 20% · Hook 15% · Hold Rate 15% · Emotion 10% · Creative Eff. 10% · Culture 10%
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -978,7 +827,6 @@ export default function App(){
 
           {/* Tab content */}
           <div style={{padding:"32px 36px",maxWidth:1300,width:"100%",boxSizing:"border-box"}}>
-
 
           {/* ===== EXECUTIVE SUMMARY ===== */}
           {tab==="summary"&&(<>
@@ -1068,15 +916,44 @@ export default function App(){
           {tab==="attention"&&(<>
             <Card style={{marginBottom:24}}>
               <CardTitle dot={C.amber}>Second-by-Second Attention Heatmap</CardTitle>
-              <div style={{display:"grid",gridTemplateColumns:`repeat(${attn.length},1fr)`,gap:4}}>
+
+              {/* FIX 1: Dynamic heatmap grid — renders full video duration */}
+              <div style={{
+                display:"grid",
+                gridTemplateColumns:`repeat(${attn.length},1fr)`,
+                gap:attn.length>30?2:4
+              }}>
                 {attn.map((v,i)=>
-                  <div key={i} title={`${i}s — ${v}%`} style={{height:56,borderRadius:6,cursor:"pointer",background:hex(v),opacity:Math.max(.3,v/100),transition:"transform .15s"}} onMouseEnter={e=>e.target.style.transform="scaleY(1.3)"} onMouseLeave={e=>e.target.style.transform="scaleY(1)"}/>
+                  <div key={i} title={`${i}s — ${v}%`}
+                    style={{
+                      height:56,
+                      borderRadius:attn.length>40?3:6,
+                      cursor:"pointer",
+                      background:hex(v),
+                      opacity:Math.max(.3,v/100),
+                      transition:"transform .15s"
+                    }}
+                    onMouseEnter={e=>e.target.style.transform="scaleY(1.3)"}
+                    onMouseLeave={e=>e.target.style.transform="scaleY(1)"}
+                  />
                 )}
               </div>
+
+              {/* FIX 1: Dynamic timeline labels — smart spacing up to 12 labels */}
               <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11,color:C.dim,fontFamily:"'JetBrains Mono',monospace"}}>
-                <span>0s</span><span>{Math.round(attn.length*.25)}s</span><span>{Math.round(attn.length*.5)}s</span><span>{Math.round(attn.length*.75)}s</span><span>{attn.length}s</span>
+                {heatmapLabels.map(s=>(
+                  <span key={s}>{s}s</span>
+                ))}
+              </div>
+
+              {/* FIX 1: Duration badge */}
+              <div style={{textAlign:"right",marginTop:6}}>
+                <span style={{fontSize:9,color:C.gold,fontWeight:700,letterSpacing:2,textTransform:"uppercase",opacity:0.7,fontFamily:"'DM Mono',monospace"}}>
+                  Full {attn.length}s analysed
+                </span>
               </div>
             </Card>
+
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
               <Card>
                 <CardTitle dot={C.green}>Attention Stats</CardTitle>
@@ -1085,6 +962,7 @@ export default function App(){
                   <p>Lowest Point: <b style={{color:C.red}}>{Math.min(...attn)}%</b> at ~{attn.indexOf(Math.min(...attn))}s</p>
                   <p>Average Attention: <b style={{color:C.cyan}}>{Math.round(attn.reduce((a,b)=>a+b,0)/attn.length)}%</b></p>
                   <p>Drop Zones: <b style={{color:C.amber}}>{attn.filter((v,i)=>i>0&&v<attn[i-1]-10).length}</b> significant drops detected</p>
+                  <p>Duration Analysed: <b style={{color:C.gold}}>{attn.length}s</b></p>
                 </div>
               </Card>
               <Card>
@@ -1286,6 +1164,50 @@ export default function App(){
 
           {/* ===== METHODOLOGY & GLOSSARY ===== */}
           {tab==="methodology"&&(<>
+
+            {/* FIX 2: Grade Rubric Card — added at top of methodology */}
+            <Card style={{marginBottom:24,borderColor:`${C.gold}33`}}>
+              <CardTitle dot={C.gold}>Overall Grade — How It Is Calculated</CardTitle>
+              <p style={{fontSize:14,color:C.dim,lineHeight:1.7,marginBottom:20}}>
+                The Overall Grade is a weighted composite of 7 core neural performance metrics. It represents the creative's predicted ability to capture attention, drive memory, and deliver brand outcomes across its primary distribution channels.
+              </p>
+              {[
+                {g:"A+", range:"90–100", c:C.green,  meaning:"Exceptional. Top 5% of creatives analysed. Deploy with confidence across all platforms."},
+                {g:"A",  range:"85–89",  c:C.green,  meaning:"Excellent. Strong across all neural dimensions. Minor platform-specific tweaks recommended."},
+                {g:"A−", range:"80–84",  c:C.cyan,   meaning:"Very Good. Clear strengths with 1–2 gaps in digital suitability. Light re-editing advised."},
+                {g:"B+", range:"75–79",  c:C.amber,  meaning:"Good. Solid foundation. Performs well on TV/CTV. Social-first re-edit recommended."},
+                {g:"B",  range:"70–74",  c:C.amber,  meaning:"Above Average. Works in primary broadcast channels. Significant gaps in short-form digital formats."},
+                {g:"B−", range:"65–69",  c:C.orange, meaning:"Adequate. Functional but below category leaders. Platform-specific cuts needed before deployment."},
+                {g:"C+", range:"60–64",  c:C.orange, meaning:"Below Average. Fundamental gaps in hook or memory encoding. Major re-edit recommended."},
+                {g:"C",  range:"55–59",  c:C.red,    meaning:"Weak. Structural creative issues detected. Do not deploy without significant revision."},
+                {g:"D/F",range:"Below 55",c:C.red,   meaning:"Failing. Full creative overhaul required. Deployment will reduce brand equity and waste media spend."},
+              ].map(({g,range,c,meaning})=>(
+                <div key={g} style={{display:"flex",gap:14,marginBottom:12,alignItems:"flex-start",paddingBottom:12,borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{minWidth:44,height:44,borderRadius:8,background:`${c}15`,border:`2px solid ${c}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:c,fontFamily:"'DM Mono',monospace",flexShrink:0}}>
+                    {g.replace("−","-")}
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:3}}>
+                      <span style={{fontSize:12,fontWeight:700,color:C.text}}>{g}</span>
+                      <span style={{fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace"}}>Score {range}</span>
+                    </div>
+                    <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{meaning}</div>
+                  </div>
+                </div>
+              ))}
+              <div style={{background:C.s3,borderRadius:10,padding:16,marginTop:8}}>
+                <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:10,fontFamily:"'DM Mono',monospace"}}>Composite Score Weights</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 16px"}}>
+                  {[["Memory Encoding","20%"],["Brand Recall","20%"],["Hook Strength","15%"],["Hold Rate","15%"],["Emotional Peak","10%"],["Creative Efficiency","10%"],["Cultural Resonance","10%"]].map(([label,weight])=>(
+                    <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:11,color:C.dim}}>{label}</span>
+                      <span style={{fontSize:11,fontWeight:700,color:C.gold,fontFamily:"'DM Mono',monospace"}}>{weight}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
             <Card style={{marginBottom:24}}>
               <CardTitle dot={C.gold}>How the Brain Encoder Works</CardTitle>
               <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:20}}>The Brain Encoder uses a three-stage analysis pipeline to predict how the human brain responds to advertising creatives. It is grounded in peer-reviewed neuroscience and advertising effectiveness research.</p>
@@ -1406,7 +1328,7 @@ export default function App(){
           <div style={{padding:"20px 36px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:1,marginTop:"auto"}}>
             ADVantage Insights™ · Brain Encoder Platform™ · Neural Creative Intelligence · {new Date().getFullYear()}
           </div>
-        </div>{/* end main content */}
+        </div>
       </div>
     );
   }

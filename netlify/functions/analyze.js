@@ -24,10 +24,7 @@ export async function handler(event) {
 
     const meta = metadata || {};
     const isImage = meta.isImage || false;
-
-    // FIX 1: Read actual video duration from metadata
-    const duration = meta.duration_seconds || meta.video_duration || meta.duration || 0;
-    const videoDuration = Math.max(5, Math.min(120, Math.round(duration)));
+    const duration = meta.duration || 0;
 
     // Use max 3 frames to stay within time budget
     const usedFrames = frames.slice(0, 3);
@@ -41,17 +38,8 @@ export async function handler(event) {
 
 CRITICAL: Return ONLY valid JSON. No markdown, no backticks, no preamble.
 
-Analyzing ${usedFrames.length} frames from a ${isImage ? "static display/image ad" : `video ad (${videoDuration}s duration)`}.
+Analyzing ${usedFrames.length} frames from a ${isImage ? "static display/image ad" : `video ad (${duration.toFixed(1)}s)`}.
 Brand: ${meta.brand||"Unknown"} | Client: ${meta.client||"Unknown"} | Campaign: ${meta.campaign||"Unknown"} | Agency: ${meta.agency||"Unknown"} | Type: ${meta.type||"video"} | Industry: ${meta.industry||"Not specified"} | Audience: ${meta.audience||"Not specified"} | Market: ${meta.market||"India"}
-
-ATTENTION CURVE CRITICAL INSTRUCTION:
-The video is ${videoDuration} seconds long.
-Return "attention_curve" as a JSON array of exactly ${videoDuration} integers (0-100), one value per second.
-Cover the FULL duration — do NOT stop at 10 seconds.
-For a 35-second video return 35 values. For a 20-second video return 20 values.
-Model realistic patterns: strong hook at seconds 0-2, gradual decay with micro-recoveries, end-card variation.
-Also return "emotion_curve" as an array of exactly ${videoDuration} integers (0-100).
-Return "video_duration_seconds": ${videoDuration} in the JSON.
 
 Return this exact JSON structure (ALL fields required, INT = 0-100):
 
@@ -60,14 +48,13 @@ Return this exact JSON structure (ALL fields required, INT = 0-100):
   "overall_grade": "A+|A|A-|B+|B|B-|C+|C|C-|D|F",
   "grade_note": "One line justification",
   "creative_summary": "4-5 sentence executive summary",
-  "video_duration_seconds": ${videoDuration},
   "viral_potential": INT, "hook_strength": INT, "hold_rate": INT, "emotional_peak": INT,
   "brand_recall": INT, "memory_encoding": INT, "sound_off_survival": INT, "share_intent": INT,
   "creative_efficiency": INT, "ad_fatigue_risk": INT, "cultural_resonance": INT,
   "celebrity_talent_index": INT, "brand_safety": INT, "regulatory_compliance": INT,
   "first_party_data_opportunity": INT, "carbon_signal": INT, "system1_vs_system2": INT,
-  "attention_curve": [/* exactly ${videoDuration} integers covering full video duration */],
-  "emotion_curve": [/* exactly ${videoDuration} integers covering full video duration */],
+  "attention_curve": [INT,INT,INT,INT,INT,INT,INT,INT,INT,INT],
+  "emotion_curve": [INT,INT,INT,INT,INT,INT,INT,INT,INT,INT],
   "emotion_types": {
     "joy": [INT,INT,INT,INT,INT], "surprise": [INT,INT,INT,INT,INT],
     "trust": [INT,INT,INT,INT,INT], "fear": [INT,INT,INT,INT,INT],
@@ -134,7 +121,7 @@ Return this exact JSON structure (ALL fields required, INT = 0-100):
             role: "user",
             content: [...imageContent, {
               type: "text",
-              text: `Analyze these ${usedFrames.length} frames for ${meta.brand||"this brand"}. The video is ${videoDuration} seconds long — return attention_curve and emotion_curve with exactly ${videoDuration} values each. ${meta.notes ? "Context: "+meta.notes : ""} Return ONLY the JSON.`
+              text: `Analyze these ${usedFrames.length} frames for ${meta.brand||"this brand"}. ${meta.notes ? "Context: "+meta.notes : ""} Return ONLY the JSON.`
             }]
           }]
         })

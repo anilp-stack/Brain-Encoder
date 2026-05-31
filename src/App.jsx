@@ -653,18 +653,6 @@ export default function App(){
 
       setProgressMsg("Extracting visual signals...");setProgress(12);
 
-      const fastPromise=fetch("/api/analyze-fast",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(payload)
-      });
-
-      const richPromise=fetch("/api/analyze-rich",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(payload)
-      });
-
       const progressMsgs=[
         [20,"Mapping neural activation zones..."],
         [32,"Scoring 17 performance metrics..."],
@@ -684,39 +672,22 @@ export default function App(){
         }
       },1800);
 
-      let fastData, richData;
+      let combined;
       try{
-        const fastResp=await fastPromise;
-        const fastText=await fastResp.text();
-        let fd;
-        try{fd=JSON.parse(fastText);}catch(e){throw new Error("Fast analysis failed: "+fastText.substring(0,100));}
-        if(!fastResp.ok||!fd.success){throw new Error(fd.error||"Metrics analysis failed");}
-        fastData=fd.analysis;
-        setProgressMsg("Metrics computed. Generating insights...");setProgress(72);
-
-        try{
-          const richResp=await richPromise;
-          const richText=await richResp.text();
-          let rd;
-          try{rd=JSON.parse(richText);}catch(e){ rd=null; }
-          if(richResp.ok&&rd?.success){
-            richData=rd.richData;
-          }else{
-            console.warn("Rich analysis failed, showing metrics only:", rd?.error||"timeout");
-          }
-        }catch(richErr){
-          console.warn("Rich analysis timed out, showing metrics only");
-        }
+        const resp=await fetch("/api/analyze",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload)
+        });
+        const text=await resp.text();
+        let rd;
+        try{rd=JSON.parse(text);}catch(e){throw new Error("Analysis failed: "+text.substring(0,100));}
+        if(!resp.ok||!rd.success){throw new Error(rd.error||"Analysis failed");}
+        combined=rd.analysis;
+        setProgressMsg("Report ready.");setProgress(95);
       }finally{
         clearInterval(ticker);
       }
-
-      const combined={
-        ...fastData,
-        scenes: richData?.scenes||[],
-        strategic_insights: richData?.strategic_insights||[],
-        cmo_actions: richData?.cmo_actions||[],
-      };
 
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));

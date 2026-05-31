@@ -2,366 +2,198 @@ import { useState, useRef, useCallback } from "react";
 import { generateBrainEncoderPDF } from "./generatePDF";
 
 // ============================================================
-// DESIGN TOKENS — World-Class Consultancy Edition
-// Palette: Obsidian · Warm Ivory · Electric Indigo · Signal Gold
-// Typography: Instrument Serif + Cabinet Grotesk + JetBrains Mono
+// DESIGN TOKENS — Premium Consultancy Edition
+// Palette: Deep Onyx · Champagne Gold · Malachite · Slate
 // ============================================================
 const C = {
-  // Surfaces — rich deep navy, not pure black
-  bg:"#080c18",
-  s1:"#0e1425",      // card background — distinctly lighter than bg
-  s2:"#141b30",      // elevated card
-  s3:"#1a2240",      // input / tag background
-  s4:"#202a4a",      // hover state
-
-  // Borders — clearly visible
-  border:"#2a3560",
-  border2:"#3a4878",
-  borderLight:"#4a5890",
-
-  // Text — high contrast hierarchy
-  text:"#f4f1eb",       // warm ivory — primary text
-  textSub:"#c8c4b8",    // secondary text — very readable
-  dim:"#8a95b8",        // tertiary — labels
-  muted:"#4a5278",      // very muted — timestamps
-
-  // Brand
-  gold:"#e8b84b",
-  goldL:"#f5d07a",
-  goldD:"#a07b25",
-  goldGlow:"rgba(232,184,75,0.15)",
-
-  // Signal — vivid, high contrast on dark
-  cyan:"#22e5cc",
-  blue:"#5b9cf6",
-  green:"#2dd67a",
-  red:"#f5637a",
-  amber:"#f8a832",
-  orange:"#f07840",
-  purple:"#a87ef5",
-  pink:"#f040a0",
-  teal:"#18c9b4",
-  rose:"#f84060",
-  lime:"#96e030",
-  sky:"#44c8f8",
-  indigo:"#6878f8",
-
-  sideW:240,
+  // Surfaces
+  bg:"#060810",s1:"#0a0d1e",s2:"#0f1228",s3:"#141730",
+  // Borders
+  border:"#1c2040",border2:"#252850",
+  // Text
+  text:"#f0f0f8",dim:"#8890b0",muted:"#454870",
+  // Brand accents
+  gold:"#c9a84c",goldL:"#e8c97a",goldD:"#8a6f2e",
+  // Signal colours
+  cyan:"#00d4b8",blue:"#4f8ef7",green:"#22d472",
+  red:"#f05a6a",amber:"#f5a623",orange:"#e8793a",
+  purple:"#9b7fea",pink:"#e84393",teal:"#00b8a9",
+  rose:"#f43f5e",lime:"#84cc16",sky:"#38bdf8",
+  // Sidebar
+  sideW: 220,
 };
-
-// Score → colour — higher contrast thresholds
-const hex=(v)=>v>=75?C.green:v>=55?C.amber:v>=38?C.orange:C.red;
+const hex=(v)=>v>=80?C.green:v>=60?C.amber:v>=40?C.orange:C.red;
 const grade=(v)=>v>=90?"A+":v>=85?"A":v>=80?"A-":v>=75?"B+":v>=70?"B":v>=65?"B-":v>=60?"C+":v>=55?"C":v>=50?"C-":v>=40?"D":"F";
 
 // ============================================================
-// FONTS — Inject premium typefaces
+// SHARED COMPONENTS — Premium Edition
 // ============================================================
-if(typeof document!=="undefined"&&!document.getElementById("be-fonts")){
-  const l=document.createElement("link");
-  l.id="be-fonts";l.rel="stylesheet";
-  l.href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Cabinet+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap";
+
+// Google Fonts injection
+if(typeof document !== "undefined" && !document.getElementById("be-fonts")){
+  const l = document.createElement("link");
+  l.id = "be-fonts";
+  l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap";
   document.head.appendChild(l);
 }
 
-// CSS keyframes injection
-if(typeof document!=="undefined"&&!document.getElementById("be-styles")){
-  const s=document.createElement("style");
-  s.id="be-styles";
-  s.textContent=`
-    *{box-sizing:border-box;}
-    body{background:#080c18;}
-    ::-webkit-scrollbar{width:6px;height:6px;}
-    ::-webkit-scrollbar-track{background:#0e1425;}
-    ::-webkit-scrollbar-thumb{background:#2a3560;border-radius:3px;}
-    ::-webkit-scrollbar-thumb:hover{background:#3a4878;}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-    @keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
-    @keyframes pulse-ring{0%,100%{opacity:0.4;}50%{opacity:1;}}
-    @keyframes spin{to{transform:rotate(360deg);}}
-    .be-fade-up{animation:fadeUp 0.4s ease forwards;}
-    .be-card:hover{transform:translateY(-1px);transition:transform 0.2s ease;}
-  `;
-  document.head.appendChild(s);
-}
-
-// Font aliases
-const F={
-  display:"'Instrument Serif',Georgia,serif",
-  body:"'Cabinet Grotesk',system-ui,sans-serif",
-  mono:"'JetBrains Mono',monospace",
-};
-
-// ============================================================
-// SVG ICONS
-// ============================================================
-const Icon={
-  summary:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
-  neural:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M12 11l-5 6M12 11l5 6"/></svg>,
-  attn:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-  emotion:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
-  scene:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20"/></svg>,
+// SVG Icons — no emojis
+const Icon = {
+  summary: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+  neural:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M12 11l-5 6M12 11l5 6"/></svg>,
+  attn:    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  emotion: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
+  scene:   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/></svg>,
   platform:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,
-  sound:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>,
-  privacy:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  sound:   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>,
+  privacy: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
   strategy:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
-  cmo:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  cmo:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   glossary:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
-  new:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  dl:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  new:     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  dl:      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  tm:      null,
 };
 
-// ============================================================
-// CARD — Premium with subtle depth
-// ============================================================
 function Card({children,style,...p}){
-  return(
-    <div className="be-card" style={{
-      background:C.s1,
-      border:`1px solid ${C.border}`,
-      borderRadius:20,
-      padding:28,
-      position:"relative",
-      boxShadow:"0 4px 24px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset",
-      ...style
-    }} {...p}>{children}</div>
-  );
+  return <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:28,...style}} {...p}>{children}</div>;
 }
-
-// ============================================================
-// CARD TITLE — Clearly readable with accent bar
-// ============================================================
 function CardTitle({dot,children}){
-  const c=dot||C.gold;
-  return(
-    <div style={{
-      fontSize:11,fontWeight:700,letterSpacing:2.5,
-      color:c,textTransform:"uppercase",marginBottom:22,
-      fontFamily:F.mono,display:"flex",alignItems:"center",gap:10,
-    }}>
-      <span style={{
-        width:3,height:18,borderRadius:2,
-        background:c,display:"inline-block",flexShrink:0,
-      }}/>
-      {children}
-    </div>
-  );
+  return <div style={{fontSize:13,fontWeight:700,letterSpacing:1.5,color:dot||C.gold,textTransform:"uppercase",marginBottom:20,fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",gap:8}}>
+    <span style={{width:3,height:16,borderRadius:2,background:dot||C.gold,display:"inline-block"}}/>
+    {children}
+  </div>;
 }
 
-// ============================================================
-// SCORE CARD — Premium metric tile
-// ============================================================
 function ScoreCard({label,value,note,pct}){
   const c=hex(value);
   return(
-    <div className="be-card" style={{
-      background:`linear-gradient(145deg,${C.s2},${C.s1})`,
-      border:`1px solid ${C.border}`,
-      borderRadius:18,padding:"24px 22px",
-      position:"relative",overflow:"hidden",
-      boxShadow:`0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset`,
-      transition:"transform 0.2s ease, box-shadow 0.2s ease",
-    }}>
-      {/* Top accent bar */}
-      <div style={{
-        position:"absolute",top:0,left:0,right:0,height:3,
-        background:`linear-gradient(90deg,${c}cc,${c}22)`,
-      }}/>
-      {/* Subtle glow orb */}
-      <div style={{
-        position:"absolute",top:-20,right:-20,width:80,height:80,
-        borderRadius:"50%",background:`${c}08`,filter:"blur(20px)",
-        pointerEvents:"none",
-      }}/>
-      <div style={{
-        fontSize:10,fontWeight:700,letterSpacing:2.5,
-        color:C.dim,textTransform:"uppercase",
-        marginBottom:10,fontFamily:F.mono,
-      }}>{label}</div>
-      <div style={{
-        fontSize:48,fontWeight:700,fontFamily:F.mono,
-        color:c,lineHeight:1,letterSpacing:-1,
-      }}>{value}</div>
-      {note&&<div style={{
-        fontSize:11,color:C.textSub,marginTop:10,
-        lineHeight:1.6,minHeight:18,fontFamily:F.body,
-      }}>{note}</div>}
-      <div style={{
-        height:3,borderRadius:2,background:C.s3,
-        marginTop:14,overflow:"hidden",
-      }}>
-        <div style={{
-          height:"100%",borderRadius:2,
-          background:`linear-gradient(90deg,${c}66,${c})`,
-          width:`${pct||value}%`,transition:"width 1.5s ease",
-        }}/>
+    <div style={{background:`linear-gradient(135deg,${C.s2},${C.s1})`,border:`1px solid ${C.border}`,borderRadius:16,padding:"22px 20px",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${c},${c}88)`}}/>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:C.muted,textTransform:"uppercase",marginBottom:8,fontFamily:"'DM Mono',monospace"}}>{label}</div>
+      <div style={{fontSize:42,fontWeight:700,fontFamily:"'DM Mono',monospace",color:c,lineHeight:1}}>{value}</div>
+      <div style={{fontSize:11,color:C.dim,marginTop:8,lineHeight:1.5,minHeight:16}}>{note}</div>
+      <div style={{height:4,borderRadius:2,background:C.s3,marginTop:14,overflow:"hidden"}}>
+        <div style={{height:"100%",borderRadius:2,background:`linear-gradient(90deg,${c}aa,${c})`,width:`${pct||value}%`,transition:"width 1.5s ease"}}/>
       </div>
     </div>
   );
 }
 
-// ============================================================
-// BAR METRIC — Clearly readable label + bar + value
-// ============================================================
 function BarMetric({label,value,color,maxW}){
   const c=color||hex(value);
   return(
-    <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:13}}>
-      <div style={{
-        width:maxW||150,fontSize:13,fontWeight:600,
-        color:C.textSub,textTransform:"capitalize",
-        flexShrink:0,fontFamily:F.body,lineHeight:1.3,
-      }}>{label.replace(/_/g," ")}</div>
-      <div style={{
-        flex:1,height:6,borderRadius:3,
-        background:C.s3,overflow:"hidden",
-      }}>
-        <div style={{
-          height:"100%",borderRadius:3,
-          background:`linear-gradient(90deg,${c}55,${c})`,
-          width:`${value}%`,transition:"width 1.1s cubic-bezier(0.4,0,0.2,1)",
-        }}/>
+    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:11}}>
+      <div style={{width:maxW||140,fontSize:12,fontWeight:600,color:C.dim,textTransform:"capitalize",flexShrink:0,fontFamily:"'DM Sans',sans-serif"}}>{label.replace(/_/g," ")}</div>
+      <div style={{flex:1,height:8,borderRadius:4,background:C.s3,overflow:"hidden"}}>
+        <div style={{height:"100%",borderRadius:4,background:`linear-gradient(90deg,${c}77,${c})`,width:`${value}%`,transition:"width 1s ease"}}/>
       </div>
-      <div style={{
-        width:38,fontSize:13,fontWeight:700,
-        fontFamily:F.mono,color:c,textAlign:"right",
-      }}>{value}</div>
+      <div style={{width:40,fontSize:13,fontWeight:700,fontFamily:"'DM Mono',monospace",color:c,textAlign:"right"}}>{value}</div>
     </div>
   );
 }
 
-// ============================================================
-// NAV TABS
-// ============================================================
+// Vertical Sidebar Nav
 const NAV_TABS = [
-  {id:"summary",   label:"Executive Summary",   icon:Icon.summary},
-  {id:"neural",    label:"Neural Map",           icon:Icon.neural},
-  {id:"attention", label:"Attention",            icon:Icon.attn},
-  {id:"emotion",   label:"Emotional Arch.",      icon:Icon.emotion},
-  {id:"scenes",    label:"Scene Intelligence",   icon:Icon.scene},
-  {id:"platforms", label:"Platform Scores",      icon:Icon.platform},
-  {id:"sound",     label:"Sound & Sensory",      icon:Icon.sound},
-  {id:"privacy",   label:"Privacy & Compliance", icon:Icon.privacy},
-  {id:"strategy",  label:"Strategic Insights",   icon:Icon.strategy},
-  {id:"cmo",       label:"CMO Playbook",         icon:Icon.cmo},
-  {id:"methodology",label:"Methodology",         icon:Icon.glossary},
+  {id:"summary",  label:"Executive Summary", icon:Icon.summary},
+  {id:"neural",   label:"Neural Map",         icon:Icon.neural},
+  {id:"attention",label:"Attention",          icon:Icon.attn},
+  {id:"emotion",  label:"Emotional Arch.",    icon:Icon.emotion},
+  {id:"scenes",   label:"Scene Intelligence", icon:Icon.scene},
+  {id:"platforms",label:"Platform Scores",    icon:Icon.platform},
+  {id:"sound",    label:"Sound & Sensory",    icon:Icon.sound},
+  {id:"privacy",  label:"Privacy & Compliance",icon:Icon.privacy},
+  {id:"strategy", label:"Strategic Insights", icon:Icon.strategy},
+  {id:"cmo",      label:"CMO Playbook",       icon:Icon.cmo},
+  {id:"methodology",label:"Methodology",      icon:Icon.glossary},
 ];
 
 function Sidebar({tab, setTab, grade: gr, brand, onNew, onDownload, downloading}){
   const gc = gr==="A+"||gr==="A"||gr==="A-" ? C.green : gr?.startsWith("B") ? C.amber : gr?.startsWith("C") ? C.gold : C.red;
   return(
     <div style={{
-      width:C.sideW, minWidth:C.sideW,
-      background:`linear-gradient(180deg,${C.s2} 0%,${C.bg} 100%)`,
-      borderRight:`1px solid ${C.border}`,
-      height:"100vh", position:"sticky", top:0,
-      display:"flex", flexDirection:"column",
+      width:C.sideW, minWidth:C.sideW, background:C.s1,
+      borderRight:`1px solid ${C.border}`, height:"100vh",
+      position:"sticky", top:0, display:"flex", flexDirection:"column",
       overflowY:"auto", flexShrink:0, zIndex:50,
-      fontFamily:F.body,
+      fontFamily:"'DM Sans',sans-serif",
     }}>
       {/* Brand header */}
-      <div style={{padding:"28px 24px 22px", borderBottom:`1px solid ${C.border}`,position:"relative"}}>
-        <div style={{
-          fontSize:8,fontWeight:700,letterSpacing:5,
-          color:C.gold,textTransform:"uppercase",
-          marginBottom:8,fontFamily:F.mono,opacity:0.9,
-        }}>
-          ADVantage Insights<sup style={{fontSize:6,verticalAlign:"super"}}>TM</sup>
+      <div style={{padding:"24px 20px 20px", borderBottom:`1px solid ${C.border}`}}>
+        <div style={{fontSize:8,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:6,fontFamily:"'DM Mono',monospace"}}>
+          ADVantage Insights<sup style={{fontSize:6,color:C.gold,verticalAlign:"super"}}>TM</sup>
         </div>
-        <div style={{
-          fontSize:20,fontWeight:400,color:C.text,
-          lineHeight:1.1,fontFamily:F.display,
-          fontStyle:"italic",letterSpacing:-0.3,
-        }}>
-          Brain Encoder<sup style={{fontSize:9,color:C.gold,verticalAlign:"super",fontFamily:F.mono,fontStyle:"normal",fontWeight:700}}>TM</sup>
+        <div style={{fontSize:16,fontWeight:700,color:C.text,letterSpacing:-0.3,lineHeight:1.2,fontFamily:"'Playfair Display',serif"}}>
+          Brain Encoder<sup style={{fontSize:8,color:C.gold,verticalAlign:"super"}}>TM</sup>
         </div>
         {gr && (
-          <div style={{marginTop:16,display:"flex",alignItems:"center",gap:10}}>
-            <div style={{
-              background:`linear-gradient(135deg,${gc}22,${gc}08)`,
-              border:`1px solid ${gc}55`,
-              borderRadius:10,padding:"6px 14px",
-              fontSize:16,fontWeight:800,color:gc,
-              fontFamily:F.mono,letterSpacing:1,
-              boxShadow:`0 0 16px ${gc}22`,
-            }}>{gr}</div>
-            {brand && <div style={{
-              fontSize:12,color:C.textSub,
-              overflow:"hidden",textOverflow:"ellipsis",
-              whiteSpace:"nowrap",maxWidth:110,
-              fontFamily:F.body,fontWeight:600,
-            }}>{brand}</div>}
+          <div style={{marginTop:14,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:8,padding:"4px 12px",fontSize:14,fontWeight:800,color:gc,fontFamily:"'DM Mono',monospace",letterSpacing:1}}>
+              {gr}
+            </div>
+            {brand && <div style={{fontSize:11,color:C.dim,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:100}}>{brand}</div>}
           </div>
         )}
       </div>
 
-      {/* Nav */}
-      <nav style={{flex:1,padding:"12px 0"}}>
+      {/* Nav items */}
+      <nav style={{flex:1,padding:"10px 0"}}>
         {NAV_TABS.map(n=>{
-          const active=tab===n.id;
+          const active = tab===n.id;
           return(
             <button key={n.id} onClick={()=>setTab(n.id)}
               style={{
-                width:"100%",display:"flex",alignItems:"center",gap:12,
-                padding:"11px 24px",
-                background:active?`linear-gradient(90deg,${C.gold}14,transparent)`:"transparent",
+                width:"100%", display:"flex", alignItems:"center", gap:10,
+                padding:"10px 20px",
+                background: active ? `${C.gold}12` : "transparent",
                 borderLeft:`3px solid ${active?C.gold:"transparent"}`,
                 borderRight:"none",borderTop:"none",borderBottom:"none",
-                cursor:"pointer",textAlign:"left",
-                color:active?C.gold:C.dim,
-                fontSize:13,fontWeight:active?700:500,
-                transition:"all 0.18s ease",
-                fontFamily:F.body,letterSpacing:0.1,
-              }}
-              onMouseEnter={e=>{if(!active){e.currentTarget.style.color=C.textSub;e.currentTarget.style.background=`${C.s3}80`;}}}
-              onMouseLeave={e=>{if(!active){e.currentTarget.style.color=C.dim;e.currentTarget.style.background="transparent";}}}>
-              <span style={{display:"flex",opacity:active?1:0.6,flexShrink:0,color:"inherit"}}>{n.icon}</span>
+                cursor:"pointer", textAlign:"left",
+                color: active ? C.gold : C.dim,
+                fontSize:12, fontWeight: active ? 700 : 500,
+                transition:"all 0.15s ease",
+                fontFamily:"'DM Sans',sans-serif",
+                letterSpacing:0.2,
+              }}>
+              <span style={{display:"flex",opacity:active?1:0.55,flexShrink:0}}>{n.icon}</span>
               <span style={{lineHeight:1.3}}>{n.label}</span>
             </button>
           );
         })}
       </nav>
 
-      {/* Actions */}
-      <div style={{padding:"20px 20px 24px",borderTop:`1px solid ${C.border}`}}>
-        {onDownload&&(
+      {/* New Analysis button */}
+      <div style={{padding:"16px 20px",borderTop:`1px solid ${C.border}`}}>
+        {onDownload && (
           <button onClick={onDownload} disabled={downloading}
             style={{
-              width:"100%",
-              background:downloading?`${C.gold}18`:`linear-gradient(135deg,${C.gold},${C.goldD})`,
-              border:downloading?`1px solid ${C.gold}44`:"none",
-              borderRadius:12,padding:"12px 16px",
-              color:downloading?C.gold:C.bg,
-              fontSize:12,fontWeight:800,cursor:downloading?"wait":"pointer",
-              display:"flex",alignItems:"center",justifyContent:"center",gap:7,
-              fontFamily:F.body,letterSpacing:0.4,
-              marginBottom:10,transition:"all 0.2s",
-              boxShadow:downloading?"none":`0 4px 20px ${C.gold}35`,
+              width:"100%", background: downloading ? `${C.gold}22` : `linear-gradient(135deg,${C.gold},${C.goldD})`,
+              border:"none", borderRadius:10,
+              padding:"11px 14px", color: downloading ? C.gold : C.bg,
+              fontSize:12, fontWeight:800, cursor: downloading ? "wait" : "pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+              fontFamily:"'DM Sans',sans-serif", letterSpacing:0.3,
+              marginBottom:10, transition:"all 0.2s",
+              boxShadow: downloading ? "none" : `0 4px 16px ${C.gold}30`,
             }}>
-            {Icon.dl}{downloading?"Generating PDF...":"Download PDF Report"}
+            {Icon.dl} {downloading ? "Generating PDF..." : "Download PDF Report"}
           </button>
         )}
         <button onClick={onNew}
           style={{
-            width:"100%",
-            background:`${C.s3}`,
-            border:`1px solid ${C.borderLight}`,
-            borderRadius:12,padding:"11px 16px",
-            color:C.textSub,fontSize:12,fontWeight:700,
-            cursor:"pointer",display:"flex",
-            alignItems:"center",justifyContent:"center",gap:7,
-            fontFamily:F.body,letterSpacing:0.3,
+            width:"100%", background:`linear-gradient(135deg,${C.gold}22,${C.gold}0a)`,
+            border:`1px solid ${C.gold}44`, borderRadius:10,
+            padding:"10px 14px", color:C.gold, fontSize:12,
+            fontWeight:700, cursor:"pointer", display:"flex",
+            alignItems:"center", justifyContent:"center", gap:6,
+            fontFamily:"'DM Sans',sans-serif", letterSpacing:0.3,
             transition:"all 0.2s",
-          }}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor=C.gold;e.currentTarget.style.color=C.gold;}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor=C.borderLight;e.currentTarget.style.color=C.textSub;}}>
+          }}>
           {Icon.new} New Analysis
         </button>
-        <div style={{
-          marginTop:14,fontSize:8,color:C.muted,
-          textAlign:"center",fontFamily:F.mono,
-          letterSpacing:2.5,textTransform:"uppercase",
-        }}>
-          Neural Creative Intelligence
+        <div style={{marginTop:12,fontSize:9,color:C.muted,textAlign:"center",fontFamily:"'DM Mono',monospace",letterSpacing:1}}>
+          NEURAL CREATIVE INTELLIGENCE
         </div>
       </div>
     </div>
@@ -407,7 +239,7 @@ function Takeaway({icon,title,items,color}){
              item.type==="win"?"🏆":"→"}
           </span>
           <span style={{
-            fontSize:14,color:C.textSub,lineHeight:1.7
+            fontSize:14,color:C.dim,lineHeight:1.7
           }}>
             <b style={{color:C.text}}>
               {item.label}
@@ -653,6 +485,18 @@ export default function App(){
 
       setProgressMsg("Extracting visual signals...");setProgress(12);
 
+      const fastPromise=fetch("/api/analyze-fast",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+
+      const richPromise=fetch("/api/analyze-rich",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+
       const progressMsgs=[
         [20,"Mapping neural activation zones..."],
         [32,"Scoring 17 performance metrics..."],
@@ -672,22 +516,39 @@ export default function App(){
         }
       },1800);
 
-      let combined;
+      let fastData, richData;
       try{
-        const resp=await fetch("/.netlify/functions/analyze",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify(payload)
-        });
-        const text=await resp.text();
-        let rd;
-        try{rd=JSON.parse(text);}catch(e){throw new Error("Analysis failed: "+text.substring(0,100));}
-        if(!resp.ok||!rd.success){throw new Error(rd.error||"Analysis failed");}
-        combined=rd.analysis;
-        setProgressMsg("Report ready.");setProgress(95);
+        const fastResp=await fastPromise;
+        const fastText=await fastResp.text();
+        let fd;
+        try{fd=JSON.parse(fastText);}catch(e){throw new Error("Fast analysis failed: "+fastText.substring(0,100));}
+        if(!fastResp.ok||!fd.success){throw new Error(fd.error||"Metrics analysis failed");}
+        fastData=fd.analysis;
+        setProgressMsg("Metrics computed. Generating insights...");setProgress(72);
+
+        try{
+          const richResp=await richPromise;
+          const richText=await richResp.text();
+          let rd;
+          try{rd=JSON.parse(richText);}catch(e){ rd=null; }
+          if(richResp.ok&&rd?.success){
+            richData=rd.richData;
+          }else{
+            console.warn("Rich analysis failed, showing metrics only:", rd?.error||"timeout");
+          }
+        }catch(richErr){
+          console.warn("Rich analysis timed out, showing metrics only");
+        }
       }finally{
         clearInterval(ticker);
       }
+
+      const combined={
+        ...fastData,
+        scenes: richData?.scenes||[],
+        strategic_insights: richData?.strategic_insights||[],
+        cmo_actions: richData?.cmo_actions||[],
+      };
 
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));
@@ -701,34 +562,34 @@ export default function App(){
   // ============================================================
   if(stage==="landing"){
     return(
-      <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",fontFamily:F.body,position:"relative",overflow:"hidden"}}>
+      <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",fontFamily:"'DM Sans',sans-serif",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 70%)",pointerEvents:"none"}}/>
         <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40%",background:"radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,212,184,0.04) 0%, transparent 70%)",pointerEvents:"none"}}/>
         <div style={{marginBottom:40,position:"relative"}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:10,fontFamily:F.mono}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:10,fontFamily:"'DM Mono',monospace"}}>
             ADVantage Insights<sup style={{fontSize:7,color:C.gold,verticalAlign:"super",marginLeft:1}}>TM</sup>
           </div>
           <div style={{width:40,height:1,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`,margin:"0 auto"}}/>
         </div>
-        <h1 style={{fontSize:clamp(42,6,72),fontWeight:800,lineHeight:1.0,maxWidth:700,marginBottom:12,position:"relative",fontFamily:F.display,letterSpacing:-0.5,color:C.text,fontStyle:"italic"}}>
-          Brain Encoder<sup style={{fontSize:16,color:C.gold,verticalAlign:"super",fontFamily:F.body,fontWeight:700}}>TM</sup>
+        <h1 style={{fontSize:clamp(42,6,72),fontWeight:800,lineHeight:1.0,maxWidth:700,marginBottom:12,position:"relative",fontFamily:"'Playfair Display',serif",letterSpacing:-1,color:C.text}}>
+          Brain Encoder<sup style={{fontSize:16,color:C.gold,verticalAlign:"super",fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>TM</sup>
         </h1>
-        <div style={{fontSize:16,fontWeight:600,color:C.gold,letterSpacing:2,textTransform:"uppercase",marginBottom:28,fontFamily:F.mono}}>
+        <div style={{fontSize:16,fontWeight:600,color:C.gold,letterSpacing:2,textTransform:"uppercase",marginBottom:28,fontFamily:"'DM Mono',monospace"}}>
           Neural Creative Intelligence Platform
         </div>
-        <p style={{fontSize:17,color:C.textSub,maxWidth:560,lineHeight:1.8,marginBottom:48,position:"relative",fontWeight:400}}>
+        <p style={{fontSize:17,color:C.dim,maxWidth:560,lineHeight:1.8,marginBottom:48,position:"relative",fontWeight:400}}>
           Upload any video ad, display creative, or social content. Receive a complete neural performance report — 17 metrics, 15 platform scores, scene intelligence, and a CMO action playbook.
         </p>
         <button onClick={()=>setStage("form")}
-          style={{background:`linear-gradient(135deg,${C.gold},${C.goldD})`,color:C.bg,border:"none",padding:"18px 56px",borderRadius:12,fontSize:16,fontWeight:800,cursor:"pointer",letterSpacing:0.5,position:"relative",boxShadow:`0 8px 32px ${C.gold}40`,fontFamily:F.body,transition:"all 0.2s",marginBottom:56}}>
+          style={{background:`linear-gradient(135deg,${C.gold},${C.goldD})`,color:C.bg,border:"none",padding:"18px 56px",borderRadius:12,fontSize:16,fontWeight:800,cursor:"pointer",letterSpacing:0.5,position:"relative",boxShadow:`0 8px 32px ${C.gold}40`,fontFamily:"'DM Sans',sans-serif",transition:"all 0.2s",marginBottom:56}}>
           Start Analysis →
         </button>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:48,maxWidth:680}}>
           {["17 Neural Metrics","15 Platform Scores","Attention Heatmap","Scene Intelligence","Privacy & DPDP","CMO Playbook","No Duration Limit","System 1 / System 2"].map(t=>(
-            <span key={t} style={{padding:"7px 14px",background:C.s2,borderRadius:100,border:`1px solid ${C.border2}`,fontSize:11,fontWeight:600,color:C.dim,letterSpacing:0.3,fontFamily:F.body}}>{t}</span>
+            <span key={t} style={{padding:"7px 14px",background:C.s2,borderRadius:100,border:`1px solid ${C.border2}`,fontSize:11,fontWeight:600,color:C.dim,letterSpacing:0.3,fontFamily:"'DM Sans',sans-serif"}}>{t}</span>
           ))}
         </div>
-        <div style={{display:"flex",gap:40,color:C.muted,fontSize:11,fontFamily:F.mono,letterSpacing:1.5,textTransform:"uppercase"}}>
+        <div style={{display:"flex",gap:40,color:C.muted,fontSize:11,fontFamily:"'DM Mono',monospace",letterSpacing:1.5,textTransform:"uppercase"}}>
           <span>Full Explainability</span><span style={{color:C.border}}>·</span>
           <span>Platform-Specific</span><span style={{color:C.border}}>·</span>
           <span>No Duration Cap</span>
@@ -741,11 +602,11 @@ export default function App(){
   // UPLOAD FORM
   // ============================================================
   if(stage==="form"){
-    const inp={width:"100%",padding:"14px 18px",borderRadius:12,border:`1px solid ${C.border}`,background:C.s2,color:C.text,fontSize:15,outline:"none",fontFamily:F.body,transition:"border-color 0.2s"};
-    const lbl={fontSize:11,fontWeight:700,letterSpacing:2.5,color:C.textSub,textTransform:"uppercase",marginBottom:8,display:"block",fontFamily:F.mono};
+    const inp={width:"100%",padding:"14px 16px",borderRadius:10,border:`1px solid ${C.border}`,background:C.s2,color:C.text,fontSize:15,outline:"none",fontFamily:"inherit"};
+    const lbl={fontSize:11,fontWeight:700,letterSpacing:2,color:C.dim,textTransform:"uppercase",marginBottom:6,display:"block",fontFamily:"'JetBrains Mono',monospace"};
     const selStyle={...inp,appearance:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a9e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,backgroundRepeat:"no-repeat",backgroundPosition:"right 14px center"};
     return(
-      <div style={{minHeight:"100vh",background:C.bg,fontFamily:F.body}}>
+      <div style={{minHeight:"100vh",background:C.bg}}>
         <div style={{padding:"20px 40px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:12}}>
           <span style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",cursor:"pointer"}} onClick={()=>setStage("landing")}>ADVantage Insights</span>
           <span style={{fontSize:12,color:C.dim}}>·</span>
@@ -805,7 +666,7 @@ export default function App(){
                 <>
                   <div style={{fontSize:40,marginBottom:8}}>📁</div>
                   <div style={{fontSize:16,fontWeight:600,color:C.text}}>Drop file here or click to browse</div>
-                  <div style={{fontSize:13,color:C.textSub,marginTop:6}}>MP4, MOV, AVI, WEBM, JPG, PNG</div>
+                  <div style={{fontSize:13,color:C.dim,marginTop:6}}>MP4, MOV, AVI, WEBM, JPG, PNG</div>
                 </>
               )}
             </div>
@@ -831,13 +692,13 @@ export default function App(){
       <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40}}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}`}</style>
         <div style={{width:80,height:80,borderRadius:"50%",border:`3px solid ${C.s3}`,borderTopColor:C.cyan,animation:"spin 1s linear infinite",marginBottom:32}}/>
-        <div style={{fontSize:10,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:12,fontFamily:F.mono}}>ADVantage Insights</div>
+        <div style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:12}}>ADVantage Insights</div>
         <h2 style={{fontSize:28,fontWeight:200,marginBottom:28}}>Encoding <span style={{fontWeight:700,color:C.cyan}}>Brain Activity</span></h2>
         <div style={{width:440,maxWidth:"90%",height:8,borderRadius:4,background:C.s3,marginBottom:16,overflow:"hidden"}}>
           <div style={{height:"100%",borderRadius:4,background:`linear-gradient(90deg,${C.cyan},${C.blue})`,width:`${progress}%`,transition:"width 0.5s"}}/>
         </div>
         <div style={{fontSize:14,color:C.dim,animation:"pulse 2s infinite"}}>{progressMsg}</div>
-        <div style={{fontSize:12,color:C.muted,marginTop:8,fontFamily:F.mono}}>{progress}%</div>
+        <div style={{fontSize:12,color:C.muted,marginTop:8,fontFamily:"'JetBrains Mono',monospace"}}>{progress}%</div>
       </div>
     );
   }
@@ -875,7 +736,7 @@ export default function App(){
     );
 
     return(
-      <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:F.body}}>
+      <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'DM Sans',sans-serif"}}>
 
         {/* ── LEFT SIDEBAR ── */}
         <Sidebar
@@ -897,13 +758,13 @@ export default function App(){
         <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflowY:"auto"}}>
 
           {/* Top header bar */}
-          <div style={{background:`linear-gradient(90deg,${C.s2},${C.s1})`,borderBottom:`1px solid ${C.border}`,padding:"20px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(12px)"}}>
+          <div style={{background:C.s1,borderBottom:`1px solid ${C.border}`,padding:"20px 36px",position:"sticky",top:0,zIndex:40}}>
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:16}}>
               <div style={{minWidth:0}}>
-                <div style={{fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:5,fontFamily:F.mono}}>
+                <div style={{fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:5,fontFamily:"'DM Mono',monospace"}}>
                   {form.industry||""}{form.market?` · ${form.market}`:""}{form.type?` · ${form.type}`:""} · {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
                 </div>
-                <h1 style={{fontSize:22,fontWeight:800,color:C.text,margin:0,letterSpacing:-0.5,fontFamily:F.display,lineHeight:1.2}}>
+                <h1 style={{fontSize:22,fontWeight:800,color:C.text,margin:0,letterSpacing:-0.5,fontFamily:"'Playfair Display',serif",lineHeight:1.2}}>
                   {form.brand}{form.campaign?<span style={{fontWeight:400,color:C.dim}}> — {form.campaign}</span>:""}
                 </h1>
                 {r.headline_verdict&&<div style={{fontSize:13,color:C.gold,marginTop:6,fontStyle:"italic",opacity:0.9}}>"{r.headline_verdict}"</div>}
@@ -918,8 +779,8 @@ export default function App(){
                     onMouseLeave={()=>setGradeTooltipVisible(false)}
                   >
                     <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:12,padding:"10px 20px",textAlign:"center",cursor:"help"}}>
-                      <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:F.mono,marginBottom:3}}>Grade</div>
-                      <div style={{fontSize:24,fontWeight:900,color:gc,fontFamily:F.mono,lineHeight:1}}>{r.overall_grade}</div>
+                      <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:3}}>Grade</div>
+                      <div style={{fontSize:24,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
                       <div style={{fontSize:8,color:C.muted,marginTop:4,letterSpacing:0.5}}>hover for scale</div>
                     </div>
 
@@ -932,7 +793,7 @@ export default function App(){
                         padding:"16px 18px",zIndex:200,
                         boxShadow:"0 8px 40px rgba(0,0,0,0.7)",
                       }}>
-                        <div style={{fontSize:9,fontWeight:700,letterSpacing:2,color:C.gold,marginBottom:12,textTransform:"uppercase",fontFamily:F.mono}}>
+                        <div style={{fontSize:9,fontWeight:700,letterSpacing:2,color:C.gold,marginBottom:12,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>
                           Grade Scale
                         </div>
                         {[
@@ -947,9 +808,9 @@ export default function App(){
                           {g:"D/F",range:"Below 55",c:C.red},
                         ].map(({g,range,c})=>(
                           <div key={g} style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-                            <span style={{fontWeight:800,fontSize:12,color:c,minWidth:28,fontFamily:F.mono}}>{g}</span>
+                            <span style={{fontWeight:800,fontSize:12,color:c,minWidth:28,fontFamily:"'DM Mono',monospace"}}>{g}</span>
                             <div style={{flex:1,height:3,borderRadius:2,background:c,opacity:0.5}}/>
-                            <span style={{fontSize:10,color:C.muted,fontFamily:F.mono,minWidth:64,textAlign:"right"}}>{range}</span>
+                            <span style={{fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",minWidth:64,textAlign:"right"}}>{range}</span>
                           </div>
                         ))}
                         <div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:9,color:C.muted,lineHeight:1.7}}>
@@ -964,7 +825,7 @@ export default function App(){
           </div>
 
           {/* Tab content */}
-          <div style={{padding:"32px 36px",maxWidth:1340,width:"100%",boxSizing:"border-box",fontFamily:F.body}}>
+          <div style={{padding:"32px 36px",maxWidth:1300,width:"100%",boxSizing:"border-box"}}>
 
           {/* ===== EXECUTIVE SUMMARY ===== */}
           {tab==="summary"&&(<>
@@ -985,17 +846,17 @@ export default function App(){
                 </defs>
                 <line x1="50" y1="170" x2="970" y2="170" stroke={C.border} strokeWidth="1"/>
                 <line x1="50" y1="95" x2="970" y2="95" stroke={C.border} strokeWidth=".5" strokeDasharray="5,4"/>
-                <text x="42" y="175" fill={C.textSub} fontSize="11" fontFamily="JetBrains Mono" fontWeight="500" textAnchor="end">0</text>
-                <text x="42" y="100" fill={C.textSub} fontSize="11" fontFamily="JetBrains Mono" fontWeight="500" textAnchor="end">50</text>
-                <text x="42" y="25" fill={C.textSub} fontSize="11" fontFamily="JetBrains Mono" fontWeight="500" textAnchor="end">100</text>
+                <text x="42" y="175" fill={C.dim} fontSize="11" fontFamily="JetBrains Mono" textAnchor="end">0</text>
+                <text x="42" y="100" fill={C.dim} fontSize="11" fontFamily="JetBrains Mono" textAnchor="end">50</text>
+                <text x="42" y="25" fill={C.dim} fontSize="11" fontFamily="JetBrains Mono" textAnchor="end">100</text>
                 <path d={makeArea(attn,50,970,20,170)} fill="url(#af)"/>
                 <path d={makePath(attn,50,970,20,170)} fill="none" stroke={C.cyan} strokeWidth="2.5"/>
                 <path d={makeArea(emot,50,970,20,170)} fill="url(#ef)"/>
                 <path d={makePath(emot,50,970,20,170)} fill="none" stroke={C.orange} strokeWidth="2" strokeDasharray="6,4"/>
                 <line x1="730" y1="190" x2="755" y2="190" stroke={C.cyan} strokeWidth="3"/>
-                <text x="762" y="194" fill={C.textSub} fontSize="11" fontFamily="JetBrains Mono" fontWeight="500">Attention</text>
+                <text x="762" y="194" fill={C.dim} fontSize="11" fontFamily="JetBrains Mono">Attention</text>
                 <line x1="860" y1="190" x2="885" y2="190" stroke={C.orange} strokeWidth="2" strokeDasharray="6,4"/>
-                <text x="892" y="194" fill={C.textSub} fontSize="11" fontFamily="JetBrains Mono" fontWeight="500">Emotion</text>
+                <text x="892" y="194" fill={C.dim} fontSize="11" fontFamily="JetBrains Mono">Emotion</text>
               </svg>
             </Card>
 
@@ -1006,7 +867,7 @@ export default function App(){
                 ["1P Data Opp.",r.first_party_data_opportunity],["Regulatory",r.regulatory_compliance],["Carbon Signal",r.carbon_signal]
               ].filter(([,v])=>v!==undefined).map(([l,v])=>
                 <div key={l} style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:10,padding:16,textAlign:"center"}}>
-                  <div style={{fontSize:28,fontWeight:800,fontFamily:F.mono,color:hex(v)}}>{v}</div>
+                  <div style={{fontSize:28,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(v)}}>{v}</div>
                   <div style={{fontSize:11,color:C.dim,marginTop:4,fontWeight:600}}>{l}</div>
                 </div>
               )}
@@ -1015,7 +876,7 @@ export default function App(){
             {comp.benchmark_note&&<Card>
               <CardTitle dot={C.gold}>Competitive Benchmark</CardTitle>
               <div style={{display:"flex",alignItems:"center",gap:20}}>
-                <span style={{fontSize:14,fontWeight:700,color:comp.position==="category_leader"?C.green:comp.position==="above_average"?C.cyan:comp.position==="average"?C.amber:C.red,textTransform:"uppercase",fontFamily:F.mono}}>{(comp.position||"").replace(/_/g," ")}</span>
+                <span style={{fontSize:14,fontWeight:700,color:comp.position==="category_leader"?C.green:comp.position==="above_average"?C.cyan:comp.position==="average"?C.amber:C.red,textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace"}}>{(comp.position||"").replace(/_/g," ")}</span>
                 <span style={{fontSize:14,color:C.dim}}>{comp.benchmark_note}</span>
               </div>
             </Card>}
@@ -1078,7 +939,7 @@ export default function App(){
               </div>
 
               {/* FIX 1: Dynamic timeline labels — smart spacing up to 12 labels */}
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11,color:C.dim,fontFamily:F.mono}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11,color:C.dim,fontFamily:"'JetBrains Mono',monospace"}}>
                 {heatmapLabels.map(s=>(
                   <span key={s}>{s}s</span>
                 ))}
@@ -1086,7 +947,7 @@ export default function App(){
 
               {/* FIX 1: Duration badge */}
               <div style={{textAlign:"right",marginTop:6}}>
-                <span style={{fontSize:9,color:C.gold,fontWeight:700,letterSpacing:2,textTransform:"uppercase",opacity:0.7,fontFamily:F.mono}}>
+                <span style={{fontSize:9,color:C.gold,fontWeight:700,letterSpacing:2,textTransform:"uppercase",opacity:0.7,fontFamily:"'DM Mono',monospace"}}>
                   Full {attn.length}s analysed
                 </span>
               </div>
@@ -1095,7 +956,7 @@ export default function App(){
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
               <Card>
                 <CardTitle dot={C.green}>Attention Stats</CardTitle>
-                <div style={{fontSize:14,color:C.textSub,lineHeight:1.8}}>
+                <div style={{fontSize:14,color:C.dim,lineHeight:1.8}}>
                   <p>Peak Attention: <b style={{color:C.green}}>{Math.max(...attn)}%</b> at ~{attn.indexOf(Math.max(...attn))}s</p>
                   <p>Lowest Point: <b style={{color:C.red}}>{Math.min(...attn)}%</b> at ~{attn.indexOf(Math.min(...attn))}s</p>
                   <p>Average Attention: <b style={{color:C.cyan}}>{Math.round(attn.reduce((a,b)=>a+b,0)/attn.length)}%</b></p>
@@ -1109,9 +970,9 @@ export default function App(){
                   const idx=Math.round((pct/100)*(attn.length-1));
                   const v=attn[idx]||0;
                   return <div key={pct} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-                    <span style={{width:60,fontSize:13,color:C.dim,fontFamily:F.mono}}>{pct}%</span>
+                    <span style={{width:60,fontSize:13,color:C.dim,fontFamily:"'JetBrains Mono',monospace"}}>{pct}%</span>
                     <div style={{flex:1,height:8,borderRadius:4,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,background:hex(v),width:`${v}%`}}/></div>
-                    <span style={{width:40,fontSize:13,fontWeight:700,color:hex(v),fontFamily:F.mono}}>{v}%</span>
+                    <span style={{width:40,fontSize:13,fontWeight:700,color:hex(v),fontFamily:"'JetBrains Mono',monospace"}}>{v}%</span>
                   </div>;
                 })}
               </Card>
@@ -1136,7 +997,7 @@ export default function App(){
                     const colors=[C.green,C.amber,C.blue,C.red,C.pink,C.purple];
                     return <g key={k} transform={`translate(${i*130},0)`}>
                       <line x1="0" y1="0" x2="20" y2="0" stroke={colors[i%colors.length]} strokeWidth="2"/>
-                      <text x="26" y="4" fill={C.textSub} fontSize="11" fontFamily="JetBrains Mono" fontWeight="500" textTransform="capitalize">{k}</text>
+                      <text x="26" y="4" fill={C.dim} fontSize="11" fontFamily="JetBrains Mono" textTransform="capitalize">{k}</text>
                     </g>;
                   })}
                 </g>
@@ -1153,7 +1014,7 @@ export default function App(){
               </Card>
               <Card>
                 <CardTitle dot={C.orange}>Emotional Peak Analysis</CardTitle>
-                <p style={{fontSize:14,color:C.textSub,lineHeight:1.8}}>
+                <p style={{fontSize:14,color:C.dim,lineHeight:1.8}}>
                   Emotional Peak Score: <b style={{color:C.blue}}>{r.emotional_peak}/100</b><br/>
                   The emotional arc {r.emotional_peak>=70?"has strong peaks that correlate with shareability":"needs stronger emotional triggers to drive organic sharing"}.<br/>
                   Share Intent Score: <b style={{color:C.purple}}>{r.share_intent}/100</b>
@@ -1169,12 +1030,12 @@ export default function App(){
               {sc.map((s,i)=>
                 <Card key={i} style={{position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:5,background:`linear-gradient(90deg,${hex(s.attention||50)},${C.cyan})`}}/>
-                  <div style={{fontSize:12,fontFamily:F.mono,color:C.cyan,fontWeight:600,marginBottom:4}}>{s.ts}</div>
-                  <div style={{fontSize:17,fontWeight:700,marginBottom:10,lineHeight:1.3,color:C.text}}>{s.name}</div>
-                  <p style={{fontSize:13,color:C.textSub,lineHeight:1.7,marginBottom:12}}>{s.desc}</p>
+                  <div style={{fontSize:12,fontFamily:"'JetBrains Mono',monospace",color:C.cyan,fontWeight:600,marginBottom:4}}>{s.ts}</div>
+                  <div style={{fontSize:17,fontWeight:700,marginBottom:10,lineHeight:1.3}}>{s.name}</div>
+                  <p style={{fontSize:13,color:C.dim,lineHeight:1.7,marginBottom:12}}>{s.desc}</p>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
                     {(s.badges||[]).map((b,j)=>
-                      <span key={j} style={{padding:"3px 10px",borderRadius:16,fontSize:11,fontWeight:700,fontFamily:F.mono,background:b.includes("⚠")||b.toLowerCase().includes("risk")||b.toLowerCase().includes("drop")?"rgba(231,76,60,0.12)":"rgba(0,200,255,0.1)",color:b.includes("⚠")||b.toLowerCase().includes("risk")||b.toLowerCase().includes("drop")?C.red:C.cyan}}>{b}</span>
+                      <span key={j} style={{padding:"3px 10px",borderRadius:16,fontSize:11,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",background:b.includes("⚠")||b.toLowerCase().includes("risk")||b.toLowerCase().includes("drop")?"rgba(231,76,60,0.12)":"rgba(0,200,255,0.1)",color:b.includes("⚠")||b.toLowerCase().includes("risk")||b.toLowerCase().includes("drop")?C.red:C.cyan}}>{b}</span>
                     )}
                   </div>
                   <div style={{display:"flex",gap:16,fontSize:12,color:C.dim}}>
@@ -1194,9 +1055,9 @@ export default function App(){
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
               {Object.entries(ps).map(([k,v])=>
                 <Card key={k} style={{textAlign:"center",padding:24}}>
-                  <div style={{fontSize:40,fontWeight:700,fontFamily:F.mono,color:hex(v),lineHeight:1,letterSpacing:-1}}>{v}</div>
-                  <div style={{fontSize:12,color:C.textSub,marginTop:10,textTransform:"capitalize",lineHeight:1.3,fontWeight:600}}>{k.replace(/_/g," ")}</div>
-                  <div style={{marginTop:10,fontSize:11,fontWeight:700,fontFamily:F.mono,color:hex(v)}}>{grade(v)}</div>
+                  <div style={{fontSize:38,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(v),lineHeight:1}}>{v}</div>
+                  <div style={{fontSize:12,color:C.dim,marginTop:10,textTransform:"capitalize",lineHeight:1.3}}>{k.replace(/_/g," ")}</div>
+                  <div style={{marginTop:10,fontSize:11,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:hex(v)}}>{grade(v)}</div>
                 </Card>
               )}
             </div>
@@ -1214,10 +1075,10 @@ export default function App(){
               </Card>
               <Card>
                 <CardTitle dot={C.orange}>Sound Strategy Assessment</CardTitle>
-                <p style={{fontSize:15,color:C.textSub,lineHeight:1.8}}>{snd.sound_note||"Sound analysis data not available for this creative type."}</p>
+                <p style={{fontSize:15,color:C.dim,lineHeight:1.8}}>{snd.sound_note||"Sound analysis data not available for this creative type."}</p>
                 <div style={{marginTop:16,padding:16,borderRadius:10,background:C.s3}}>
                   <div style={{fontSize:13,fontWeight:700,color:C.amber,marginBottom:6}}>Sound-Off Survival Score</div>
-                  <div style={{fontSize:36,fontWeight:800,fontFamily:F.mono,color:hex(r.sound_off_survival||0)}}>{r.sound_off_survival||"N/A"}</div>
+                  <div style={{fontSize:36,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(r.sound_off_survival||0)}}>{r.sound_off_survival||"N/A"}</div>
                 </div>
               </Card>
             </div>
@@ -1244,15 +1105,15 @@ export default function App(){
                   <div style={{fontSize:12,fontWeight:700,color:C.dim,marginBottom:4}}>DPDP Compliance Risk</div>
                   <div style={{fontSize:22,fontWeight:800,textTransform:"uppercase",color:priv.dpdp_compliance_risk==="high"?C.red:priv.dpdp_compliance_risk==="medium"?C.amber:C.green}}>{priv.dpdp_compliance_risk||"N/A"}</div>
                 </div>
-                <p style={{fontSize:14,color:C.textSub,lineHeight:1.8}}>{priv.privacy_note||"No specific privacy signals detected in this creative."}</p>
+                <p style={{fontSize:14,color:C.dim,lineHeight:1.8}}>{priv.privacy_note||"No specific privacy signals detected in this creative."}</p>
                 <div style={{marginTop:16,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   <div style={{textAlign:"center",padding:14,borderRadius:8,background:C.s3}}>
                     <div style={{fontSize:11,color:C.dim,marginBottom:4}}>Brand Safety</div>
-                    <div style={{fontSize:24,fontWeight:800,fontFamily:F.mono,color:hex(r.brand_safety||0)}}>{r.brand_safety||"—"}</div>
+                    <div style={{fontSize:24,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(r.brand_safety||0)}}>{r.brand_safety||"—"}</div>
                   </div>
                   <div style={{textAlign:"center",padding:14,borderRadius:8,background:C.s3}}>
                     <div style={{fontSize:11,color:C.dim,marginBottom:4}}>Regulatory</div>
-                    <div style={{fontSize:24,fontWeight:800,fontFamily:F.mono,color:hex(r.regulatory_compliance||0)}}>{r.regulatory_compliance||"—"}</div>
+                    <div style={{fontSize:24,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(r.regulatory_compliance||0)}}>{r.regulatory_compliance||"—"}</div>
                   </div>
                 </div>
               </Card>
@@ -1267,9 +1128,9 @@ export default function App(){
                 const vc=n.vtype==="risk"?{bg:"rgba(231,76,60,0.1)",bd:C.red,c:"#ff7b7b"}:n.vtype==="win"?{bg:"rgba(46,204,113,0.1)",bd:C.green,c:"#6dffaa"}:n.vtype==="tip"?{bg:"rgba(0,200,255,0.1)",bd:C.cyan,c:C.cyan}:{bg:"rgba(241,196,0,0.1)",bd:C.amber,c:C.amber};
                 return(
                   <Card key={i}>
-                    <div style={{fontSize:13,fontWeight:700,fontFamily:F.mono,color:C.gold,marginBottom:6}}>{n.num}</div>
-                    <h3 style={{fontSize:18,fontWeight:700,marginBottom:12,lineHeight:1.35,color:C.text,fontFamily:F.display}}>{n.title}</h3>
-                    <p style={{fontSize:14,color:C.textSub,lineHeight:1.75}}>{n.body}</p>
+                    <div style={{fontSize:13,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:C.gold,marginBottom:6}}>{n.num}</div>
+                    <h3 style={{fontSize:18,fontWeight:700,marginBottom:12,lineHeight:1.35}}>{n.title}</h3>
+                    <p style={{fontSize:14,color:C.dim,lineHeight:1.75}}>{n.body}</p>
                     {n.verdict&&<div style={{marginTop:14,padding:"12px 16px",borderRadius:8,background:vc.bg,borderLeft:`4px solid ${vc.bd}`,fontSize:13,fontWeight:600,color:vc.c,lineHeight:1.6}}>{n.verdict}</div>}
                   </Card>
                 );
@@ -1287,12 +1148,12 @@ export default function App(){
                 {cmo.map((a,i)=>
                   <div key={i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,padding:24}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-                      <span style={{fontSize:12,fontWeight:700,fontFamily:F.mono,color:C.gold}}>ACTION {a.num||String(i+1).padStart(2,"0")}</span>
+                      <span style={{fontSize:12,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:C.gold}}>ACTION {a.num||String(i+1).padStart(2,"0")}</span>
                       {a.priority&&<span style={{padding:"2px 10px",borderRadius:12,fontSize:10,fontWeight:700,background:a.priority==="critical"?"rgba(231,76,60,0.2)":a.priority==="high"?"rgba(241,196,0,0.15)":"rgba(0,200,255,0.1)",color:a.priority==="critical"?C.red:a.priority==="high"?C.amber:C.cyan}}>{a.priority}</span>}
                       {a.effort&&<span style={{padding:"2px 10px",borderRadius:12,fontSize:10,fontWeight:700,background:C.s3,color:C.dim}}>Effort: {a.effort}</span>}
                     </div>
-                    <h4 style={{fontSize:17,fontWeight:700,marginBottom:8,lineHeight:1.3,color:C.text}}>{a.title}</h4>
-                    <p style={{fontSize:14,color:C.textSub,lineHeight:1.7}}>{a.body}</p>
+                    <h4 style={{fontSize:17,fontWeight:700,marginBottom:8,lineHeight:1.3}}>{a.title}</h4>
+                    <p style={{fontSize:14,color:C.dim,lineHeight:1.7}}>{a.body}</p>
                     {a.impact&&<div style={{marginTop:10,fontSize:12,color:C.green,fontWeight:600}}>📈 {a.impact}</div>}
                   </div>
                 )}
@@ -1316,7 +1177,7 @@ export default function App(){
               <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:28}}>
                 {METH_TABS.map(mt=>(
                   <button key={mt.id} onClick={()=>setMethTab(mt.id)}
-                    style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${methTab===mt.id?C.gold:C.border}`,background:methTab===mt.id?`${C.gold}18`:C.s2,color:methTab===mt.id?C.gold:C.dim,fontSize:12,fontWeight:methTab===mt.id?700:500,cursor:"pointer",fontFamily:F.body,transition:"all 0.15s"}}>
+                    style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${methTab===mt.id?C.gold:C.border}`,background:methTab===mt.id?`${C.gold}18`:C.s2,color:methTab===mt.id?C.gold:C.dim,fontSize:12,fontWeight:methTab===mt.id?700:500,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s"}}>
                     {mt.label}
                   </button>
                 ))}
@@ -1326,7 +1187,7 @@ export default function App(){
               {methTab==="overview"&&(<>
                 <Card style={{marginBottom:20}}>
                   <CardTitle dot={C.cyan}>What Brain Encoder Does</CardTitle>
-                  <p style={{fontSize:15,color:C.textSub,lineHeight:1.9,marginBottom:24}}>Brain Encoder is a predictive neural creative intelligence platform. It does not measure actual brain activity — it <b style={{color:C.text}}>predicts</b> how the human brain is likely to respond to an advertising creative based on visual signals, advertising science, and platform-specific norms.</p>
+                  <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:24}}>Brain Encoder is a predictive neural creative intelligence platform. It does not measure actual brain activity — it <b style={{color:C.text}}>predicts</b> how the human brain is likely to respond to an advertising creative based on visual signals, advertising science, and platform-specific norms.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
                     {[
                       [C.cyan,"STAGE 1","Frame Extraction","1–3 key frames are extracted from your creative at optimal intervals. For videos, frames are sampled at the beginning, middle, and near the end to capture the full narrative arc."],
@@ -1334,9 +1195,9 @@ export default function App(){
                       [C.green,"STAGE 3","Platform Calibration","Raw scores are calibrated against 15 platform environments, adjusting for sound-on vs sound-off, aspect ratio norms, viewing duration, and algorithmic distribution signals."],
                     ].map(([color,stage,title,desc])=>(
                       <div key={stage} style={{background:C.s2,borderRadius:12,padding:24,borderTop:`4px solid ${color}`}}>
-                        <div style={{fontSize:11,fontWeight:700,color:color,fontFamily:F.mono,marginBottom:6,letterSpacing:2}}>{stage}</div>
+                        <div style={{fontSize:11,fontWeight:700,color:color,fontFamily:"'DM Mono',monospace",marginBottom:6,letterSpacing:2}}>{stage}</div>
                         <div style={{fontSize:16,fontWeight:700,marginBottom:10,color:C.text}}>{title}</div>
-                        <p style={{fontSize:13,color:C.textSub,lineHeight:1.7}}>{desc}</p>
+                        <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>{desc}</p>
                       </div>
                     ))}
                   </div>
@@ -1354,7 +1215,7 @@ export default function App(){
                     ].map(([color,title,desc])=>(
                       <div key={title} style={{background:C.s2,borderRadius:10,padding:18,borderLeft:`3px solid ${color}`}}>
                         <div style={{fontSize:13,fontWeight:700,color:color,marginBottom:8}}>{title}</div>
-                        <p style={{fontSize:12,color:C.textSub,lineHeight:1.7}}>{desc}</p>
+                        <p style={{fontSize:12,color:C.dim,lineHeight:1.7}}>{desc}</p>
                       </div>
                     ))}
                   </div>
@@ -1365,10 +1226,10 @@ export default function App(){
               {methTab==="grading"&&(<>
                 <Card style={{marginBottom:20}}>
                   <CardTitle dot={C.gold}>Overall Grade — Full Calculation</CardTitle>
-                  <p style={{fontSize:14,color:C.textSub,lineHeight:1.8,marginBottom:20}}>The Overall Grade is a <b style={{color:C.text}}>weighted composite score</b> derived from 7 of the 17 neural metrics. These 7 were selected because they have the strongest empirical correlation with in-market advertising effectiveness outcomes (brand recall lift, purchase intent, and organic reach) in published advertising effectiveness research.</p>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>The Overall Grade is a <b style={{color:C.text}}>weighted composite score</b> derived from 7 of the 17 neural metrics. These 7 were selected because they have the strongest empirical correlation with in-market advertising effectiveness outcomes (brand recall lift, purchase intent, and organic reach) in published advertising effectiveness research.</p>
                   <div style={{background:C.s2,borderRadius:12,padding:24,marginBottom:20}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:16,fontFamily:F.mono}}>Composite Formula</div>
-                    <div style={{fontFamily:F.mono,fontSize:13,color:C.cyan,lineHeight:2.2}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:16,fontFamily:"'DM Mono',monospace"}}>Composite Formula</div>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,color:C.cyan,lineHeight:2.2}}>
                       <div>Composite Score =</div>
                       <div style={{paddingLeft:20,color:C.text}}>
                         <span style={{color:C.gold}}>(Memory Encoding × 0.20)</span> +<br/>
@@ -1380,7 +1241,7 @@ export default function App(){
                         <span style={{color:C.cyan}}>(Cultural Resonance × 0.10)</span>
                       </div>
                     </div>
-                    <div style={{marginTop:16,padding:"12px 16px",background:C.s3,borderRadius:8,fontSize:12,color:C.textSub,lineHeight:1.7}}>
+                    <div style={{marginTop:16,padding:"12px 16px",background:C.s3,borderRadius:8,fontSize:12,color:C.dim,lineHeight:1.7}}>
                       <b style={{color:C.text}}>Example:</b> Memory=72, Recall=80, Hook=65, Hold=70, Emotion=60, Efficiency=68, Culture=85<br/>
                       = (72×0.20)+(80×0.20)+(65×0.15)+(70×0.15)+(60×0.10)+(68×0.10)+(85×0.10)<br/>
                       = 14.4 + 16.0 + 9.75 + 10.5 + 6.0 + 6.8 + 8.5 = <b style={{color:C.gold}}>71.95 → Grade: B</b>
@@ -1399,13 +1260,13 @@ export default function App(){
                       {g:"D/F",range:"Below 55",c:C.red, meaning:"Failing. Full creative overhaul required. Deployment will reduce brand equity and generate negative ROI on media spend."},
                     ].map(({g,range,c,meaning})=>(
                       <div key={g} style={{display:"flex",gap:14,alignItems:"flex-start",padding:"12px 14px",background:C.s2,borderRadius:10,border:`1px solid ${C.border}`}}>
-                        <div style={{minWidth:44,height:44,borderRadius:8,background:`${c}15`,border:`2px solid ${c}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:c,fontFamily:F.mono,flexShrink:0}}>{g}</div>
+                        <div style={{minWidth:44,height:44,borderRadius:8,background:`${c}15`,border:`2px solid ${c}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:c,fontFamily:"'DM Mono',monospace",flexShrink:0}}>{g}</div>
                         <div style={{flex:1}}>
                           <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:4}}>
                             <span style={{fontSize:13,fontWeight:700,color:C.text}}>{g}</span>
-                            <span style={{fontSize:11,color:C.muted,fontFamily:F.mono}}>Composite score {range}</span>
+                            <span style={{fontSize:11,color:C.muted,fontFamily:"'DM Mono',monospace"}}>Composite score {range}</span>
                           </div>
-                          <div style={{fontSize:12,color:C.textSub,lineHeight:1.6}}>{meaning}</div>
+                          <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{meaning}</div>
                         </div>
                       </div>
                     ))}
@@ -1426,9 +1287,9 @@ export default function App(){
                       <div key={metric} style={{background:C.s2,borderRadius:10,padding:18}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                           <span style={{fontSize:13,fontWeight:700,color:C.text}}>{metric}</span>
-                          <span style={{fontSize:13,fontWeight:800,color:c,fontFamily:F.mono}}>{weight}</span>
+                          <span style={{fontSize:13,fontWeight:800,color:c,fontFamily:"'DM Mono',monospace"}}>{weight}</span>
                         </div>
-                        <p style={{fontSize:12,color:C.textSub,lineHeight:1.7}}>{why}</p>
+                        <p style={{fontSize:12,color:C.dim,lineHeight:1.7}}>{why}</p>
                       </div>
                     ))}
                   </div>
@@ -1439,7 +1300,7 @@ export default function App(){
               {methTab==="metrics"&&(<>
                 <Card style={{marginBottom:20}}>
                   <CardTitle dot={C.cyan}>All 17 Neural Metrics — Complete Reference</CardTitle>
-                  <p style={{fontSize:14,color:C.textSub,lineHeight:1.8,marginBottom:20}}>Every metric is scored 0–100. Below is the full definition, what drives a high score, what a low score means, and what to do about it.</p>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Every metric is scored 0–100. Below is the full definition, what drives a high score, what a low score means, and what to do about it.</p>
                   <div style={{display:"grid",gap:12}}>
                     {[
                       {name:"Viral Potential",good:"70+",color:C.cyan,def:"Aggregate shareability prediction.",drives:"Strong emotional peak + identity signaling + novelty + pattern interrupt. Creatives people share because they feel 'this is so me' or 'this is surprising'.",low:"Below 50: The creative will not generate organic amplification. Every impression will be paid."},
@@ -1463,12 +1324,12 @@ export default function App(){
                       <div key={name} style={{background:C.s2,borderRadius:12,padding:20,borderLeft:`3px solid ${color}`}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                           <span style={{fontSize:14,fontWeight:700,color:C.text}}>{name}</span>
-                          <span style={{fontSize:11,fontWeight:700,color:color,fontFamily:F.mono,padding:"2px 10px",background:`${color}15`,borderRadius:6}}>Good: {good}</span>
+                          <span style={{fontSize:11,fontWeight:700,color:color,fontFamily:"'DM Mono',monospace",padding:"2px 10px",background:`${color}15`,borderRadius:6}}>Good: {good}</span>
                         </div>
                         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
-                          <div><div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Definition</div><p style={{fontSize:12,color:C.textSub,lineHeight:1.6}}>{def}</p></div>
-                          <div><div style={{fontSize:10,fontWeight:700,color:C.green,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>What drives it high</div><p style={{fontSize:12,color:C.textSub,lineHeight:1.6}}>{drives}</p></div>
-                          <div><div style={{fontSize:10,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Low score means</div><p style={{fontSize:12,color:C.textSub,lineHeight:1.6}}>{low}</p></div>
+                          <div><div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Definition</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{def}</p></div>
+                          <div><div style={{fontSize:10,fontWeight:700,color:C.green,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>What drives it high</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{drives}</p></div>
+                          <div><div style={{fontSize:10,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Low score means</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{low}</p></div>
                         </div>
                       </div>
                     ))}
@@ -1480,7 +1341,7 @@ export default function App(){
               {methTab==="neural"&&(<>
                 <Card style={{marginBottom:20}}>
                   <CardTitle dot={C.purple}>Brain Region Activation — What Each Region Means</CardTitle>
-                  <p style={{fontSize:14,color:C.textSub,lineHeight:1.8,marginBottom:20}}>Brain Encoder predicts activation levels across 8 brain regions based on visual stimuli present in the creative. These predictions are derived from established neuromarketing research mapping visual advertising stimuli to neural activation patterns.</p>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Brain Encoder predicts activation levels across 8 brain regions based on visual stimuli present in the creative. These predictions are derived from established neuromarketing research mapping visual advertising stimuli to neural activation patterns.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                     {[
                       ["Visual Cortex","Primary visual processing centre.","High activation (70+): Complex visual scenes, high colour saturation, motion, faces. This is the entry point for all visual advertising. Without visual cortex engagement, nothing else fires.","Good range: 60–85. Below 50 = visually flat creative. Above 90 = potential cognitive overload."],
@@ -1495,8 +1356,8 @@ export default function App(){
                       <div key={region} style={{background:C.s2,borderRadius:12,padding:20}}>
                         <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:4}}>{region}</div>
                         <div style={{fontSize:12,color:C.purple,fontWeight:600,marginBottom:10}}>{summary}</div>
-                        <div style={{marginBottom:8}}><span style={{fontSize:10,fontWeight:700,color:C.green,letterSpacing:1.5,textTransform:"uppercase"}}>High activation means: </span><span style={{fontSize:12,color:C.textSub,lineHeight:1.6}}>{high}</span></div>
-                        <div><span style={{fontSize:10,fontWeight:700,color:C.amber,letterSpacing:1.5,textTransform:"uppercase"}}>Watch for: </span><span style={{fontSize:12,color:C.textSub,lineHeight:1.6}}>{watch}</span></div>
+                        <div style={{marginBottom:8}}><span style={{fontSize:10,fontWeight:700,color:C.green,letterSpacing:1.5,textTransform:"uppercase"}}>High activation means: </span><span style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{high}</span></div>
+                        <div><span style={{fontSize:10,fontWeight:700,color:C.amber,letterSpacing:1.5,textTransform:"uppercase"}}>Watch for: </span><span style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{watch}</span></div>
                       </div>
                     ))}
                   </div>
@@ -1506,16 +1367,16 @@ export default function App(){
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
                     <div style={{background:C.s2,borderRadius:12,padding:24,borderTop:`4px solid ${C.blue}`}}>
                       <div style={{fontSize:14,fontWeight:700,color:C.blue,marginBottom:12}}>System 2 — Rational Processing</div>
-                      <p style={{fontSize:13,color:C.textSub,lineHeight:1.8}}>Slow, deliberate, effortful thinking. Activates when the creative contains product claims, prices, feature comparisons, or text-heavy information. The viewer is consciously evaluating the message. <br/><br/><b style={{color:C.text}}>Score range: 0–64</b><br/>Good for: B2B, high-consideration purchases, pharmaceutical, financial services.<br/>Risk: In FMCG/CPG, forcing System 2 causes scroll-away. Viewers don't want to think about detergent.</p>
+                      <p style={{fontSize:13,color:C.dim,lineHeight:1.8}}>Slow, deliberate, effortful thinking. Activates when the creative contains product claims, prices, feature comparisons, or text-heavy information. The viewer is consciously evaluating the message. <br/><br/><b style={{color:C.text}}>Score range: 0–64</b><br/>Good for: B2B, high-consideration purchases, pharmaceutical, financial services.<br/>Risk: In FMCG/CPG, forcing System 2 causes scroll-away. Viewers don't want to think about detergent.</p>
                     </div>
                     <div style={{background:C.s2,borderRadius:12,padding:24,borderTop:`4px solid ${C.orange}`}}>
                       <div style={{fontSize:14,fontWeight:700,color:C.orange,marginBottom:12}}>System 1 — Emotional Processing</div>
-                      <p style={{fontSize:13,color:C.textSub,lineHeight:1.8}}>Fast, automatic, intuitive. Activates when the creative leads with emotion, music, storytelling, or faces. The viewer feels before they think. Advertising that works through System 1 bypasses ad-avoidance entirely.<br/><br/><b style={{color:C.text}}>Score range: 76–100</b><br/>Good for: FMCG, lifestyle, entertainment, social content.<br/>Risk: Pure System 1 with no rational anchor can build emotion without purchase intent.</p>
+                      <p style={{fontSize:13,color:C.dim,lineHeight:1.8}}>Fast, automatic, intuitive. Activates when the creative leads with emotion, music, storytelling, or faces. The viewer feels before they think. Advertising that works through System 1 bypasses ad-avoidance entirely.<br/><br/><b style={{color:C.text}}>Score range: 76–100</b><br/>Good for: FMCG, lifestyle, entertainment, social content.<br/>Risk: Pure System 1 with no rational anchor can build emotion without purchase intent.</p>
                     </div>
                   </div>
                   <div style={{background:`${C.gold}10`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:20,marginTop:16}}>
                     <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:8}}>The Optimal Zone: 65–75</div>
-                    <p style={{fontSize:13,color:C.textSub,lineHeight:1.8}}>Creatives scoring 65–75 lead with emotion (System 1) to earn attention and build memory, then layer in just enough rational messaging (System 2) to justify the purchase decision. This is the sweet spot identified across Byron Sharp's effectiveness research and the Ehrenberg-Bass Institute's long-term brand building studies.</p>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.8}}>Creatives scoring 65–75 lead with emotion (System 1) to earn attention and build memory, then layer in just enough rational messaging (System 2) to justify the purchase decision. This is the sweet spot identified across Byron Sharp's effectiveness research and the Ehrenberg-Bass Institute's long-term brand building studies.</p>
                   </div>
                 </Card>
               </>)}
@@ -1524,10 +1385,10 @@ export default function App(){
               {methTab==="platforms"&&(<>
                 <Card style={{marginBottom:20}}>
                   <CardTitle dot={C.blue}>How Platform Scores Are Calculated</CardTitle>
-                  <p style={{fontSize:14,color:C.textSub,lineHeight:1.8,marginBottom:20}}>Each platform score is derived from the base neural metrics adjusted by platform-specific weighting coefficients. These coefficients reflect the attention norms, sound environment, format constraints, and viewer behaviour on each platform.</p>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Each platform score is derived from the base neural metrics adjusted by platform-specific weighting coefficients. These coefficients reflect the attention norms, sound environment, format constraints, and viewer behaviour on each platform.</p>
                   <div style={{background:C.s2,borderRadius:12,padding:24,marginBottom:20}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:12,fontFamily:F.mono}}>Platform Score Formula</div>
-                    <div style={{fontFamily:F.mono,fontSize:13,color:C.text,lineHeight:2}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace"}}>Platform Score Formula</div>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,color:C.text,lineHeight:2}}>
                       Platform Score = Base Neural Score<br/>
                       <span style={{paddingLeft:20,color:C.dim}}>× Format Suitability Multiplier (0.5–1.2)<br/>
                       × Sound Environment Factor (0.7–1.0)<br/>
@@ -1552,7 +1413,7 @@ export default function App(){
                           <span style={{fontSize:13,fontWeight:700,color:C.text}}>{platform}</span>
                           <span style={{fontSize:11,color:color,fontWeight:600}}>{score}</span>
                         </div>
-                        <p style={{fontSize:12,color:C.textSub,lineHeight:1.6}}>{weights}</p>
+                        <p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{weights}</p>
                       </div>
                     ))}
                   </div>
@@ -1563,7 +1424,7 @@ export default function App(){
               {methTab==="science"&&(<>
                 <Card style={{marginBottom:20}}>
                   <CardTitle dot={C.purple}>Scientific Research Foundations</CardTitle>
-                  <p style={{fontSize:14,color:C.textSub,lineHeight:1.8,marginBottom:20}}>Brain Encoder's scoring methodology is grounded in published advertising effectiveness research and cognitive neuroscience. Below are the key frameworks and how each is operationalised in the platform.</p>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Brain Encoder's scoring methodology is grounded in published advertising effectiveness research and cognitive neuroscience. Below are the key frameworks and how each is operationalised in the platform.</p>
                   <div style={{display:"grid",gap:14}}>
                     {[
                       {title:"Kahneman — Thinking Fast and Slow (2011)",color:C.cyan,application:"System 1 / System 2 score directly implements Kahneman's dual-process theory. Creatives that force System 2 (deliberate thinking) in low-involvement contexts cause avoidance. The optimal zone (65–75) is calibrated against Kahneman's findings on effortful vs effortless processing.",metric:"System 1/2 Balance metric"},
@@ -1577,8 +1438,8 @@ export default function App(){
                     ].map(({title,color,application,metric})=>(
                       <div key={title} style={{background:C.s2,borderRadius:12,padding:20,borderLeft:`4px solid ${color}`}}>
                         <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:6}}>{title}</div>
-                        <div style={{display:"inline-block",padding:"2px 10px",background:`${color}15`,borderRadius:6,fontSize:10,fontWeight:700,color:color,fontFamily:F.mono,marginBottom:10,letterSpacing:1}}>Applied to: {metric}</div>
-                        <p style={{fontSize:13,color:C.textSub,lineHeight:1.7}}>{application}</p>
+                        <div style={{display:"inline-block",padding:"2px 10px",background:`${color}15`,borderRadius:6,fontSize:10,fontWeight:700,color:color,fontFamily:"'DM Mono',monospace",marginBottom:10,letterSpacing:1}}>Applied to: {metric}</div>
+                        <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>{application}</p>
                       </div>
                     ))}
                   </div>
@@ -1620,7 +1481,7 @@ export default function App(){
                         <span style={{fontSize:20,flexShrink:0}}>{icon}</span>
                         <div>
                           <div style={{fontSize:13,fontWeight:700,color:color,marginBottom:6}}>{title}</div>
-                          <p style={{fontSize:13,color:C.textSub,lineHeight:1.7}}>{desc}</p>
+                          <p style={{fontSize:13,color:C.dim,lineHeight:1.7}}>{desc}</p>
                         </div>
                       </div>
                     ))}
@@ -1639,7 +1500,7 @@ export default function App(){
                     ].map(([color,title,desc])=>(
                       <div key={title} style={{background:C.s2,borderRadius:10,padding:18,borderTop:`3px solid ${color}`}}>
                         <div style={{fontSize:12,fontWeight:700,color:color,marginBottom:8,letterSpacing:0.5}}>{title}</div>
-                        <p style={{fontSize:12,color:C.textSub,lineHeight:1.7}}>{desc}</p>
+                        <p style={{fontSize:12,color:C.dim,lineHeight:1.7}}>{desc}</p>
                       </div>
                     ))}
                   </div>
@@ -1651,7 +1512,7 @@ export default function App(){
           </div>
 
           {/* FOOTER */}
-          <div style={{padding:"20px 36px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:F.mono,letterSpacing:2,marginTop:"auto",textTransform:"uppercase"}}>
+          <div style={{padding:"20px 36px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:1,marginTop:"auto"}}>
             ADVantage Insights™ · Brain Encoder Platform™ · Neural Creative Intelligence · {new Date().getFullYear()}
           </div>
         </div>

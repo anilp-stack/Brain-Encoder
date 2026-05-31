@@ -88,7 +88,7 @@ if(typeof document!=="undefined"&&!document.getElementById("be-styles")){
 const F={
   display:"'Instrument Serif',Georgia,serif",
   body:"'Cabinet Grotesk',system-ui,sans-serif",
-  mono:F.mono,
+  mono:"'JetBrains Mono',monospace",
 };
 
 // ============================================================
@@ -228,6 +228,23 @@ function BarMetric({label,value,color,maxW}){
     </div>
   );
 }
+
+// ============================================================
+// NAV TABS
+// ============================================================
+const NAV_TABS = [
+  {id:"summary",   label:"Executive Summary",   icon:Icon.summary},
+  {id:"neural",    label:"Neural Map",           icon:Icon.neural},
+  {id:"attention", label:"Attention",            icon:Icon.attn},
+  {id:"emotion",   label:"Emotional Arch.",      icon:Icon.emotion},
+  {id:"scenes",    label:"Scene Intelligence",   icon:Icon.scene},
+  {id:"platforms", label:"Platform Scores",      icon:Icon.platform},
+  {id:"sound",     label:"Sound & Sensory",      icon:Icon.sound},
+  {id:"privacy",   label:"Privacy & Compliance", icon:Icon.privacy},
+  {id:"strategy",  label:"Strategic Insights",   icon:Icon.strategy},
+  {id:"cmo",       label:"CMO Playbook",         icon:Icon.cmo},
+  {id:"methodology",label:"Methodology",         icon:Icon.glossary},
+];
 
 function Sidebar({tab, setTab, grade: gr, brand, onNew, onDownload, downloading}){
   const gc = gr==="A+"||gr==="A"||gr==="A-" ? C.green : gr?.startsWith("B") ? C.amber : gr?.startsWith("C") ? C.gold : C.red;

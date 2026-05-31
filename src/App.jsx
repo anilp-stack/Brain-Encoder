@@ -674,7 +674,7 @@ export default function App(){
 
       let combined;
       try{
-        const resp=await fetch("/api/analyze",{
+        const resp=await fetch("/.netlify/functions/analyze",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify(payload)

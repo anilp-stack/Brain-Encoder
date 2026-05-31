@@ -24,7 +24,7 @@ export async function handler(event) {
 
     const meta = metadata || {};
     const isImage = meta.isImage || false;
-    const duration = meta.duration || 0;
+    const duration = meta.duration_seconds || meta.video_duration || meta.duration || 30;
 
     // Use max 3 frames to stay within time budget
     const usedFrames = frames.slice(0, 3);
@@ -53,7 +53,8 @@ Return this exact JSON structure (ALL fields required, INT = 0-100):
   "creative_efficiency": INT, "ad_fatigue_risk": INT, "cultural_resonance": INT,
   "celebrity_talent_index": INT, "brand_safety": INT, "regulatory_compliance": INT,
   "first_party_data_opportunity": INT, "carbon_signal": INT, "system1_vs_system2": INT,
-  "attention_curve": [INT,INT,INT,INT,INT,INT,INT,INT,INT,INT],
+  "attention_curve": [/* exactly ${duration} integers, one per second for the FULL video duration - if video is 35s return 35 values, if 20s return 20 values, NEVER truncate to 10 */],
+"emotion_curve": [/* exactly ${duration} integers for full video duration */],
   "emotion_curve": [INT,INT,INT,INT,INT,INT,INT,INT,INT,INT],
   "emotion_types": {
     "joy": [INT,INT,INT,INT,INT], "surprise": [INT,INT,INT,INT,INT],

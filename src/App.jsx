@@ -6,19 +6,19 @@ import { generateBrainEncoderPDF } from "./generatePDF";
 // Palette: Deep Onyx · Champagne Gold · Malachite · Slate
 // ============================================================
 const C = {
-  // Surfaces — layered depth, clearly distinct from each other
-  bg:"#070b14",s1:"#0e1525",s2:"#151e32",s3:"#1c2640",
-  // Borders — clearly visible, not invisible
-  border:"#2c3a5e",border2:"#3a4c7a",
-  // Text — warm white hierarchy, all readable on dark
-  text:"#eeeae0",dim:"#b0bcd8",muted:"#6878a8",
+  // Surfaces
+  bg:"#060810",s1:"#0a0d1e",s2:"#0f1228",s3:"#141730",
+  // Borders
+  border:"#1c2040",border2:"#252850",
+  // Text
+  text:"#f0f0f8",dim:"#8890b0",muted:"#454870",
   // Brand accents
-  gold:"#e8b84b",goldL:"#f5d07a",goldD:"#a07b25",
-  // Signal colours — vivid, high contrast on dark backgrounds
-  cyan:"#18e8cc",blue:"#6098f8",green:"#28dc78",
-  red:"#f86878",amber:"#f8aa30",orange:"#f08048",
-  purple:"#b088f8",pink:"#f048a8",teal:"#18c8b8",
-  rose:"#f85068",lime:"#98e838",sky:"#48c8f8",
+  gold:"#c9a84c",goldL:"#e8c97a",goldD:"#8a6f2e",
+  // Signal colours
+  cyan:"#00d4b8",blue:"#4f8ef7",green:"#22d472",
+  red:"#f05a6a",amber:"#f5a623",orange:"#e8793a",
+  purple:"#9b7fea",pink:"#e84393",teal:"#00b8a9",
+  rose:"#f43f5e",lime:"#84cc16",sky:"#38bdf8",
   // Sidebar
   sideW: 220,
 };
@@ -545,9 +545,9 @@ export default function App(){
 
       const combined={
         ...fastData,
-        scenes: fastData?.scenes||[],
-        strategic_insights: fastData?.strategic_insights||[],
-        cmo_actions: fastData?.cmo_actions||[],
+        scenes: richData?.scenes||[],
+        strategic_insights: richData?.strategic_insights||[],
+        cmo_actions: richData?.cmo_actions||[],
       };
 
       setProgress(100);setProgressMsg("Report ready.");

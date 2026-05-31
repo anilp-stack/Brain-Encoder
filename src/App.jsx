@@ -722,7 +722,7 @@ export default function App(){
           </div>
           <div style={{width:40,height:1,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`,margin:"0 auto"}}/>
         </div>
-        <h1 style={{fontSize:clamp(42,6,72),fontWeight:800,lineHeight:1.0,maxWidth:700,marginBottom:12,position:"relative",fontFamily:F.display,letterSpacing:-0.5,color:C.text,fontStyle:'italic'}}>
+        <h1 style={{fontSize:clamp(42,6,72),fontWeight:800,lineHeight:1.0,maxWidth:700,marginBottom:12,position:"relative",fontFamily:F.display,letterSpacing:-0.5,color:C.text,fontStyle:"italic"}}>
           Brain Encoder<sup style={{fontSize:16,color:C.gold,verticalAlign:"super",fontFamily:F.body,fontWeight:700}}>TM</sup>
         </h1>
         <div style={{fontSize:16,fontWeight:600,color:C.gold,letterSpacing:2,textTransform:"uppercase",marginBottom:28,fontFamily:F.mono}}>

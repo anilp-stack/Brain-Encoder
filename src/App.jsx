@@ -1318,6 +1318,51 @@ export default function App(){
 
           {/* ===== METHODOLOGY & GLOSSARY ===== */}
           {tab==="methodology"&&(<>
+            {/* GRADE RUBRIC CARD */}
+<Card style={{marginBottom:24,border:`1px solid ${C.gold}44`}}>
+  <CardTitle dot={C.gold}>Overall Grade — How It Is Calculated</CardTitle>
+  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>
+    The Overall Grade is a weighted composite of 7 core neural performance metrics. It represents the creative's predicted ability to capture attention, drive memory encoding, and deliver measurable brand outcomes across primary distribution channels.
+  </p>
+  <div style={{display:"grid",gap:10,marginBottom:24}}>
+    {[
+      {g:"A+",range:"90–100",c:C.green,  meaning:"Exceptional. Top 5% of creatives. Deploy with full confidence across all platforms."},
+      {g:"A", range:"85–89", c:C.green,  meaning:"Excellent. Strong across all neural dimensions. Minor platform-specific tweaks only."},
+      {g:"A−",range:"80–84", c:C.cyan,   meaning:"Very Good. Clear strengths with 1–2 gaps in digital suitability. Light re-editing advised."},
+      {g:"B+",range:"75–79", c:C.amber,  meaning:"Good. Solid foundation. Performs well on TV/CTV. Social-first re-edit recommended."},
+      {g:"B", range:"70–74", c:C.amber,  meaning:"Above Average. Works in primary broadcast channels. Significant gaps in short-form digital."},
+      {g:"B−",range:"65–69", c:C.orange, meaning:"Adequate. Functional but below category leaders. Platform cuts needed before deployment."},
+      {g:"C+",range:"60–64", c:C.orange, meaning:"Below Average. Fundamental gaps in hook or memory encoding. Major re-edit recommended."},
+      {g:"C", range:"55–59", c:C.red,    meaning:"Weak. Structural creative issues detected. Do not deploy without significant revision."},
+      {g:"D/F",range:"Below 55",c:C.red, meaning:"Failing. Full creative overhaul required. Deployment will reduce brand equity and waste media spend."},
+    ].map(({g,range,c,meaning})=>(
+      <div key={g} style={{display:"flex",gap:14,alignItems:"flex-start",padding:"12px 14px",background:C.s2,borderRadius:10,border:`1px solid ${C.border}`}}>
+        <div style={{minWidth:44,height:44,borderRadius:8,background:`${c}15`,border:`2px solid ${c}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:c,fontFamily:"'DM Mono',monospace",flexShrink:0}}>{g}</div>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:4}}>
+            <span style={{fontSize:12,fontWeight:700,color:C.text}}>{g}</span>
+            <span style={{fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace"}}>Score {range}</span>
+          </div>
+          <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{meaning}</div>
+        </div>
+      </div>
+    ))}
+  </div>
+  <div style={{background:C.s3,borderRadius:10,padding:16}}>
+    <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace"}}>Composite Score Weights</div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px 24px"}}>
+      {[["Memory Encoding","20%","Hippocampus + amygdala co-activation score"],["Brand Recall","20%","Logo/product visibility + distinctive asset frequency"],["Hook Strength","15%","First 2s visual salience + pattern interrupt score"],["Hold Rate","15%","Predicted completion rate based on pacing + scene variety"],["Emotional Peak","10%","Peak amygdala activation across the creative"],["Creative Efficiency","10%","Message density vs cognitive load ratio"],["Cultural Resonance","10%","Cultural mirror score for target market"]].map(([label,weight,desc])=>(
+        <div key={label} style={{paddingBottom:8,borderBottom:`1px solid ${C.border}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+            <span style={{fontSize:12,fontWeight:700,color:C.text}}>{label}</span>
+            <span style={{fontSize:12,fontWeight:800,color:C.gold,fontFamily:"'DM Mono',monospace"}}>{weight}</span>
+          </div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{desc}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</Card>
             <Card style={{marginBottom:24}}>
               <CardTitle dot={C.gold}>How the Brain Encoder Works</CardTitle>
               <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:20}}>The Brain Encoder uses a three-stage analysis pipeline to predict how the human brain responds to advertising creatives. It is grounded in peer-reviewed neuroscience and advertising effectiveness research.</p>

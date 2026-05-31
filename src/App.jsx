@@ -968,10 +968,41 @@ export default function App(){
               {r.overall_grade&&(()=>{
                 const gc=r.overall_grade==="A+"||r.overall_grade==="A"||r.overall_grade==="A-"?C.green:r.overall_grade?.startsWith("B")?C.amber:r.overall_grade?.startsWith("C")?C.gold:C.red;
                 return(
-                  <div style={{flexShrink:0,background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:12,padding:"10px 20px",textAlign:"center"}}>
-                    <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:3}}>Grade</div>
-                    <div style={{fontSize:24,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
-                  </div>
+                  <div style={{flexShrink:0,position:"relative"}}
+  onMouseEnter={()=>setGradeTooltipVisible(true)}
+  onMouseLeave={()=>setGradeTooltipVisible(false)}
+>
+  <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:12,padding:"10px 20px",textAlign:"center",cursor:"help"}}>
+    <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:3}}>Grade</div>
+    <div style={{fontSize:24,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
+    <div style={{fontSize:8,color:C.muted,marginTop:4}}>hover for scale</div>
+  </div>
+  {gradeTooltipVisible&&(
+    <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,width:270,background:"#0d0d1f",border:`1px solid ${C.border2}`,borderRadius:12,padding:"16px 18px",zIndex:200,boxShadow:"0 8px 40px rgba(0,0,0,0.7)"}}>
+      <div style={{fontSize:9,fontWeight:700,letterSpacing:2,color:C.gold,marginBottom:12,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>Grade Scale</div>
+      {[
+        {g:"A+",range:"90–100",c:C.green},
+        {g:"A", range:"85–89", c:C.green},
+        {g:"A−",range:"80–84", c:C.cyan},
+        {g:"B+",range:"75–79", c:C.amber},
+        {g:"B", range:"70–74", c:C.amber},
+        {g:"B−",range:"65–69", c:C.orange},
+        {g:"C+",range:"60–64", c:C.orange},
+        {g:"C", range:"55–59", c:C.red},
+        {g:"D/F",range:"Below 55",c:C.red},
+      ].map(({g,range,c})=>(
+        <div key={g} style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontWeight:800,fontSize:12,color:c,minWidth:28,fontFamily:"'DM Mono',monospace"}}>{g}</span>
+          <div style={{flex:1,height:3,borderRadius:2,background:c,opacity:0.5}}/>
+          <span style={{fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",minWidth:64,textAlign:"right"}}>{range}</span>
+        </div>
+      ))}
+      <div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:9,color:C.muted,lineHeight:1.7}}>
+        Composite: Memory 20% · Brand Recall 20% · Hook 15% · Hold Rate 15% · Emotion 10% · Creative Eff. 10% · Culture 10%
+      </div>
+    </div>
+  )}
+</div>
                 );
               })()}
             </div>

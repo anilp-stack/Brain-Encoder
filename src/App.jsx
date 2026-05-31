@@ -625,6 +625,7 @@ export default function App(){
   const [error,setError]=useState(null);
   const [tab,setTab]=useState("summary");
   const [downloading,setDownloading]=useState(false);
+  const [gradeTooltipVisible,setGradeTooltipVisible]=useState(false); 
   const fileRef=useRef(null);
 
   const handleFile=(e)=>{

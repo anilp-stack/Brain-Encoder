@@ -311,11 +311,24 @@ export default function App(){
 
       setProgressMsg("Extracting visual signals...");setProgress(12);
 
-      const resp=await fetch("/.netlify/functions/analyze",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(payload)
-      });
+      const controller=new AbortController();
+      const timeoutId=setTimeout(()=>controller.abort(),9000);
+      let resp;
+      try{
+        resp=await fetch("/.netlify/functions/analyze",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload),
+          signal:controller.signal
+        });
+      }catch(fetchErr){
+        clearTimeout(timeoutId);
+        if(fetchErr.name==="AbortError"){
+          throw new Error("Analysis timed out. Try a shorter video or fewer frames.");
+        }
+        throw fetchErr;
+      }
+      clearTimeout(timeoutId);
 
       const progressMsgs=[
         [20,"Mapping neural activation zones..."],

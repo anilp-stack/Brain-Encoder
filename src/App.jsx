@@ -311,32 +311,24 @@ export default function App(){
 
       setProgressMsg("Extracting visual signals...");setProgress(12);
 
-      const fetchAnalysis=async(url)=>{
-        const controller=new AbortController();
-        const timeoutId=setTimeout(()=>controller.abort(),9000);
-        try{
-          const resp=await fetch(url,{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify(payload),
-            signal:controller.signal
-          });
-          const data=await resp.json();
-          if(!resp.ok||!data.success){throw new Error(data.error||"Analysis failed");}
-          return data;
-        }catch(fetchErr){
-          if(fetchErr.name==="AbortError"){
-            throw new Error("Analysis timed out. Try a shorter video or fewer frames.");
-          }
-          throw fetchErr;
-        }finally{
-          clearTimeout(timeoutId);
+      const controller=new AbortController();
+      const timeoutId=setTimeout(()=>controller.abort(),9000);
+      let resp;
+      try{
+        resp=await fetch("/.netlify/functions/analyze",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload),
+          signal:controller.signal
+        });
+      }catch(fetchErr){
+        clearTimeout(timeoutId);
+        if(fetchErr.name==="AbortError"){
+          throw new Error("Analysis timed out. Try a shorter video or fewer frames.");
         }
-      };
-
-      const fastPromise=fetchAnalysis("/.netlify/functions/analyze-fast");
-      const richPromise=fetchAnalysis("/.netlify/functions/analyze-rich");
-      const richSettledPromise=Promise.allSettled([richPromise]);
+        throw fetchErr;
+      }
+      clearTimeout(timeoutId);
 
       const progressMsgs=[
         [20,"Mapping neural activation zones..."],
@@ -357,33 +349,19 @@ export default function App(){
         }
       },1800);
 
-      let fastData;
+      let data;
       try{
-        const fastResult=await fastPromise;
-        fastData=fastResult.analysis;
+        data=await resp.json();
+        if(!resp.ok||!data.success){throw new Error(data.error||"Analysis failed");}
       }finally{
         clearInterval(ticker);
       }
 
-      const combined={...fastData,scenes:[],strategic_insights:[],cmo_actions:[],__richStatus:"loading"};
+      const combined=data.analysis;
 
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));
       setResults(combined);setStage("results");setTab("summary");
-
-      const [richResult]=await richSettledPromise;
-      if(richResult.status==="fulfilled"){
-        const richData=richResult.value.richData||{};
-        setResults(prev=>({
-          ...prev,
-          scenes:richData.scenes||[],
-          strategic_insights:richData.strategic_insights||[],
-          cmo_actions:richData.cmo_actions||[],
-          __richStatus:"loaded"
-        }));
-      }else{
-        setResults(prev=>prev?{...prev,__richStatus:"error"}:prev);
-      }
 
     }catch(e){setError(e.message);setStage("form");}
   },[file,form]);
@@ -552,7 +530,6 @@ export default function App(){
     const sc=r.scenes||[];
     const ins=r.strategic_insights||r.insights||[];
     const cmo=r.cmo_actions||[];
-    const richPending=r.__richStatus&&r.__richStatus!=="loaded";
     const snd=r.sound_analysis||{};
     const priv=r.privacy_and_data_audit||r.privacy||{};
     const comp=r.competitive_context||{};
@@ -958,13 +935,7 @@ export default function App(){
           {/* ===== STRATEGIC INSIGHTS ===== */}
           {tab==="strategy"&&(
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-              {ins.length===0&&richPending?(
-                <Card C={C} style={{gridColumn:"1 / -1",textAlign:"center"}}>
-                  <div style={{fontSize:18,fontWeight:700,color:C.gold,marginBottom:10}}>Generating insights...</div>
-                  <p style={{fontSize:14,color:C.dim,lineHeight:1.7,marginBottom:18}}>Strategic insights are still being generated. You can retry the analysis if this takes too long.</p>
-                  <button onClick={handleAnalyze} style={{padding:"10px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:`${C.gold}18`,color:C.gold,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Retry</button>
-                </Card>
-              ):ins.map((n,i)=>{
+              {ins.map((n,i)=>{
                 const vc=n.vtype==="risk"?{bg:"rgba(231,76,60,0.1)",bd:C.red,c:"#ff7b7b"}:n.vtype==="win"?{bg:"rgba(46,204,113,0.1)",bd:C.green,c:"#6dffaa"}:n.vtype==="tip"?{bg:"rgba(0,200,255,0.1)",bd:C.cyan,c:C.cyan}:{bg:"rgba(241,196,0,0.1)",bd:C.amber,c:C.amber};
                 return(
                   <Card C={C} key={i}>
@@ -985,13 +956,7 @@ export default function App(){
               <h2 style={{fontSize:32,fontWeight:200,marginBottom:8}}>The <span style={{fontWeight:700,color:C.gold}}>CMO Playbook</span></h2>
               <p style={{fontSize:14,color:C.dim,marginBottom:32}}>Prioritized actions mapped to metric gaps. Sorted by impact-to-effort ratio.</p>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-                {cmo.length===0&&richPending?(
-                  <div style={{gridColumn:"1 / -1",textAlign:"center",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,padding:28}}>
-                    <div style={{fontSize:18,fontWeight:700,color:C.gold,marginBottom:10}}>Generating insights...</div>
-                    <p style={{fontSize:14,color:C.dim,lineHeight:1.7,marginBottom:18}}>The CMO Playbook is still being generated. You can retry the analysis if this takes too long.</p>
-                    <button onClick={handleAnalyze} style={{padding:"10px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:`${C.gold}18`,color:C.gold,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Retry</button>
-                  </div>
-                ):cmo.map((a,i)=>
+                {cmo.map((a,i)=>
                   <div key={i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,padding:24}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                       <span style={{fontSize:12,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:C.gold}}>ACTION {a.num||String(i+1).padStart(2,"0")}</span>

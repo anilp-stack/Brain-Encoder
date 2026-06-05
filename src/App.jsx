@@ -311,7 +311,13 @@ export default function App(){
 
       setProgressMsg("Extracting visual signals...");setProgress(12);
 
-      const resp=await fetch("/.netlify/functions/analyze",{
+      const fastPromise=fetch("/api/analyze-fast",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+
+      const richPromise=fetch("/api/analyze-rich",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify(payload)
@@ -336,15 +342,39 @@ export default function App(){
         }
       },1800);
 
-      let data;
+      let fastData, richData;
       try{
-        data=await resp.json();
-        if(!resp.ok||!data.success){throw new Error(data.error||"Analysis failed");}
+        const fastResp=await fastPromise;
+        const fastText=await fastResp.text();
+        let fd;
+        try{fd=JSON.parse(fastText);}catch(e){throw new Error("Fast analysis failed: "+fastText.substring(0,100));}
+        if(!fastResp.ok||!fd.success){throw new Error(fd.error||"Metrics analysis failed");}
+        fastData=fd.analysis;
+        setProgressMsg("Metrics computed. Generating insights...");setProgress(72);
+
+        try{
+          const richResp=await richPromise;
+          const richText=await richResp.text();
+          let rd;
+          try{rd=JSON.parse(richText);}catch(e){ rd=null; }
+          if(richResp.ok&&rd?.success){
+            richData=rd.richData;
+          }else{
+            console.warn("Rich analysis failed, showing metrics only:", rd?.error||"timeout");
+          }
+        }catch(richErr){
+          console.warn("Rich analysis timed out, showing metrics only");
+        }
       }finally{
         clearInterval(ticker);
       }
 
-      const combined=data.analysis;
+      const combined={
+        ...fastData,
+        scenes: richData?.scenes||[],
+        strategic_insights: richData?.strategic_insights||[],
+        cmo_actions: richData?.cmo_actions||[],
+      };
 
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));

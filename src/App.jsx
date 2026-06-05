@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { generateBrainEncoderPDF } from "./generatePDF";
+import Card from "./components/Card";
+import ScoreCard from "./components/ScoreCard";
+import BarMetric from "./components/BarMetric";
 
 // ============================================================
 // DESIGN TOKENS — Premium Consultancy Edition
@@ -56,42 +59,11 @@ const Icon = {
   tm:      null,
 };
 
-function Card({children,style,...p}){
-  return <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:28,...style}} {...p}>{children}</div>;
-}
 function CardTitle({dot,children}){
   return <div style={{fontSize:13,fontWeight:700,letterSpacing:1.5,color:dot||C.gold,textTransform:"uppercase",marginBottom:20,fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",gap:8}}>
     <span style={{width:3,height:16,borderRadius:2,background:dot||C.gold,display:"inline-block"}}/>
     {children}
   </div>;
-}
-
-function ScoreCard({label,value,note,pct}){
-  const c=hex(value);
-  return(
-    <div style={{background:`linear-gradient(135deg,${C.s2},${C.s1})`,border:`1px solid ${C.border}`,borderRadius:16,padding:"22px 20px",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${c},${c}88)`}}/>
-      <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:C.muted,textTransform:"uppercase",marginBottom:8,fontFamily:"'DM Mono',monospace"}}>{label}</div>
-      <div style={{fontSize:42,fontWeight:700,fontFamily:"'DM Mono',monospace",color:c,lineHeight:1}}>{value}</div>
-      <div style={{fontSize:11,color:C.dim,marginTop:8,lineHeight:1.5,minHeight:16}}>{note}</div>
-      <div style={{height:4,borderRadius:2,background:C.s3,marginTop:14,overflow:"hidden"}}>
-        <div style={{height:"100%",borderRadius:2,background:`linear-gradient(90deg,${c}aa,${c})`,width:`${pct||value}%`,transition:"width 1.5s ease"}}/>
-      </div>
-    </div>
-  );
-}
-
-function BarMetric({label,value,color,maxW}){
-  const c=color||hex(value);
-  return(
-    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:11}}>
-      <div style={{width:maxW||140,fontSize:12,fontWeight:600,color:C.dim,textTransform:"capitalize",flexShrink:0,fontFamily:"'DM Sans',sans-serif"}}>{label.replace(/_/g," ")}</div>
-      <div style={{flex:1,height:8,borderRadius:4,background:C.s3,overflow:"hidden"}}>
-        <div style={{height:"100%",borderRadius:4,background:`linear-gradient(90deg,${c}77,${c})`,width:`${value}%`,transition:"width 1s ease"}}/>
-      </div>
-      <div style={{width:40,fontSize:13,fontWeight:700,fontFamily:"'DM Mono',monospace",color:c,textAlign:"right"}}>{value}</div>
-    </div>
-  );
 }
 
 // Vertical Sidebar Nav
@@ -834,10 +806,10 @@ export default function App(){
                 ["Viral Potential",r.viral_potential],["Hook Strength",r.hook_strength],["Hold Rate",r.hold_rate],
                 ["Emotional Peak",r.emotional_peak],["Brand Recall",r.brand_recall],["Memory Encoding",r.memory_encoding],
                 ["Sound-Off Survival",r.sound_off_survival],["Share Intent",r.share_intent],["Creative Efficiency",r.creative_efficiency]
-              ].map(([l,v])=>v!==undefined&&<ScoreCard key={l} label={l} value={v} note={r.score_notes?.[l.toLowerCase().replace(/ /g,"_")]||""} pct={v}/>)}
+              ].map(([l,v])=>v!==undefined&&<ScoreCard C={C} hex={hex} key={l} label={l} value={v} note={r.score_notes?.[l.toLowerCase().replace(/ /g,"_")]||""} pct={v}/>)}
             </div>
 
-            <Card style={{marginBottom:24}}>
+            <Card C={C} style={{marginBottom:24}}>
               <CardTitle dot={C.cyan}>Predicted Attention & Emotion Curves</CardTitle>
               <svg viewBox="0 0 1000 200" style={{width:"100%",height:200}}>
                 <defs>
@@ -873,7 +845,7 @@ export default function App(){
               )}
             </div>
 
-            {comp.benchmark_note&&<Card>
+            {comp.benchmark_note&&<Card C={C}>
               <CardTitle dot={C.gold}>Competitive Benchmark</CardTitle>
               <div style={{display:"flex",alignItems:"center",gap:20}}>
                 <span style={{fontSize:14,fontWeight:700,color:comp.position==="category_leader"?C.green:comp.position==="above_average"?C.cyan:comp.position==="average"?C.amber:C.red,textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace"}}>{(comp.position||"").replace(/_/g," ")}</span>
@@ -887,16 +859,16 @@ export default function App(){
           {/* ===== NEURAL MAP ===== */}
           {tab==="neural"&&(<>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.purple}>Brain Region Activation</CardTitle>
-                {Object.entries(br).map(([k,v])=><BarMetric key={k} label={k.replace(/_/g," ")} value={v}/>)}
+                {Object.entries(br).map(([k,v])=><BarMetric C={C} hex={hex} key={k} label={k.replace(/_/g," ")} value={v}/>)}
               </Card>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.teal}>Cognitive Channel Load</CardTitle>
-                {Object.entries(cl).map(([k,v])=><BarMetric key={k} label={k.replace(/_/g," ")} value={v} color={C.purple}/>)}
+                {Object.entries(cl).map(([k,v])=><BarMetric C={C} hex={hex} key={k} label={k.replace(/_/g," ")} value={v} color={C.purple}/>)}
               </Card>
             </div>
-            <Card>
+            <Card C={C}>
               <CardTitle dot={C.orange}>System 1 vs System 2 Processing Balance</CardTitle>
               <div style={{display:"flex",alignItems:"center",gap:20}}>
                 <span style={{fontSize:13,fontWeight:700,color:C.cyan}}>SYSTEM 2<br/><span style={{fontWeight:400,fontSize:11,color:C.dim}}>Rational</span></span>
@@ -913,7 +885,7 @@ export default function App(){
 
           {/* ===== ATTENTION ECONOMICS ===== */}
           {tab==="attention"&&(<>
-            <Card style={{marginBottom:24}}>
+            <Card C={C} style={{marginBottom:24}}>
               <CardTitle dot={C.amber}>Second-by-Second Attention Heatmap</CardTitle>
 
               {/* FIX 1: Dynamic heatmap grid — renders full video duration */}
@@ -954,7 +926,7 @@ export default function App(){
             </Card>
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.green}>Attention Stats</CardTitle>
                 <div style={{fontSize:14,color:C.dim,lineHeight:1.8}}>
                   <p>Peak Attention: <b style={{color:C.green}}>{Math.max(...attn)}%</b> at ~{attn.indexOf(Math.max(...attn))}s</p>
@@ -964,7 +936,7 @@ export default function App(){
                   <p>Duration Analysed: <b style={{color:C.gold}}>{attn.length}s</b></p>
                 </div>
               </Card>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.red}>Predicted View-Through Rate</CardTitle>
                 {[25,50,75,100].map(pct=>{
                   const idx=Math.round((pct/100)*(attn.length-1));
@@ -982,7 +954,7 @@ export default function App(){
 
           {/* ===== EMOTIONAL ARCHITECTURE ===== */}
           {tab==="emotion"&&(<>
-            <Card style={{marginBottom:24}}>
+            <Card C={C} style={{marginBottom:24}}>
               <CardTitle dot={C.pink}>Emotion Types Over Time</CardTitle>
               <svg viewBox="0 0 1000 200" style={{width:"100%",height:200}}>
                 <line x1="50" y1="170" x2="970" y2="170" stroke={C.border} strokeWidth="1"/>
@@ -1004,15 +976,15 @@ export default function App(){
               </svg>
             </Card>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.rose}>Dominant Emotion by Section</CardTitle>
                 {Object.entries(emotTypes).map(([k,arr])=>{
                   if(!arr)return null;
                   const avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
-                  return <BarMetric key={k} label={k} value={avg} color={C.pink}/>;
+                  return <BarMetric C={C} hex={hex} key={k} label={k} value={avg} color={C.pink}/>;
                 })}
               </Card>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.orange}>Emotional Peak Analysis</CardTitle>
                 <p style={{fontSize:14,color:C.dim,lineHeight:1.8}}>
                   Emotional Peak Score: <b style={{color:C.blue}}>{r.emotional_peak}/100</b><br/>
@@ -1028,7 +1000,7 @@ export default function App(){
           {tab==="scenes"&&(<>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
               {sc.map((s,i)=>
-                <Card key={i} style={{position:"relative",overflow:"hidden"}}>
+                <Card C={C} key={i} style={{position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:5,background:`linear-gradient(90deg,${hex(s.attention||50)},${C.cyan})`}}/>
                   <div style={{fontSize:12,fontFamily:"'JetBrains Mono',monospace",color:C.cyan,fontWeight:600,marginBottom:4}}>{s.ts}</div>
                   <div style={{fontSize:17,fontWeight:700,marginBottom:10,lineHeight:1.3}}>{s.name}</div>
@@ -1054,7 +1026,7 @@ export default function App(){
           {tab==="platforms"&&(<>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
               {Object.entries(ps).map(([k,v])=>
-                <Card key={k} style={{textAlign:"center",padding:24}}>
+                <Card C={C} key={k} style={{textAlign:"center",padding:24}}>
                   <div style={{fontSize:38,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(v),lineHeight:1}}>{v}</div>
                   <div style={{fontSize:12,color:C.dim,marginTop:10,textTransform:"capitalize",lineHeight:1.3}}>{k.replace(/_/g," ")}</div>
                   <div style={{marginTop:10,fontSize:11,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:hex(v)}}>{grade(v)}</div>
@@ -1067,13 +1039,13 @@ export default function App(){
           {/* ===== SOUND & SENSORY ===== */}
           {tab==="sound"&&(<>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.purple}>Sound Analysis Metrics</CardTitle>
                 {[["Sound Dependency",snd.sound_dependency],["Music Effectiveness",snd.music_effectiveness],["Voiceover Clarity",snd.voiceover_clarity],["Sound-Off Text Quality",snd.sound_off_text_quality],["ASMR Trigger",snd.asmr_trigger],["Sonic Branding",snd.sonic_branding]].filter(([,v])=>v!==undefined).map(([l,v])=>
-                  <BarMetric key={l} label={l} value={v} maxW={180}/>
+                  <BarMetric C={C} hex={hex} key={l} label={l} value={v} maxW={180}/>
                 )}
               </Card>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.orange}>Sound Strategy Assessment</CardTitle>
                 <p style={{fontSize:15,color:C.dim,lineHeight:1.8}}>{snd.sound_note||"Sound analysis data not available for this creative type."}</p>
                 <div style={{marginTop:16,padding:16,borderRadius:10,background:C.s3}}>
@@ -1088,7 +1060,7 @@ export default function App(){
           {/* ===== PRIVACY & COMPLIANCE ===== */}
           {tab==="privacy"&&(<>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.amber}>Privacy & Data Audit</CardTitle>
                 <div style={{fontSize:14,color:C.dim,lineHeight:2}}>
                   {[["Data Collection Present",priv.data_collection_present],["Consent Mechanism Visible",priv.consent_mechanism_visible],["QR Code Present",priv.qr_code_present],["URL / CTA Present",priv.url_cta_present],["Hashtag Present",priv.hashtag_present],["Regulatory Disclaimers Visible",priv.regulatory_disclaimers_visible]].map(([l,v])=>
@@ -1099,7 +1071,7 @@ export default function App(){
                   )}
                 </div>
               </Card>
-              <Card>
+              <Card C={C}>
                 <CardTitle dot={C.red}>Compliance Risk</CardTitle>
                 <div style={{marginBottom:16,padding:16,borderRadius:10,background:priv.dpdp_compliance_risk==="high"?"rgba(231,76,60,0.1)":priv.dpdp_compliance_risk==="medium"?"rgba(241,196,0,0.1)":"rgba(46,204,113,0.1)",border:`1px solid ${priv.dpdp_compliance_risk==="high"?C.red:priv.dpdp_compliance_risk==="medium"?C.amber:C.green}`}}>
                   <div style={{fontSize:12,fontWeight:700,color:C.dim,marginBottom:4}}>DPDP Compliance Risk</div>
@@ -1127,7 +1099,7 @@ export default function App(){
               {ins.map((n,i)=>{
                 const vc=n.vtype==="risk"?{bg:"rgba(231,76,60,0.1)",bd:C.red,c:"#ff7b7b"}:n.vtype==="win"?{bg:"rgba(46,204,113,0.1)",bd:C.green,c:"#6dffaa"}:n.vtype==="tip"?{bg:"rgba(0,200,255,0.1)",bd:C.cyan,c:C.cyan}:{bg:"rgba(241,196,0,0.1)",bd:C.amber,c:C.amber};
                 return(
-                  <Card key={i}>
+                  <Card C={C} key={i}>
                     <div style={{fontSize:13,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:C.gold,marginBottom:6}}>{n.num}</div>
                     <h3 style={{fontSize:18,fontWeight:700,marginBottom:12,lineHeight:1.35}}>{n.title}</h3>
                     <p style={{fontSize:14,color:C.dim,lineHeight:1.75}}>{n.body}</p>
@@ -1185,7 +1157,7 @@ export default function App(){
 
               {/* ── OVERVIEW ── */}
               {methTab==="overview"&&(<>
-                <Card style={{marginBottom:20}}>
+                <Card C={C} style={{marginBottom:20}}>
                   <CardTitle dot={C.cyan}>What Brain Encoder Does</CardTitle>
                   <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:24}}>Brain Encoder is a predictive neural creative intelligence platform. It does not measure actual brain activity — it <b style={{color:C.text}}>predicts</b> how the human brain is likely to respond to an advertising creative based on visual signals, advertising science, and platform-specific norms.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
@@ -1202,7 +1174,7 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
-                <Card style={{marginBottom:20}}>
+                <Card C={C} style={{marginBottom:20}}>
                   <CardTitle dot={C.amber}>What You Get — Full Output Map</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
                     {[
@@ -1224,7 +1196,7 @@ export default function App(){
 
               {/* ── GRADING ── */}
               {methTab==="grading"&&(<>
-                <Card style={{marginBottom:20}}>
+                <Card C={C} style={{marginBottom:20}}>
                   <CardTitle dot={C.gold}>Overall Grade — Full Calculation</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>The Overall Grade is a <b style={{color:C.text}}>weighted composite score</b> derived from 7 of the 17 neural metrics. These 7 were selected because they have the strongest empirical correlation with in-market advertising effectiveness outcomes (brand recall lift, purchase intent, and organic reach) in published advertising effectiveness research.</p>
                   <div style={{background:C.s2,borderRadius:12,padding:24,marginBottom:20}}>
@@ -1272,7 +1244,7 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
-                <Card>
+                <Card C={C}>
                   <CardTitle dot={C.purple}>Why These 7 Metrics Drive the Grade</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                     {[
@@ -1298,7 +1270,7 @@ export default function App(){
 
               {/* ── ALL 17 METRICS ── */}
               {methTab==="metrics"&&(<>
-                <Card style={{marginBottom:20}}>
+                <Card C={C} style={{marginBottom:20}}>
                   <CardTitle dot={C.cyan}>All 17 Neural Metrics — Complete Reference</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Every metric is scored 0–100. Below is the full definition, what drives a high score, what a low score means, and what to do about it.</p>
                   <div style={{display:"grid",gap:12}}>
@@ -1339,7 +1311,7 @@ export default function App(){
 
               {/* ── NEURAL SCIENCE ── */}
               {methTab==="neural"&&(<>
-                <Card style={{marginBottom:20}}>
+                <Card C={C} style={{marginBottom:20}}>
                   <CardTitle dot={C.purple}>Brain Region Activation — What Each Region Means</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Brain Encoder predicts activation levels across 8 brain regions based on visual stimuli present in the creative. These predictions are derived from established neuromarketing research mapping visual advertising stimuli to neural activation patterns.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
@@ -1362,7 +1334,7 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
-                <Card>
+                <Card C={C}>
                   <CardTitle dot={C.orange}>System 1 vs System 2 — The Balance That Drives Effectiveness</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
                     <div style={{background:C.s2,borderRadius:12,padding:24,borderTop:`4px solid ${C.blue}`}}>
@@ -1383,7 +1355,7 @@ export default function App(){
 
               {/* ── PLATFORM SCORING ── */}
               {methTab==="platforms"&&(<>
-                <Card style={{marginBottom:20}}>
+                <Card C={C} style={{marginBottom:20}}>
                   <CardTitle dot={C.blue}>How Platform Scores Are Calculated</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Each platform score is derived from the base neural metrics adjusted by platform-specific weighting coefficients. These coefficients reflect the attention norms, sound environment, format constraints, and viewer behaviour on each platform.</p>
                   <div style={{background:C.s2,borderRadius:12,padding:24,marginBottom:20}}>
@@ -1422,7 +1394,7 @@ export default function App(){
 
               {/* ── SCIENCE ── */}
               {methTab==="science"&&(<>
-                <Card style={{marginBottom:20}}>
+                <Card C={C} style={{marginBottom:20}}>
                   <CardTitle dot={C.purple}>Scientific Research Foundations</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Brain Encoder's scoring methodology is grounded in published advertising effectiveness research and cognitive neuroscience. Below are the key frameworks and how each is operationalised in the platform.</p>
                   <div style={{display:"grid",gap:14}}>
@@ -1448,7 +1420,7 @@ export default function App(){
 
               {/* ── LIMITATIONS ── */}
               {methTab==="limits"&&(<>
-                <Card style={{marginBottom:20}}>
+                <Card C={C} style={{marginBottom:20}}>
                   <CardTitle dot={C.red}>What Brain Encoder Is — and Is Not</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
                     <div style={{background:"rgba(34,212,114,0.06)",border:`1px solid ${C.green}33`,borderRadius:12,padding:20}}>
@@ -1487,7 +1459,7 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
-                <Card>
+                <Card C={C}>
                   <CardTitle dot={C.gold}>How to Use Brain Encoder Responsibly</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
                     {[

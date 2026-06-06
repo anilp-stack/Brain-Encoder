@@ -74,6 +74,7 @@ const NAV_TABS = [
   {id:"privacy",  label:"Privacy & Compliance",icon:Icon.privacy},
   {id:"strategy", label:"Strategic Insights", icon:Icon.strategy},
   {id:"cmo",      label:"CMO Playbook",       icon:Icon.cmo},
+  {id:"repository", label:"Repository",        icon:"🗄️"},
   {id:"methodology",label:"Methodology",      icon:Icon.glossary},
 ];
 
@@ -284,6 +285,8 @@ export default function App(){
   const [downloading,setDownloading]=useState(false);
   const [gradeTooltipVisible,setGradeTooltipVisible]=useState(false);
   const [methTab,setMethTab]=useState("overview");
+  const [savedAnalyses, setSavedAnalyses] = useState([]);
+  const [repoLoading, setRepoLoading] = useState(false);
   const fileRef=useRef(null);
 
   const handleFile=(e)=>{
@@ -382,6 +385,89 @@ export default function App(){
 
     }catch(e){setError(e.message);setStage("form");}
   },[file,form]);
+
+  const cleanResultForSave=(source)=>{
+    const clean={};
+    Object.entries(source||{}).forEach(([k,v])=>{ if(!k.startsWith("__")) clean[k]=v; });
+    return clean;
+  };
+
+  const saveCurrentAnalysis=async()=>{
+    if(!results)return;
+    const fullResult=cleanResultForSave(results);
+    setResults(p=>({...p,__saveStatus:"saving",__saveError:""}));
+    try{
+      const resp=await fetch("/.netlify/functions/save-analysis",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          brand:form.brand,
+          client:form.client,
+          campaign:form.campaign,
+          agency:form.agency,
+          industry:form.industry,
+          market:form.market,
+          creative_type:form.type,
+          overall_grade:fullResult.overall_grade,
+          headline_verdict:fullResult.headline_verdict,
+          viral_potential:fullResult.viral_potential,
+          hook_strength:fullResult.hook_strength,
+          hold_rate:fullResult.hold_rate,
+          emotional_peak:fullResult.emotional_peak,
+          brand_recall:fullResult.brand_recall,
+          memory_encoding:fullResult.memory_encoding,
+          sound_off_survival:fullResult.sound_off_survival,
+          share_intent:fullResult.share_intent,
+          creative_efficiency:fullResult.creative_efficiency,
+          cultural_resonance:fullResult.cultural_resonance,
+          full_result:fullResult
+        })
+      });
+      const data=await resp.json();
+      if(!resp.ok||!data.success)throw new Error(data.error||"Save failed");
+      setResults(p=>({...p,__saveStatus:"saved",__saveError:""}));
+      setTimeout(()=>setResults(p=>{
+        if(!p||p.__saveStatus!=="saved")return p;
+        const next={...p};delete next.__saveStatus;return next;
+      }),3000);
+    }catch(e){
+      setResults(p=>({...p,__saveStatus:"error",__saveError:e.message}));
+    }
+  };
+
+  const loadRepository=async(filters={})=>{
+    setRepoLoading(true);
+    try{
+      const params=new URLSearchParams();
+      if(filters.brand)params.set("brand",filters.brand);
+      if(filters.grade)params.set("grade",filters.grade);
+      const resp=await fetch(`/.netlify/functions/get-analyses?${params.toString()}`);
+      const data=await resp.json();
+      if(!resp.ok||!data.success)throw new Error(data.error||"Failed to load repository");
+      setSavedAnalyses(data.analyses||[]);
+    }catch(e){
+      alert("Repository load failed: "+e.message);
+    }finally{
+      setRepoLoading(false);
+    }
+  };
+
+  const deleteSavedAnalysis=async(id)=>{
+    if(!confirm("Delete this analysis? This cannot be undone."))return;
+    try{
+      const resp=await fetch(`/.netlify/functions/delete-analysis?id=${encodeURIComponent(id)}`,{method:"DELETE"});
+      const data=await resp.json();
+      if(!resp.ok||!data.success)throw new Error(data.error||"Delete failed");
+      setSavedAnalyses(p=>p.filter(a=>a.id!==id));
+    }catch(e){
+      alert("Delete failed: "+e.message);
+    }
+  };
+
+  const setDashboardTab=(next)=>{
+    setTab(next);
+    if(next==="repository")loadRepository();
+  };
 
   // ============================================================
   // LANDING PAGE
@@ -569,7 +655,7 @@ export default function App(){
           C={C}
           NAV_TABS={NAV_TABS}
           tab={tab}
-          setTab={setTab}
+          setTab={setDashboardTab}
           grade={r.overall_grade}
           brand={form.brand}
           onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);}}
@@ -645,10 +731,15 @@ export default function App(){
                           Composite: Memory 20% · Brand Recall 20% · Hook 15% · Hold Rate 15% · Emotion 10% · Creative Eff. 10% · Culture 10%
                         </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })()}
+	                    )}
+	                    <button onClick={saveCurrentAnalysis} disabled={r.__saveStatus==="saving"}
+	                      style={{width:"100%",marginTop:10,padding:"9px 12px",borderRadius:10,border:`1px solid ${C.gold}44`,background:r.__saveStatus==="saved"?`${C.green}18`:r.__saveStatus==="error"?`${C.red}18`:`${C.gold}14`,color:r.__saveStatus==="saved"?C.green:r.__saveStatus==="error"?C.red:C.gold,fontSize:11,fontWeight:800,cursor:r.__saveStatus==="saving"?"wait":"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+	                      {r.__saveStatus==="saving"?"Saving...":r.__saveStatus==="saved"?"Saved ✓":"Save to Repository"}
+	                    </button>
+	                    {r.__saveError&&<div style={{fontSize:10,color:C.red,marginTop:6,maxWidth:140,lineHeight:1.4}}>{r.__saveError}</div>}
+	                  </div>
+	                );
+	              })()}
             </div>
           </div>
 
@@ -988,6 +1079,70 @@ export default function App(){
               </div>
             </div>
           )}
+
+          {/* ===== REPOSITORY ===== */}
+          {tab==="repository"&&(<>
+            <Card C={C} style={{marginBottom:20}}>
+              <CardTitle C={C} label={C.gold}>Saved Analysis Repository</CardTitle>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 160px auto",gap:12,alignItems:"end"}}>
+                <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
+                  Brand
+                  <input id="repoBrandFilter" onChange={(e)=>loadRepository({brand:e.target.value,grade:document.getElementById("repoGradeFilter")?.value||""})}
+                    placeholder="Filter by brand"
+                    style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                </label>
+                <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
+                  Grade
+                  <input id="repoGradeFilter" onChange={(e)=>loadRepository({brand:document.getElementById("repoBrandFilter")?.value||"",grade:e.target.value})}
+                    placeholder="A+"
+                    style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                </label>
+                <button onClick={()=>loadRepository({brand:document.getElementById("repoBrandFilter")?.value||"",grade:document.getElementById("repoGradeFilter")?.value||""})}
+                  style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.gold}44`,background:`${C.gold}16`,color:C.gold,fontWeight:800,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                  Refresh
+                </button>
+              </div>
+            </Card>
+            {repoLoading?(
+              <Card C={C} style={{textAlign:"center"}}>
+                <div style={{fontSize:15,color:C.gold,fontWeight:700}}>Loading repository...</div>
+              </Card>
+            ):savedAnalyses.length===0?(
+              <Card C={C} style={{textAlign:"center"}}>
+                <div style={{fontSize:18,color:C.text,fontWeight:700,marginBottom:8}}>No saved analyses yet</div>
+                <div style={{fontSize:14,color:C.dim}}>Saved analysis reports will appear here.</div>
+              </Card>
+            ):(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
+                {savedAnalyses.map(a=>{
+                  const gr=a.overall_grade||a.full_result?.overall_grade||"—";
+                  const gc=gr==="A+"||gr==="A"||gr==="A-"?C.green:String(gr).startsWith("B")?C.amber:String(gr).startsWith("C")?C.gold:C.red;
+                  return(
+                    <Card C={C} key={a.id} style={{padding:22}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:12}}>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontSize:18,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{a.brand||"Untitled Brand"}</div>
+                          <div style={{fontSize:11,color:C.dim,marginTop:4}}>{a.industry||"Unknown industry"} · {a.created_at?new Date(a.created_at).toLocaleDateString("en-GB"):"No date"}</div>
+                        </div>
+                        <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:8,padding:"5px 10px",fontSize:13,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace"}}>{gr}</div>
+                      </div>
+                      <p style={{fontSize:13,color:C.dim,lineHeight:1.7,minHeight:44,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{a.headline_verdict||a.full_result?.headline_verdict||"No headline verdict saved."}</p>
+                      <div style={{display:"flex",gap:10,marginTop:16}}>
+                        <button onClick={()=>{setResults(a.full_result||{});setTab("summary");}}
+                          style={{flex:1,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.cyan}44`,background:`${C.cyan}12`,color:C.cyan,fontWeight:800,cursor:"pointer"}}>
+                          Load
+                        </button>
+                        <button onClick={()=>deleteSavedAnalysis(a.id)}
+                          style={{flex:1,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.red}44`,background:`${C.red}12`,color:C.red,fontWeight:800,cursor:"pointer"}}>
+                          Delete
+                        </button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>)}
 
           {/* ===== METHODOLOGY & GLOSSARY ===== */}
           {tab==="methodology"&&(()=>{

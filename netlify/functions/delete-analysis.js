@@ -1,6 +1,6 @@
 // netlify/functions/delete-analysis.js
 
-export async function handler(req, context) {
+export async function handler(event) {
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -8,8 +8,8 @@ export async function handler(req, context) {
     "Content-Type": "application/json"
   };
 
-  if (req.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
-  if (req.httpMethod !== "DELETE") {
+  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
+  if (event.httpMethod !== "DELETE") {
     return { statusCode: 405, headers, body: JSON.stringify({ success: false, error: "Method not allowed" }) };
   }
 
@@ -20,7 +20,7 @@ export async function handler(req, context) {
       throw new Error("SUPABASE_URL or SUPABASE_ANON_KEY not set.");
     }
 
-    const id = req.queryStringParameters?.id;
+    const id = event.queryStringParameters?.id;
     if (!id) throw new Error("Missing analysis id.");
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/analyses?id=eq.${encodeURIComponent(id)}`, {

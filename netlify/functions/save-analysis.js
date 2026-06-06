@@ -1,6 +1,6 @@
 // netlify/functions/save-analysis.js
 
-export async function handler(req, context) {
+export async function handler(event) {
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -8,8 +8,8 @@ export async function handler(req, context) {
     "Content-Type": "application/json"
   };
 
-  if (req.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
-  if (req.httpMethod !== "POST") {
+  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
+  if (event.httpMethod !== "POST") {
     return { statusCode: 405, headers, body: JSON.stringify({ success: false, error: "Method not allowed" }) };
   }
 
@@ -20,7 +20,7 @@ export async function handler(req, context) {
       throw new Error("SUPABASE_URL or SUPABASE_ANON_KEY not set.");
     }
 
-    const body = JSON.parse(req.body || "{}");
+    const body = JSON.parse(event.body || "{}");
     const payload = {
       brand: body.brand || "",
       client: body.client || "",

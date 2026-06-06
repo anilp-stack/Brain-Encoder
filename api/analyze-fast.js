@@ -31,7 +31,7 @@ CRITICAL: Return ONLY this exact JSON with integer scores 0-100. No text outside
       headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 2500,
+        max_tokens: 8000,
         system: prompt,
         messages: [{ role: "user", content: [...imageContent, { type: "text", text: `Score this ${meta.brand || "creative"} ad. Return ONLY JSON.` }] }]
       })

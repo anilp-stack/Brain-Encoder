@@ -66,7 +66,7 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
             fontFamily: "'Playfair Display',serif",
           }}
         >
-          Brain Encoder<sup style={{ fontSize: 8, color: C.gold, verticalAlign: "super" }}>TM</sup>
+          AdCritIQ<sup style={{ fontSize: 8, color: C.gold, verticalAlign: "super" }}>TM</sup>
         </div>
         {gr && (
           <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>

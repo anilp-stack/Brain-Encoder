@@ -1,6 +1,6 @@
-# Brain Encoder Architecture Audit
+# AdCritIQ™ Architecture Audit
 
-This audit documents the current Brain Encoder codebase without modifying `src/App.jsx` or `netlify/functions/analyze.js`.
+This audit documents the current AdCritIQ™ codebase. Previously named Brain Encoder™, the platform was rebranded to AdCritIQ™ in June 2026. The Netlify files remain as backup while the active deployment target moves to Vercel.
 
 ## `src/App.jsx` `useState` Inventory
 
@@ -8,22 +8,24 @@ All `useState` hooks are declared at the top of `App()` before conditional rende
 
 | Line | Hook |
 | ---: | --- |
-| 449 | `const [stage,setStage]=useState("landing");` |
-| 450 | `const [form,setForm]=useState({brand:"",client:"",campaign:"",agency:"",type:"video",industry:"FMCG / CPG",audience:"",market:"India",notes:"",password:""});` |
-| 451 | `const [file,setFile]=useState(null);` |
-| 452 | `const [preview,setPreview]=useState(null);` |
-| 453 | `const [progress,setProgress]=useState(0);` |
-| 454 | `const [progressMsg,setProgressMsg]=useState("");` |
-| 455 | `const [results,setResults]=useState(null);` |
-| 456 | `const [error,setError]=useState(null);` |
-| 457 | `const [tab,setTab]=useState("summary");` |
-| 458 | `const [downloading,setDownloading]=useState(false);` |
-| 459 | `const [gradeTooltipVisible,setGradeTooltipVisible]=useState(false);` |
-| 460 | `const [methTab,setMethTab]=useState("overview");` |
+| 276 | `const [stage,setStage]=useState("landing");` |
+| 277 | `const [form,setForm]=useState({brand:"",client:"",campaign:"",agency:"",type:"video",industry:"FMCG / CPG",audience:"",market:"India",notes:"",password:""});` |
+| 278 | `const [file,setFile]=useState(null);` |
+| 279 | `const [preview,setPreview]=useState(null);` |
+| 280 | `const [progress,setProgress]=useState(0);` |
+| 281 | `const [progressMsg,setProgressMsg]=useState("");` |
+| 282 | `const [results,setResults]=useState(null);` |
+| 283 | `const [error,setError]=useState(null);` |
+| 284 | `const [tab,setTab]=useState("summary");` |
+| 285 | `const [downloading,setDownloading]=useState(false);` |
+| 286 | `const [gradeTooltipVisible,setGradeTooltipVisible]=useState(false);` |
+| 287 | `const [methTab,setMethTab]=useState("overview");` |
+| 288 | `const [savedAnalyses, setSavedAnalyses] = useState([]);` |
+| 289 | `const [repoLoading, setRepoLoading] = useState(false);` |
 
 ## Data Flow
 
-Current endpoint confirmation: `src/App.jsx` does **not** call `netlify/functions/analyze.js`. The active React fetch calls are `POST /api/analyze-fast` at `src/App.jsx:488` and `POST /api/analyze-rich` at `src/App.jsx:494`.
+Current endpoint confirmation: `src/App.jsx` does **not** call `netlify/functions/analyze.js`. The active React fetch calls use Vercel-style `/api/*` routes.
 
 1. **Upload and form state**
    - `stage` controls the current UI view: `landing`, `form`, `analyzing`, or `results`.
@@ -34,23 +36,23 @@ Current endpoint confirmation: `src/App.jsx` does **not** call `netlify/function
    - `extractFrames(file)` handles images and videos.
    - Images are read through `FileReader` and return one base64 JPEG payload with `isImage: true`.
    - Videos are loaded into a hidden `<video>`, sampled into a `320x180` canvas, encoded as JPEG at quality `0.3`, and return up to 2 frames with duration, dimensions, and `isImage: false`.
-   - `netlify/functions/analyze.js` accepts up to 3 frames internally with `frames.slice(0, 3)`.
-   - The currently wired React flow calls the edge functions instead: `/api/analyze-fast` uses 1 frame for images or up to 2 frames for videos, and `/api/analyze-rich` uses 1 frame.
+   - `netlify/functions/analyze.js` accepts up to 3 frames internally with `frames.slice(0, 3)` but is not the active frontend endpoint.
+   - The currently wired React flow calls `/api/analyze-fast`, which uses 1 frame for images or up to 2 frames for videos.
 
 3. **API call**
    - `handleAnalyze()` builds `payload = { frames: frameData.frames, metadata: { ...form, ...frameData } }`.
    - The current UI sends two parallel POST requests from `src/App.jsx`:
-     - `POST /api/analyze-fast` from `fastPromise=fetch("/api/analyze-fast", ...)` at line 488.
-     - `POST /api/analyze-rich` from `richPromise=fetch("/api/analyze-rich", ...)` at line 494.
+     - `POST /api/analyze-fast` from `fastPromise=fetch("/api/analyze-fast", ...)` at line 317.
+     - `POST /api/analyze-rich` from `richPromise=fetch("/api/analyze-rich", ...)` at line 323.
    - Both requests use `Content-Type: application/json`.
-   - These endpoints are implemented by Netlify Edge Functions:
-     - `netlify/edge-functions/analyze-fast.js`, exported with `config = { path: "/api/analyze-fast" }`.
-     - `netlify/edge-functions/analyze-rich.js`, exported with `config = { path: "/api/analyze-rich" }`.
+   - On Vercel, these endpoints are implemented by `api/analyze-fast.js` and `api/analyze-rich.js`.
+   - `api/analyze-fast.js` is the real long-running analysis endpoint with `maxDuration: 300`.
+   - `api/analyze-rich.js` currently returns empty/null rich data by design with `maxDuration: 30`.
    - The requested `netlify/functions/analyze.js` schema is documented below for audit completeness, but that serverless function is not currently called by `src/App.jsx`.
 
 4. **JSON response and React state**
    - Fast response must return `{ success: true, analysis }`.
-   - Rich response may return `{ success: true, richData }`; failures are logged and the UI continues with metrics-only data.
+   - Rich response returns `{ success: true, richData: null }` in the current Vercel migration phase; failures are logged and the UI continues with metrics-only data.
    - `combined` is created from `fastData` plus `richData.scenes`, `richData.strategic_insights`, and `richData.cmo_actions`.
    - `setResults(combined)`, `setStage("results")`, and `setTab("summary")` render the dashboard.
 
@@ -66,6 +68,7 @@ Current endpoint confirmation: `src/App.jsx` does **not** call `netlify/function
    - `strategy`: strategic insight cards from `results.strategic_insights`.
    - `cmo`: prioritized action cards from `results.cmo_actions`.
    - `methodology`: internal methodology sub-tabs controlled by `methTab`.
+   - `repository`: saved analysis list/load/delete flow backed by `/api/save-analysis`, `/api/get-analyses`, and `/api/delete-analysis`.
 
 ## `netlify/functions/analyze.js` Schema
 

@@ -397,7 +397,7 @@ export default function App(){
     const fullResult=cleanResultForSave(results);
     setResults(p=>({...p,__saveStatus:"saving",__saveError:""}));
     try{
-      const resp=await fetch("/.netlify/functions/save-analysis",{
+      const resp=await fetch("/api/save-analysis",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
@@ -441,7 +441,7 @@ export default function App(){
       const params=new URLSearchParams();
       if(filters.brand)params.set("brand",filters.brand);
       if(filters.grade)params.set("grade",filters.grade);
-      const resp=await fetch(`/.netlify/functions/get-analyses?${params.toString()}`);
+      const resp=await fetch(`/api/get-analyses?${params.toString()}`);
       const data=await resp.json();
       if(!resp.ok||!data.success)throw new Error(data.error||"Failed to load repository");
       setSavedAnalyses(data.analyses||[]);
@@ -455,7 +455,7 @@ export default function App(){
   const deleteSavedAnalysis=async(id)=>{
     if(!confirm("Delete this analysis? This cannot be undone."))return;
     try{
-      const resp=await fetch(`/.netlify/functions/delete-analysis?id=${encodeURIComponent(id)}`,{method:"DELETE"});
+      const resp=await fetch(`/api/delete-analysis?id=${encodeURIComponent(id)}`,{method:"DELETE"});
       const data=await resp.json();
       if(!resp.ok||!data.success)throw new Error(data.error||"Delete failed");
       setSavedAnalyses(p=>p.filter(a=>a.id!==id));
@@ -484,7 +484,7 @@ export default function App(){
           <div style={{width:40,height:1,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`,margin:"0 auto"}}/>
         </div>
         <h1 style={{fontSize:clamp(42,6,72),fontWeight:800,lineHeight:1.0,maxWidth:700,marginBottom:12,position:"relative",fontFamily:"'Playfair Display',serif",letterSpacing:-1,color:C.text}}>
-          Brain Encoder<sup style={{fontSize:16,color:C.gold,verticalAlign:"super",fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>TM</sup>
+          AdCritIQ<sup style={{fontSize:16,color:C.gold,verticalAlign:"super",fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>TM</sup>
         </h1>
         <div style={{fontSize:16,fontWeight:600,color:C.gold,letterSpacing:2,textTransform:"uppercase",marginBottom:28,fontFamily:"'DM Mono',monospace"}}>
           Neural Creative Intelligence Platform
@@ -522,7 +522,7 @@ export default function App(){
         <div style={{padding:"20px 40px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:12}}>
           <span style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",cursor:"pointer"}} onClick={()=>setStage("landing")}>ADVantage Insights</span>
           <span style={{fontSize:12,color:C.dim}}>·</span>
-          <span style={{fontSize:12,color:C.cyan,fontWeight:600}}>Brain Encoder</span>
+          <span style={{fontSize:12,color:C.cyan,fontWeight:600}}>AdCritIQ</span>
         </div>
         <div style={{maxWidth:760,margin:"40px auto",padding:"0 24px"}}>
           <h2 style={{fontSize:34,fontWeight:200,marginBottom:6}}>Upload <span style={{fontWeight:700}}>Creative</span></h2>
@@ -589,7 +589,7 @@ export default function App(){
             <input type="password" placeholder="Leave blank if open access" style={{...inp,maxWidth:300}} value={form.password} onChange={e=>u("password",e.target.value)}/>
           </div>
           <button onClick={handleAnalyze} disabled={!file||!form.brand} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:`linear-gradient(135deg,${C.cyan},${C.blue})`,color:(!file||!form.brand)?C.dim:"white",fontSize:17,fontWeight:700,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":"0 4px 20px rgba(0,200,255,0.25)"}}>
-            🧠 Run Brain Encoder Analysis
+            🧠 Run AdCritIQ Analysis
           </button>
         </div>
       </div>
@@ -1169,8 +1169,8 @@ export default function App(){
               {/* ── OVERVIEW ── */}
               {methTab==="overview"&&(<>
                 <Card C={C} style={{marginBottom:20}}>
-                  <CardTitle C={C} label={C.cyan}>What Brain Encoder Does</CardTitle>
-                  <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:24}}>Brain Encoder is a predictive neural creative intelligence platform. It does not measure actual brain activity — it <b style={{color:C.text}}>predicts</b> how the human brain is likely to respond to an advertising creative based on visual signals, advertising science, and platform-specific norms.</p>
+                  <CardTitle C={C} label={C.cyan}>What AdCritIQ Does</CardTitle>
+                  <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:24}}>AdCritIQ is a predictive neural creative intelligence platform. It does not measure actual brain activity — it <b style={{color:C.text}}>predicts</b> how the human brain is likely to respond to an advertising creative based on visual signals, advertising science, and platform-specific norms.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
                     {[
                       [C.cyan,"STAGE 1","Frame Extraction","1–3 key frames are extracted from your creative at optimal intervals. For videos, frames are sampled at the beginning, middle, and near the end to capture the full narrative arc."],
@@ -1324,7 +1324,7 @@ export default function App(){
               {methTab==="neural"&&(<>
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.purple}>Brain Region Activation — What Each Region Means</CardTitle>
-                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Brain Encoder predicts activation levels across 8 brain regions based on visual stimuli present in the creative. These predictions are derived from established neuromarketing research mapping visual advertising stimuli to neural activation patterns.</p>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>AdCritIQ predicts activation levels across 8 brain regions based on visual stimuli present in the creative. These predictions are derived from established neuromarketing research mapping visual advertising stimuli to neural activation patterns.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                     {[
                       ["Visual Cortex","Primary visual processing centre.","High activation (70+): Complex visual scenes, high colour saturation, motion, faces. This is the entry point for all visual advertising. Without visual cortex engagement, nothing else fires.","Good range: 60–85. Below 50 = visually flat creative. Above 90 = potential cognitive overload."],
@@ -1407,7 +1407,7 @@ export default function App(){
               {methTab==="science"&&(<>
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.purple}>Scientific Research Foundations</CardTitle>
-                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Brain Encoder's scoring methodology is grounded in published advertising effectiveness research and cognitive neuroscience. Below are the key frameworks and how each is operationalised in the platform.</p>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>AdCritIQ's scoring methodology is grounded in published advertising effectiveness research and cognitive neuroscience. Below are the key frameworks and how each is operationalised in the platform.</p>
                   <div style={{display:"grid",gap:14}}>
                     {[
                       {title:"Kahneman — Thinking Fast and Slow (2011)",color:C.cyan,application:"System 1 / System 2 score directly implements Kahneman's dual-process theory. Creatives that force System 2 (deliberate thinking) in low-involvement contexts cause avoidance. The optimal zone (65–75) is calibrated against Kahneman's findings on effortful vs effortless processing.",metric:"System 1/2 Balance metric"},
@@ -1432,10 +1432,10 @@ export default function App(){
               {/* ── LIMITATIONS ── */}
               {methTab==="limits"&&(<>
                 <Card C={C} style={{marginBottom:20}}>
-                  <CardTitle C={C} label={C.red}>What Brain Encoder Is — and Is Not</CardTitle>
+                  <CardTitle C={C} label={C.red}>What AdCritIQ Is — and Is Not</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
                     <div style={{background:"rgba(34,212,114,0.06)",border:`1px solid ${C.green}33`,borderRadius:12,padding:20}}>
-                      <div style={{fontSize:13,fontWeight:700,color:C.green,marginBottom:12}}>Brain Encoder IS</div>
+                      <div style={{fontSize:13,fontWeight:700,color:C.green,marginBottom:12}}>AdCritIQ IS</div>
                       {["A predictive pre-screening tool for creative effectiveness","A directional intelligence system to prioritise re-edits","A platform suitability guide for media planning","A structured framework for creative briefing and feedback","A consistent benchmark across multiple creatives","A fast, scalable alternative to qualitative research for go/no-go decisions"].map((s,i)=>(
                         <div key={i} style={{display:"flex",gap:8,marginBottom:6,fontSize:12,color:C.dim}}>
                           <span style={{color:C.green,flexShrink:0}}>✓</span>{s}
@@ -1443,7 +1443,7 @@ export default function App(){
                       ))}
                     </div>
                     <div style={{background:"rgba(240,90,106,0.06)",border:`1px solid ${C.red}33`,borderRadius:12,padding:20}}>
-                      <div style={{fontSize:13,fontWeight:700,color:C.red,marginBottom:12}}>Brain Encoder IS NOT</div>
+                      <div style={{fontSize:13,fontWeight:700,color:C.red,marginBottom:12}}>AdCritIQ IS NOT</div>
                       {["A neuroscience lab measurement or biometric study","A replacement for consumer research or in-market testing","A guarantee of campaign performance","A legal compliance check — consult your legal team","A replacement for creative judgement and strategic thinking","A tool that accounts for media weight, targeting, or competitive activity"].map((s,i)=>(
                         <div key={i} style={{display:"flex",gap:8,marginBottom:6,fontSize:12,color:C.dim}}>
                           <span style={{color:C.red,flexShrink:0}}>✗</span>{s}
@@ -1454,11 +1454,11 @@ export default function App(){
                   <div style={{display:"grid",gap:12}}>
                     {[
                       ["⚠️",C.amber,"Predictive, Not Measured","All scores are AI predictions based on visual frame analysis. They represent the most probable cognitive response based on established advertising science patterns — not measured neural activity from EEG, fMRI, or biometric devices."],
-                      ["🖼️",C.cyan,"Frame Sampling Limitation","Brain Encoder analyses 1–3 extracted frames per creative. For videos with rapid scene changes (cut every 1–2 seconds), frame sampling may miss important transitions. For maximum accuracy, upload key scenes as separate image files."],
+                      ["🖼️",C.cyan,"Frame Sampling Limitation","AdCritIQ analyses 1–3 extracted frames per creative. For videos with rapid scene changes (cut every 1–2 seconds), frame sampling may miss important transitions. For maximum accuracy, upload key scenes as separate image files."],
                       ["🔇",C.purple,"Audio is Inferred","This version analyses visual frames only. Audio characteristics (music tempo, voiceover tone, sonic branding) are inferred from visual context cues, not measured directly from the audio track."],
                       ["🌍",C.teal,"Cultural Calibration is India-First","Scoring is calibrated for the Indian market by default. Cultural Resonance, Regulatory Compliance, and certain emotion scores may require recalibration for international markets. Always contextualise scores with local market knowledge."],
-                      ["📊",C.orange,"No In-Market Performance Guarantee","Brain Encoder cannot account for media weight, audience targeting precision, competitive share of voice, seasonality, brand equity, or algorithmic distribution. Real-world performance may differ significantly from predicted scores."],
-                      ["⚖️",C.red,"Not Legal Clearance","Regulatory and DPDP compliance scores are indicative signals only. Do not use Brain Encoder scores as a substitute for legal review of advertising claims, disclaimers, or data collection mechanisms."],
+                      ["📊",C.orange,"No In-Market Performance Guarantee","AdCritIQ cannot account for media weight, audience targeting precision, competitive share of voice, seasonality, brand equity, or algorithmic distribution. Real-world performance may differ significantly from predicted scores."],
+                      ["⚖️",C.red,"Not Legal Clearance","Regulatory and DPDP compliance scores are indicative signals only. Do not use AdCritIQ scores as a substitute for legal review of advertising claims, disclaimers, or data collection mechanisms."],
                     ].map(([icon,color,title,desc])=>(
                       <div key={title} style={{background:C.s2,borderRadius:10,padding:18,display:"flex",gap:14,alignItems:"flex-start"}}>
                         <span style={{fontSize:20,flexShrink:0}}>{icon}</span>
@@ -1471,14 +1471,14 @@ export default function App(){
                   </div>
                 </Card>
                 <Card C={C}>
-                  <CardTitle C={C} label={C.gold}>How to Use Brain Encoder Responsibly</CardTitle>
+                  <CardTitle C={C} label={C.gold}>How to Use AdCritIQ Responsibly</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
                     {[
-                      [C.cyan,"Use it for GO/NO-GO","Run Brain Encoder before any creative goes to production or media. A C+ or below should trigger a mandatory re-edit conversation with the creative team."],
+                      [C.cyan,"Use it for GO/NO-GO","Run AdCritIQ before any creative goes to production or media. A C+ or below should trigger a mandatory re-edit conversation with the creative team."],
                       [C.amber,"Use it for RE-EDIT BRIEFING","The Scene Intelligence and CMO Playbook tabs give the creative team specific, actionable re-edit instructions. Use them as a creative brief, not just a score."],
                       [C.green,"Use it for PLATFORM PLANNING","Platform scores tell you where to concentrate media spend and where to create platform-specific cuts. A TV-first creative should never run on TikTok without re-editing."],
-                      [C.purple,"Combine with Human Judgement","Brain Encoder surfaces patterns and signals. The creative director, brand manager, and media planner must interpret these signals in the context of the campaign strategy."],
-                      [C.pink,"Track Across Campaigns","The most powerful use of Brain Encoder is longitudinal — tracking how your brand's creative scores improve over time as teams learn what works."],
+                      [C.purple,"Combine with Human Judgement","AdCritIQ surfaces patterns and signals. The creative director, brand manager, and media planner must interpret these signals in the context of the campaign strategy."],
+                      [C.pink,"Track Across Campaigns","The most powerful use of AdCritIQ is longitudinal — tracking how your brand's creative scores improve over time as teams learn what works."],
                       [C.gold,"Benchmark Against Category","Use the Competitive Benchmark section to understand where your creative stands relative to category norms, not just against an absolute scale."],
                     ].map(([color,title,desc])=>(
                       <div key={title} style={{background:C.s2,borderRadius:10,padding:18,borderTop:`3px solid ${color}`}}>
@@ -1496,7 +1496,7 @@ export default function App(){
 
           {/* FOOTER */}
           <div style={{padding:"20px 36px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:1,marginTop:"auto"}}>
-            ADVantage Insights™ · Brain Encoder Platform™ · Neural Creative Intelligence · {new Date().getFullYear()}
+            ADVantage Insights™ · AdCritIQ™ · Neural Creative Intelligence · {new Date().getFullYear()}
           </div>
         </div>
       </div>

@@ -56,9 +56,9 @@ export async function generateBrainEncoderPDF(results, form) {
 
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
   doc.setProperties({
-    title: `Brain Encoder — ${safeStr(form?.brand, "Creative")}`,
+    title: `AdCritIQ — ${safeStr(form?.brand, "Creative")}`,
     author: "ADVantage Insights",
-    creator: "Brain Encoder Platform"
+    creator: "AdCritIQ Platform"
   });
 
   let pageNum = 0;
@@ -75,7 +75,7 @@ export async function generateBrainEncoderPDF(results, form) {
     fill(PANEL); doc.rect(0, H-12, W, 12, "F");
     stroke(BORDER); doc.setLineWidth(0.3); doc.line(0, H-12, W, H-12);
     doc.setFontSize(7); doc.setFont("helvetica","normal");
-    color(DIM); doc.text("ADVantage Insights™  |  Brain Encoder Platform™  |  Confidential", 10, H-5);
+    color(DIM); doc.text("ADVantage Insights™  |  AdCritIQ™  |  Confidential", 10, H-5);
     color(GOLD); doc.text(`Page ${pageNum}`, W-10, H-5, {align:"right"});
   }
 
@@ -85,7 +85,7 @@ export async function generateBrainEncoderPDF(results, form) {
     doc.setFontSize(7); doc.setFont("helvetica","bold");
     color(GOLD); doc.text("ADVantage Insights™", 10, 7);
     doc.setFont("helvetica","normal"); color(DIM);
-    doc.text("Brain Encoder Platform™  |  Neural Creative Intelligence", 10, 13);
+    doc.text("AdCritIQ™  |  Neural Creative Intelligence", 10, 13);
     doc.setFont("helvetica","bold"); color(CYAN);
     doc.text(label, W-10, 9, {align:"right"});
   }
@@ -603,15 +603,15 @@ export async function generateBrainEncoderPDF(results, form) {
   doc.setFontSize(8); doc.setFont("helvetica","bold"); color(GOLD);
   doc.text("SCIENTIFIC METHODOLOGY", 14, y+10);
   doc.setFontSize(7); doc.setFont("helvetica","normal"); color(DIM);
-  const meth="Brain Encoder analyzes advertising creatives through three stages: (1) Frame extraction — visual frames sampled at optimal intervals. (2) Neural activation prediction — frames analyzed using multimodal AI vision against 17 advertising science constructs covering attention, memory, emotion, and behavioral response. (3) Platform calibration — each creative scored against 15 media environments accounting for format, sound-on/off ratios, and viewing duration norms.";
+  const meth="AdCritIQ analyzes advertising creatives through three stages: (1) Frame extraction — visual frames sampled at optimal intervals. (2) Neural activation prediction — frames analyzed using multimodal AI vision against 17 advertising science constructs covering attention, memory, emotion, and behavioral response. (3) Platform calibration — each creative scored against 15 media environments accounting for format, sound-on/off ratios, and viewing duration norms.";
   const mL=doc.splitTextToSize(meth,W-28);
   doc.text(mL.slice(0,4),14,y+18);
 
   doc.setFontSize(8); doc.setFont("helvetica","bold"); color(GOLD);
-  doc.text("ADVantage Insights™  |  Brain Encoder Platform™  |  Anil Pandit  |  2026", W/2, y+36, {align:"center"});
+  doc.text("ADVantage Insights™  |  AdCritIQ™  |  Anil Pandit  |  2026", W/2, y+36, {align:"center"});
 
   // ── SAVE ──────────────────────────────────────────────────
   const safeBrand=safeStr(form?.brand,"Creative").replace(/[^a-zA-Z0-9]/g,"_");
   const dateStr=new Date().toISOString().slice(0,10);
-  doc.save(`BrainEncoder_${safeBrand}_${dateStr}.pdf`);
+  doc.save(`AdCritIQ_${safeBrand}_${dateStr}.pdf`);
 }

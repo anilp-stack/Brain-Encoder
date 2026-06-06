@@ -1,7 +1,7 @@
 {
-  "name": "advantage-insights-brain-encoder",
+  "name": "advantage-insights-adcritiq",
   "version": "1.0.0",
-  "description": "ADVantage Insights Brain Encoder Platform — AI-Powered Creative Intelligence",
+  "description": "AdCritIQ™ by ADVantage Insights™ — AI-Powered Creative Intelligence",
   "private": true,
   "scripts": {
     "dev": "vite",

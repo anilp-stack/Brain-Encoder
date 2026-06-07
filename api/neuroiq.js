@@ -30,10 +30,15 @@ You are NeurIQ™. Speak with authority.
 FULL ANALYSIS DATA:
 ${analysisContext}`;
 
-    const messages = [
-      ...history.slice(-10).map(h => ({ role: h.role === "neuriq" ? "assistant" : "user", content: h.content })),
-      { role: "user", content: message }
-    ];
+    // Fix: Anthropic Messages API requires the conversation to start with role "user".
+    // The initial NeurIQ welcome message (role:"neuriq") maps to "assistant" and causes a 400
+    // on the very first user question. Strip any leading assistant messages from history.
+    const mappedHistory = (history || [])
+      .slice(-10)
+      .map(h => ({ role: h.role === "neuriq" ? "assistant" : "user", content: h.content }));
+    const firstUserIdx = mappedHistory.findIndex(m => m.role === "user");
+    const validHistory = firstUserIdx >= 0 ? mappedHistory.slice(firstUserIdx) : [];
+    const messages = [...validHistory, { role: "user", content: message }];
 
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

@@ -374,9 +374,9 @@ export default function App(){
 
       const combined={
         ...fastData,
-        scenes: richData?.scenes||[],
-        strategic_insights: richData?.strategic_insights||[],
-        cmo_actions: richData?.cmo_actions||[],
+        scenes: richData?.scenes||fastData?.scenes||[],
+        strategic_insights: richData?.strategic_insights||fastData?.strategic_insights||[],
+        cmo_actions: richData?.cmo_actions||fastData?.cmo_actions||[],
       };
 
       setProgress(100);setProgressMsg("Report ready.");

@@ -6,6 +6,7 @@ import BarMetric from "./components/BarMetric";
 import CardTitle from "./components/CardTitle";
 import Takeaway from "./components/Takeaway";
 import Sidebar from "./components/Sidebar";
+import NeurIQTab from "./components/NeurIQTab";
 
 // ============================================================
 // DESIGN TOKENS — Premium Consultancy Edition
@@ -56,6 +57,7 @@ const Icon = {
   privacy: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
   strategy:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
   cmo:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  neuriq:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>,
   glossary:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
   new:     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   dl:      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
@@ -74,6 +76,7 @@ const NAV_TABS = [
   {id:"privacy",  label:"Privacy & Compliance",icon:Icon.privacy},
   {id:"strategy", label:"Strategic Insights", icon:Icon.strategy},
   {id:"cmo",      label:"CMO Playbook",       icon:Icon.cmo},
+  {id:"neuriq",   label:"NeurIQ™",            icon:Icon.neuriq},
   {id:"repository", label:"Repository",        icon:"🗄️"},
   {id:"methodology",label:"Methodology",      icon:Icon.glossary},
 ];
@@ -1079,6 +1082,8 @@ export default function App(){
               </div>
             </div>
           )}
+
+          {tab==="neuriq"&&results&&<NeurIQTab results={results} C={C}/>}
 
           {/* ===== REPOSITORY ===== */}
           {tab==="repository"&&(<>

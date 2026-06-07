@@ -42,6 +42,7 @@ export default async function handler(req, res) {
       throw new Error(analyses.message || analyses.error || "Failed to fetch analyses.");
     }
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     return res.status(200).json({ success: true, analyses });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });

@@ -277,7 +277,7 @@ function extractFrames(file){
 // ============================================================
 export default function App(){
   const [stage,setStage]=useState("landing");
-  const [form,setForm]=useState({brand:"",client:"",campaign:"",agency:"",type:"video",industry:"FMCG / CPG",audience:"",market:"India",notes:"",password:""});
+  const [form,setForm]=useState({brand:"",client:"",campaign:"",agency:"",type:"video",industry:"FMCG / CPG",audience:"",market:"India",country:"India",notes:""});
   const [file,setFile]=useState(null);
   const [preview,setPreview]=useState(null);
   const [progress,setProgress]=useState(0);
@@ -306,7 +306,16 @@ export default function App(){
   const u=(k,v)=>setForm(p=>({...p,[k]:v}));
 
   const handleAnalyze=useCallback(async()=>{
-    if(!file||!form.brand)return;
+    const missingFields = [];
+    if(!form.brand.trim()) missingFields.push("Brand Name");
+    if(!form.country) missingFields.push("Country");
+    if(!form.industry) missingFields.push("Industry Vertical");
+    if(!form.type) missingFields.push("Creative Type");
+    if(!file) missingFields.push("Creative File");
+    if(missingFields.length > 0){
+      setError(`Please fill in required fields: ${missingFields.join(", ")}`);
+      return;
+    }
     setStage("analyzing");setProgress(0);setError(null);
 
     try{
@@ -410,6 +419,7 @@ export default function App(){
           agency:form.agency,
           industry:form.industry,
           market:form.market,
+          country:form.country,
           creative_type:form.type,
           overall_grade:fullResult.overall_grade,
           headline_verdict:fullResult.headline_verdict,
@@ -545,9 +555,14 @@ export default function App(){
                 {["FMCG / CPG","Pharma / Healthcare","Auto / Mobility","BFSI / Fintech","Technology","E-commerce","Retail / QSR","Telecom","Media / Entertainment","Real Estate","Education","Government / PSU","Other"].map(v=><option key={v} value={v}>{v}</option>)}
               </select>
             </div>
+            <div><label style={lbl}>Country *</label>
+              <select style={{...selStyle, borderColor: !form.country ? C.red : C.border}} value={form.country} onChange={e=>u("country",e.target.value)}>
+                {["India","UAE","Saudi Arabia","Singapore","USA","UK","Australia","Indonesia","Bangladesh","Sri Lanka","Malaysia","Other"].map(v=><option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
             <div><label style={lbl}>Target Market</label>
               <select style={selStyle} value={form.market} onChange={e=>u("market",e.target.value)}>
-                {["India","India — Tier 1","India — Tier 2/3","USA","UK","UAE / MENA","Southeast Asia","Global","Other"].map(v=><option key={v} value={v}>{v}</option>)}
+                {["India","India — Tier 1","India — Tier 2/3","Pan-India","Urban India","Rural India","USA","UK","UAE / MENA","Southeast Asia","Global","Other"].map(v=><option key={v} value={v}>{v}</option>)}
               </select>
             </div>
             <div><label style={lbl}>Target Audience</label><input placeholder="e.g. Males 35-55, SEC A/B" style={inp} value={form.audience} onChange={e=>u("audience",e.target.value)}/></div>
@@ -586,10 +601,6 @@ export default function App(){
               )}
             </div>
             <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleFile} style={{display:"none"}}/>
-          </div>
-          <div style={{marginBottom:24}}>
-            <label style={lbl}>Access Code (if required)</label>
-            <input type="password" placeholder="Leave blank if open access" style={{...inp,maxWidth:300}} value={form.password} onChange={e=>u("password",e.target.value)}/>
           </div>
           <button onClick={handleAnalyze} disabled={!file||!form.brand} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:`linear-gradient(135deg,${C.cyan},${C.blue})`,color:(!file||!form.brand)?C.dim:"white",fontSize:17,fontWeight:700,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":"0 4px 20px rgba(0,200,255,0.25)"}}>
             🧠 Run AdCritIQ Analysis
@@ -965,6 +976,11 @@ export default function App(){
                     {s.emotion!==undefined&&<span>Emotion: <b style={{color:hex(s.emotion)}}>{s.emotion}%</b></span>}
                     {s.system_mode&&<span>Mode: <b style={{color:C.purple}}>{s.system_mode}</b></span>}
                     {s.cognitive_load&&<span>Load: <b style={{color:s.cognitive_load==="overload"?C.red:s.cognitive_load==="high"?C.amber:C.green}}>{s.cognitive_load}</b></span>}
+                    {s.drop_second != null && (
+                      <span style={{fontSize:12,color:C.red,fontWeight:700,marginLeft:8}}>
+                        ⚠ Drop risk: {Math.floor(s.drop_second/60)}:{String(s.drop_second%60).padStart(2,"0")}
+                      </span>
+                    )}
                   </div>
                 </Card>
               )}
@@ -1076,7 +1092,13 @@ export default function App(){
                     </div>
                     <h4 style={{fontSize:17,fontWeight:700,marginBottom:8,lineHeight:1.3}}>{a.title}</h4>
                     <p style={{fontSize:14,color:C.dim,lineHeight:1.7}}>{a.body}</p>
-                    {a.impact&&<div style={{marginTop:10,fontSize:12,color:C.green,fontWeight:600}}>📈 {a.impact}</div>}
+                    {a.estimated_uplift_pct ? (
+                      <div style={{marginTop:10,fontSize:12,color:C.green,fontWeight:700}}>
+                        📈 Est. +{a.estimated_uplift_pct}% completion rate improvement
+                      </div>
+                    ) : a.impact && (
+                      <div style={{marginTop:10,fontSize:12,color:C.green,fontWeight:600}}>📈 {a.impact}</div>
+                    )}
                   </div>
                 )}
               </div>

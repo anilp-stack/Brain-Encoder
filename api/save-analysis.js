@@ -25,6 +25,7 @@ export default async function handler(req, res) {
       agency: body.agency || "",
       industry: body.industry || "",
       market: body.market || "",
+      country: body.country || "",
       creative_type: body.creative_type || "",
       overall_grade: body.overall_grade || "",
       headline_verdict: body.headline_verdict || "",

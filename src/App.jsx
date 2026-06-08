@@ -290,6 +290,9 @@ export default function App(){
   const [methTab,setMethTab]=useState("overview");
   const [savedAnalyses, setSavedAnalyses] = useState([]);
   const [repoLoading, setRepoLoading] = useState(false);
+  const [token, setToken] = useState(localStorage.getItem("adcritiq_token") || "");
+  const [credits, setCredits] = useState(null);
+  const [showPricing, setShowPricing] = useState(false);
   const fileRef=useRef(null);
 
   const handleFile=(e)=>{
@@ -316,6 +319,31 @@ export default function App(){
       setError(`Please fill in required fields: ${missingFields.join(", ")}`);
       return;
     }
+    if (!token.trim()) {
+      setError("Please enter your analysis token. Don't have one? Click 'Buy credits' above.");
+      return;
+    }
+    setError(null);
+
+    let creditData;
+    try {
+      const creditRes = await fetch("/api/check-credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token.trim() })
+      });
+      creditData = await creditRes.json();
+    } catch {
+      setError("Could not verify token. Please check your connection and try again.");
+      return;
+    }
+
+    if (!creditData.valid) {
+      setError(creditData.error || "Invalid token. Please check or purchase credits.");
+      setShowPricing(true);
+      return;
+    }
+    setCredits(creditData.credits);
     setStage("analyzing");setProgress(0);setError(null);
 
     try{
@@ -393,10 +421,21 @@ export default function App(){
 
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));
-      setResults(combined);setStage("results");setTab("summary");
+      setResults(combined);
+      if (token.trim()) {
+        fetch("/api/deduct-credit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: token.trim() })
+        })
+          .then(r => r.json())
+          .then(d => { if (d.credits_remaining !== undefined) setCredits(d.credits_remaining); })
+          .catch(() => {});
+      }
+      setStage("results");setTab("summary");
 
     }catch(e){setError(e.message);setStage("form");}
-  },[file,form]);
+  },[file,form,token]);
 
   const cleanResultForSave=(source)=>{
     const clean={};
@@ -482,6 +521,108 @@ export default function App(){
     if(next==="repository")loadRepository();
   };
 
+  const pricingModal = showPricing && (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:32,maxWidth:460,width:"100%"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+          <div style={{fontSize:20,fontWeight:800,color:C.text}}>Buy Analysis Credits</div>
+          <div style={{cursor:"pointer",color:C.dim,fontSize:22,lineHeight:1}} onClick={()=>setShowPricing(false)}>✕</div>
+        </div>
+
+        {[
+          { plan:"single", label:"Single Analysis", credits:1, price:"₹299", note:"One-off creative check" },
+          { plan:"starter", label:"Starter Pack", credits:5, price:"₹999", note:"₹200 per analysis" },
+          { plan:"growth", label:"Growth Pack", credits:10, price:"₹1,799", note:"₹180 per analysis — most popular" },
+        ].map(p=>(
+          <div key={p.plan}
+            style={{
+              border:`1px solid ${p.plan==="growth"?C.gold:C.border}`,
+              borderRadius:12,
+              padding:"14px 16px",
+              marginBottom:10,
+              cursor:"pointer",
+              background:p.plan==="growth"?"rgba(245,158,11,0.05)":C.s2
+            }}
+            onClick={async()=>{
+              if(!window.Razorpay){
+                alert("Payment system still loading. Please wait a moment and try again.");
+                return;
+              }
+              const email=prompt("Enter your email address to receive your token:");
+              if(!email||!email.trim())return;
+              try{
+                const orderRes=await fetch("/api/create-order",{
+                  method:"POST",
+                  headers:{"Content-Type":"application/json"},
+                  body:JSON.stringify({plan:p.plan})
+                });
+                const orderData=await orderRes.json();
+                if(!orderData.order_id)throw new Error(orderData.error||"Could not create order");
+
+                const rzp=new window.Razorpay({
+                  key:import.meta.env.VITE_RAZORPAY_KEY_ID,
+                  amount:orderData.amount,
+                  currency:"INR",
+                  name:"AdCritIQ™",
+                  description:p.label,
+                  order_id:orderData.order_id,
+                  handler:async function(response){
+                    try{
+                      const verifyRes=await fetch("/api/verify-payment",{
+                        method:"POST",
+                        headers:{"Content-Type":"application/json"},
+                        body:JSON.stringify({
+                          ...response,
+                          plan:p.plan,
+                          email:email.trim(),
+                          amount:orderData.amount
+                        })
+                      });
+                      const verifyData=await verifyRes.json();
+                      if(verifyData.token){
+                        setToken(verifyData.token);
+                        setCredits(verifyData.credits);
+                        localStorage.setItem("adcritiq_token",verifyData.token);
+                        setShowPricing(false);
+                        alert(`✅ Payment successful!\n\nYour AdCritIQ™ Token:\n${verifyData.token}\n\nCredits: ${verifyData.credits}\n\n⚠️ Save this token — you need it for every analysis.\nIt has been auto-filled in the form.`);
+                      }else{
+                        alert("Payment received but token generation failed.\nContact support@adcritiq.com with your payment ID: "+response.razorpay_payment_id);
+                      }
+                    }catch(e){
+                      alert("Verification error: "+e.message+"\nContact support@adcritiq.com");
+                    }
+                  },
+                  prefill:{email:email.trim()},
+                  theme:{color:"#F59E0B"},
+                  modal:{confirm_close:true}
+                });
+                rzp.open();
+              }catch(e){
+                alert("Could not initiate payment: "+e.message);
+              }
+            }}
+          >
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <div style={{fontWeight:700,color:C.text,fontSize:15}}>{p.label}</div>
+                <div style={{fontSize:12,color:C.dim,marginTop:3}}>{p.note}</div>
+              </div>
+              <div style={{textAlign:"right",marginLeft:16}}>
+                <div style={{fontWeight:800,fontSize:18,color:p.plan==="growth"?C.gold:C.text}}>{p.price}</div>
+                <div style={{fontSize:11,color:C.dim}}>{p.credits} credit{p.credits>1?"s":""}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <div style={{fontSize:11,color:C.muted,marginTop:16,textAlign:"center",lineHeight:1.6}}>
+          🔒 Secure payment via Razorpay &nbsp;•&nbsp; Credits never expire<br/>
+          Token displayed immediately after payment
+        </div>
+      </div>
+    </div>
+  );
+
   // ============================================================
   // LANDING PAGE
   // ============================================================
@@ -509,6 +650,12 @@ export default function App(){
           style={{background:`linear-gradient(135deg,${C.gold},${C.goldD})`,color:C.bg,border:"none",padding:"18px 56px",borderRadius:12,fontSize:16,fontWeight:800,cursor:"pointer",letterSpacing:0.5,position:"relative",boxShadow:`0 8px 32px ${C.gold}40`,fontFamily:"'DM Sans',sans-serif",transition:"all 0.2s",marginBottom:56}}>
           Start Analysis →
         </button>
+        <button
+          style={{marginTop:12,padding:"12px 28px",background:"transparent",border:`1px solid ${C.gold}`,borderRadius:8,color:C.gold,fontSize:14,fontWeight:600,cursor:"pointer"}}
+          onClick={()=>setShowPricing(true)}
+        >
+          💳 Buy Analysis Credits
+        </button>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:48,maxWidth:680}}>
           {["17 Neural Metrics","15 Platform Scores","Attention Heatmap","Scene Intelligence","Privacy & DPDP","CMO Playbook","No Duration Limit","System 1 / System 2"].map(t=>(
             <span key={t} style={{padding:"7px 14px",background:C.s2,borderRadius:100,border:`1px solid ${C.border2}`,fontSize:11,fontWeight:600,color:C.dim,letterSpacing:0.3,fontFamily:"'DM Sans',sans-serif"}}>{t}</span>
@@ -519,6 +666,7 @@ export default function App(){
           <span>Platform-Specific</span><span style={{color:C.border}}>·</span>
           <span>No Duration Cap</span>
         </div>
+        {pricingModal}
       </div>
     );
   }
@@ -602,10 +750,35 @@ export default function App(){
             </div>
             <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleFile} style={{display:"none"}}/>
           </div>
+          <div style={{marginBottom:16}}>
+            <label style={lbl}>
+              Analysis Token *&nbsp;
+              <span style={{fontSize:11,color:C.dim,fontWeight:400}}>
+                — <span style={{color:C.cyan,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowPricing(true)}>Buy credits</span>
+              </span>
+            </label>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <input
+                style={{...inp,flex:1,fontFamily:"monospace",letterSpacing:1}}
+                placeholder="Paste your token here..."
+                value={token}
+                onChange={e=>{
+                  setToken(e.target.value);
+                  localStorage.setItem("adcritiq_token",e.target.value);
+                }}
+              />
+              {credits!==null&&(
+                <div style={{padding:"10px 14px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,fontSize:13,color:C.green,fontWeight:700,whiteSpace:"nowrap"}}>
+                  {credits===999?"∞ demo":`${credits} credit${credits!==1?"s":""} left`}
+                </div>
+              )}
+            </div>
+          </div>
           <button onClick={handleAnalyze} disabled={!file||!form.brand} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:`linear-gradient(135deg,${C.cyan},${C.blue})`,color:(!file||!form.brand)?C.dim:"white",fontSize:17,fontWeight:700,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":"0 4px 20px rgba(0,200,255,0.25)"}}>
             🧠 Run AdCritIQ Analysis
           </button>
         </div>
+        {pricingModal}
       </div>
     );
   }

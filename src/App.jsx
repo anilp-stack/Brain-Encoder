@@ -845,7 +845,7 @@ export default function App(){
           setTab={setDashboardTab}
           grade={r.overall_grade}
           brand={form.brand}
-          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);}}
+          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);setToken("");setCredits(null);localStorage.removeItem("adcritiq_token");}}
           downloading={downloading}
           onDownload={async()=>{
             setDownloading(true);

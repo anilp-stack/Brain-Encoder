@@ -80,16 +80,18 @@ export default function NeurIQTab({ results, C }) {
   };
 
   const chipStyle = {
-    background: C.s3,
+    padding: "8px 16px",
+    background: C.s2,
     border: `1px solid ${C.border2}`,
-    color: C.dim,
-    borderRadius: 20,
-    padding: "5px 14px",
+    borderRadius: 100,
     fontSize: 12,
+    color: C.text,
+    opacity: loading ? 0.6 : 0.8,
     cursor: loading ? "not-allowed" : "pointer",
+    whiteSpace: "nowrap",
+    transition: "all 0.15s ease",
     outline: "none",
     fontFamily: "'DM Sans',sans-serif",
-    opacity: loading ? 0.6 : 1,
   };
 
   const labelBase = {
@@ -119,11 +121,11 @@ export default function NeurIQTab({ results, C }) {
             onClick={() => sendMessage(question)}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = C.gold;
-              e.currentTarget.style.color = C.gold;
+              e.currentTarget.style.opacity = "1";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = C.border2;
-              e.currentTarget.style.color = C.dim;
+              e.currentTarget.style.opacity = loading ? "0.6" : "0.8";
             }}
             style={chipStyle}
           >

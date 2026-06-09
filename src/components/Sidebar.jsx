@@ -129,7 +129,8 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
                 border: active ? `1px solid ${C.gold}44` : `1px solid transparent`,
                 borderRadius: 10,
                 cursor: "pointer",
-                color: active ? C.gold : C.dim,
+                color: active ? C.gold : C.text,
+                opacity: active ? 1 : 0.55,
                 fontSize: 12,
                 fontWeight: active ? 700 : 500,
                 transition: "all 0.15s ease",
@@ -138,7 +139,7 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
                 textAlign: "left",
               }}
             >
-              <span style={{ display: "flex", opacity: active ? 1 : 0.62, flexShrink: 0, color: active ? C.gold : C.dim }}>{n.icon}</span>
+              <span style={{ display: "flex", opacity: 1, flexShrink: 0, color: active ? C.gold : C.text }}>{n.icon}</span>
               <span style={{ lineHeight: 1.3 }}>{n.label}</span>
             </button>
           );

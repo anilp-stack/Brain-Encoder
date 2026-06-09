@@ -16,7 +16,7 @@ const C = {
   bg:"#050507",ink:"#09090b",s1:"#101014",s2:"#17171d",s3:"#22222a",
   panel:"#101014",panel2:"#17171d",
   border:"#26262d",border2:"#3a3627",
-  text:"#f7f3e8",dim:"#b8b2a5",muted:"#706c63",
+  text:"#F2F2FF",dim:"#A0A0CC",muted:"#6A6A95",
   gold:"#d8b45a",goldL:"#f0d58a",goldD:"#9b7930",
   cyan:"#2dd4bf",blue:"#60a5fa",green:"#34d399",
   red:"#fb7185",amber:"#fbbf24",orange:"#fb923c",
@@ -654,8 +654,9 @@ export default function App(){
         <main style={{flex:1,display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.08fr) minmax(340px,0.92fr)",gap:isMobile?36:56,alignItems:"center",padding:isMobile?"44px 20px 28px":"72px 48px 44px",maxWidth:1280,width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
           <section>
             <div style={{fontSize:11,fontWeight:900,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:18}}>Neural Creative Intelligence</div>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:isMobile?46:isTablet?62:76,lineHeight:0.98,fontWeight:800,color:C.text,letterSpacing:0,margin:"0 0 24px"}}>
-              AdCritIQ<sup style={{fontSize:isMobile?16:22,color:C.gold,verticalAlign:"super",fontFamily:"'Inter','DM Sans',sans-serif"}}>TM</sup>
+            <h1 style={{fontSize:isMobile?34:isTablet?50:64,fontWeight:800,color:C.text,lineHeight:1.08,letterSpacing:0,margin:"0 0 24px",fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif"}}>
+              Know if your ad works<br/>
+              <span style={{color:C.gold}}>before you spend a rupee.</span>
             </h1>
             <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.75,maxWidth:620,margin:"0 0 32px"}}>
               Premium advertising intelligence for teams that need to know whether a creative will hold attention, encode memory, and work by platform before media money is committed.
@@ -684,10 +685,10 @@ export default function App(){
               <div style={{width:58,height:58,borderRadius:14,background:`${C.gold}14`,border:`1px solid ${C.gold}44`,display:"grid",placeItems:"center",fontSize:24,fontWeight:900,color:C.gold,fontFamily:"'DM Mono',monospace"}}>A</div>
             </div>
             {[
-              ["Attention hold",82,C.green],
-              ["Memory encoding",76,C.gold],
-              ["Sound-off survival",64,C.amber],
-              ["Platform fit",88,C.cyan],
+              ["ATTENTION HOLD",82,C.green],
+              ["MEMORY ENCODING",76,C.gold],
+              ["SOUND-OFF SURVIVAL",64,C.amber],
+              ["PLATFORM FIT",88,C.cyan],
             ].map(([label,value,color])=>(
               <div key={label} style={{marginBottom:16}}>
                 <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.dim,fontWeight:800,marginBottom:8,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>
@@ -706,7 +707,7 @@ export default function App(){
           </section>
         </main>
 
-        <footer style={{padding:isMobile?"20px":"24px 48px",borderTop:`1px solid ${C.border}`,color:C.muted,fontSize:12,display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
+        <footer style={{padding:isMobile?"20px":"24px 48px",borderTop:`1px solid ${C.border}`,color:C.dim,fontSize:12,display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
           <span>ADVantage Insights<sup>TM</sup></span>
           <span>Predictive, not biometric</span>
           <span>Built for creative decisions</span>
@@ -889,7 +890,7 @@ export default function App(){
     );
 
     return(
-      <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'Inter','DM Sans',sans-serif",color:C.text}}>
+      <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'Inter','DM Sans',sans-serif",color:C.text,animation:"fadeIn 0.5s ease both"}}>
 
         {/* ── LEFT SIDEBAR ── */}
         <Sidebar
@@ -935,9 +936,9 @@ export default function App(){
                     onMouseEnter={()=>setGradeTooltipVisible(true)}
                     onMouseLeave={()=>setGradeTooltipVisible(false)}
                   >
-                    <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:12,padding:"10px 20px",textAlign:"center",cursor:"help"}}>
+                    <div style={{background:`${gc}18`,border:`1px solid ${gc}66`,borderRadius:12,padding:"10px 20px",textAlign:"center",cursor:"help",boxShadow:`0 0 20px ${gc}33`}}>
                       <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:3}}>Grade</div>
-                      <div style={{fontSize:24,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
+                      <div style={{fontSize:28,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
                       <div style={{fontSize:8,color:C.muted,marginTop:4,letterSpacing:0.5}}>hover for scale</div>
                     </div>
 
@@ -1002,7 +1003,7 @@ export default function App(){
 
           {/* ===== EXECUTIVE SUMMARY ===== */}
           {tab==="summary"&&(<>
-            <div style={{display:"grid",gridTemplateColumns:scoreGrid,gap:isMobile?12:16,marginBottom:isMobile?24:36}}>
+            <div style={{display:"grid",gridTemplateColumns:scoreGrid,gap:isMobile?12:16,marginBottom:isMobile?24:36,animation:"fadeUp 0.4s ease 0.1s both"}}>
               {[
                 ["Viral Potential",r.viral_potential],["Hook Strength",r.hook_strength],["Hold Rate",r.hold_rate],
                 ["Emotional Peak",r.emotional_peak],["Brand Recall",r.brand_recall],["Memory Encoding",r.memory_encoding],

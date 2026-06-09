@@ -19,6 +19,38 @@
     body{font-family:'Inter',-apple-system,sans-serif;background:#08080d;color:#e8e8f0;-webkit-font-smoothing:antialiased}
   </style>
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes barFill {
+      from { width: 0%; }
+      to   { width: var(--bar-pct); }
+    }
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.5; }
+    }
+    .fade-up {
+      animation: fadeUp 0.45s ease both;
+    }
+    .fade-in {
+      animation: fadeIn 0.35s ease both;
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>

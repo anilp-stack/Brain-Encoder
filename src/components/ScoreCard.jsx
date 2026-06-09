@@ -1,22 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ScoreCard({ C, hex, label, value, note, pct }) {
-  const [hovered, setHovered] = useState(false);
   const score = typeof value === "number" ? value : 0;
+  const [displayed, setDisplayed] = useState(0);
+  const [hovered, setHovered] = useState(false);
   const c = hex ? hex(score) : C.gold;
   const barValue = Math.min(100, Math.max(0, typeof pct === "number" ? pct : score));
+
+  useEffect(() => {
+    let start = 0;
+    const duration = 900;
+    const step = 16;
+    const increment = score / (duration / step);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= score) {
+        setDisplayed(score);
+        clearInterval(timer);
+      } else {
+        setDisplayed(Math.floor(start));
+      }
+    }, step);
+    return () => clearInterval(timer);
+  }, [score]);
+
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         background: hovered ? C.s2 : C.s1,
-        border: `1px solid ${hovered ? `${c}66` : C.border}`,
+        border: `1px solid ${hovered ? `${c}88` : C.border}`,
         borderRadius: 12,
         padding: "20px 18px 16px",
         position: "relative",
         overflow: "hidden",
-        transition: "border-color 0.2s, background 0.2s",
+        transition: "all 0.2s ease",
+        transform: hovered ? "translateY(-2px)" : "translateY(0)",
+        boxShadow: hovered ? `0 8px 24px ${c}22` : "none",
+        animation: "fadeUp 0.4s ease both",
       }}
     >
       <div
@@ -52,10 +74,12 @@ export default function ScoreCard({ C, hex, label, value, note, pct }) {
           color: c,
           lineHeight: 1,
           marginBottom: 14,
-          letterSpacing: "-0.02em",
+          letterSpacing: 0,
+          transition: "color 0.3s",
+          animation: "countUp 0.35s ease both",
         }}
       >
-        {score}
+        {displayed}
       </div>
       {note && <div style={{ fontSize: 11, color: C.dim, marginBottom: 12, lineHeight: 1.5, minHeight: 16 }}>{note}</div>}
       <div style={{ height: 3, borderRadius: 2, background: C.border, overflow: "hidden" }}>
@@ -64,8 +88,9 @@ export default function ScoreCard({ C, hex, label, value, note, pct }) {
             height: "100%",
             borderRadius: 2,
             background: c,
-            width: `${barValue}%`,
+            width: `${Math.min(barValue, displayed)}%`,
             opacity: 0.65,
+            transition: "width 0.05s linear",
           }}
         />
       </div>

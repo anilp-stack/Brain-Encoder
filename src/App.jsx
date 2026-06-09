@@ -291,6 +291,7 @@ export default function App(){
   const [showPricing, setShowPricing] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
   const [isTablet, setIsTablet] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 && window.innerWidth < 1120 : false);
+  const [expandedPlatform, setExpandedPlatform] = useState(null);
   const fileRef=useRef(null);
 
   useEffect(()=>{
@@ -655,11 +656,11 @@ export default function App(){
           <section>
             <div style={{fontSize:11,fontWeight:900,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:18}}>Neural Creative Intelligence</div>
             <h1 style={{fontSize:isMobile?34:isTablet?50:64,fontWeight:800,color:C.text,lineHeight:1.08,letterSpacing:0,margin:"0 0 24px",fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif"}}>
-              Know if your ad works<br/>
-              <span style={{color:C.gold}}>before you spend a rupee.</span>
+              Know if your creative works<br/>
+              <span style={{color:C.gold}}>before you go live.</span>
             </h1>
             <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.75,maxWidth:620,margin:"0 0 32px"}}>
-              Premium advertising intelligence for teams that need to know whether a creative will hold attention, encode memory, and work by platform before media money is committed.
+              AdCritIQ™ analyses advertising creatives using multimodal AI trained on neuroscience research — delivering 17 neural metrics, 15 platform scores, and CMO-level strategic recommendations in under 2 minutes. Built for brand teams and agencies worldwide.
             </p>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:34}}>
               <button onClick={()=>setStage("form")} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:`0 16px 40px ${C.gold}24`}}>
@@ -919,13 +920,13 @@ export default function App(){
           <div style={{background:"rgba(16,16,20,0.94)",borderBottom:`1px solid ${C.border}`,padding:isMobile?"16px 18px":"20px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
             <div style={{display:"flex",alignItems:isMobile?"stretch":"flex-start",justifyContent:"space-between",gap:16,flexDirection:isMobile?"column":"row"}}>
               <div style={{minWidth:0}}>
-                <div style={{fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:5,fontFamily:"'DM Mono',monospace"}}>
+                <div style={{fontSize:11,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:5,fontFamily:"'DM Mono',monospace"}}>
                   {form.industry||""}{form.market?` · ${form.market}`:""}{form.type?` · ${form.type}`:""} · {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
                 </div>
                 <h1 style={{fontSize:isMobile?20:22,fontWeight:800,color:C.text,margin:0,letterSpacing:0,fontFamily:"'Playfair Display',serif",lineHeight:1.2}}>
                   {form.brand}{form.campaign?<span style={{fontWeight:400,color:C.dim}}> — {form.campaign}</span>:""}
                 </h1>
-                {r.headline_verdict&&<div style={{fontSize:13,color:C.gold,marginTop:6,fontStyle:"italic",opacity:0.9}}>"{r.headline_verdict}"</div>}
+                {r.headline_verdict&&<div style={{fontSize:13,color:"rgba(242,242,255,0.80)",marginTop:6,fontStyle:"italic",opacity:1}}>"{r.headline_verdict}"</div>}
               </div>
 
               {/* FIX 2: Grade badge with hover tooltip */}
@@ -1005,10 +1006,10 @@ export default function App(){
           {tab==="summary"&&(<>
             <div style={{display:"grid",gridTemplateColumns:scoreGrid,gap:isMobile?12:16,marginBottom:isMobile?24:36,animation:"fadeUp 0.4s ease 0.1s both"}}>
               {[
-                ["Viral Potential",r.viral_potential],["Hook Strength",r.hook_strength],["Hold Rate",r.hold_rate],
-                ["Emotional Peak",r.emotional_peak],["Brand Recall",r.brand_recall],["Memory Encoding",r.memory_encoding],
-                ["Sound-Off Survival",r.sound_off_survival],["Share Intent",r.share_intent],["Creative Efficiency",r.creative_efficiency]
-              ].map(([l,v])=>v!==undefined&&<ScoreCard C={C} hex={hex} key={l} label={l} value={v} note={r.score_notes?.[l.toLowerCase().replace(/ /g,"_")]||""} pct={v}/>)}
+                ["Viral Potential",r.viral_potential,70],["Hook Strength",r.hook_strength,75],["Hold Rate",r.hold_rate,65],
+                ["Emotional Peak",r.emotional_peak,70],["Brand Recall",r.brand_recall,80],["Memory Encoding",r.memory_encoding,70],
+                ["Sound-Off Survival",r.sound_off_survival,null],["Share Intent",r.share_intent,null],["Creative Efficiency",r.creative_efficiency,null]
+              ].map(([l,v,b])=>v!==undefined&&<ScoreCard C={C} hex={hex} key={l} label={l} value={v} note={r.score_notes?.[l.toLowerCase().replace(/ /g,"_")]||""} pct={v} benchmark={b}/>)}
             </div>
 
             <Card C={C} style={{marginBottom:24}}>
@@ -1571,19 +1572,32 @@ export default function App(){
                       {name:"1P Data Opportunity",good:"Varies",color:C.cyan,def:"Probability the creative contains a mechanism to capture first-party data (QR code, URL, hashtag, promo code).",drives:"QR code, clear URL, hashtag, search-triggered CTA, registration mechanic.",low:"0 = No 1P data capture. In a cookieless world, every creative should have a 1P data mechanic."},
                       {name:"Carbon Signal",good:"Lower = better",color:C.lime,def:"Estimated digital carbon footprint indicator based on creative complexity, file size proxy, and platform distribution.",drives:"High carbon: heavy video, autoplay across many platforms, high-frequency delivery. Low carbon: compressed creative, contextual targeting.",low:"High score = high estimated carbon footprint. Relevant for ESG reporting and Green Media commitments."},
                       {name:"System 1 / System 2",good:"65–75 optimal",color:C.orange,def:"Balance between emotional (System 1) and rational (System 2) processing. Kahneman (2011).",drives:"System 1: emotional imagery, music, faces, storytelling. System 2: claims, prices, comparisons, text-heavy frames.",low:"Below 40: Over-rational — viewer is thinking, not feeling. Above 85: Over-emotional — no rational anchor for purchase decision."},
-                    ].map(({name,good,color,def,drives,low})=>(
-                      <div key={name} style={{background:C.s2,borderRadius:12,padding:20,borderLeft:`3px solid ${color}`}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                          <span style={{fontSize:14,fontWeight:700,color:C.text}}>{name}</span>
-                          <span style={{fontSize:11,fontWeight:700,color:color,fontFamily:"'DM Mono',monospace",padding:"2px 10px",background:`${color}15`,borderRadius:6}}>Good: {good}</span>
+                    ].map(({name,good,color,def,drives,low})=>{
+                      const open=expandedPlatform===`metric:${name}`;
+                      return(
+                        <div key={name} style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden",transition:"all 0.2s ease",background:C.s1}}>
+                          <div
+                            onClick={()=>setExpandedPlatform(open?null:`metric:${name}`)}
+                            style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"14px 16px",cursor:"pointer",background:open?C.s2:C.s1,borderLeft:`3px solid ${color}`}}
+                          >
+                            <span style={{fontSize:14,fontWeight:700,color:C.text}}>{name}</span>
+                            <div style={{display:"flex",alignItems:"center",gap:12}}>
+                              <span style={{fontSize:11,fontWeight:700,color:color,fontFamily:"'DM Mono',monospace",padding:"2px 10px",background:`${color}15`,borderRadius:6,whiteSpace:"nowrap"}}>Good: {good}</span>
+                              <span style={{color:C.dim,fontSize:14,transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s ease"}}>▾</span>
+                            </div>
+                          </div>
+                          {open&&(
+                            <div style={{padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,background:C.s1,animation:"fadeUp 0.2s ease both"}}>
+                              <div style={{display:"grid",gridTemplateColumns:threeGrid,gap:12}}>
+                                <div><div style={{fontSize:10,fontWeight:700,color:C.dim,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Definition</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6,margin:0}}>{def}</p></div>
+                                <div><div style={{fontSize:10,fontWeight:700,color:C.green,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>What drives it high</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6,margin:0}}>{drives}</p></div>
+                                <div><div style={{fontSize:10,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Low score means</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6,margin:0}}>{low}</p></div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div style={{display:"grid",gridTemplateColumns:threeGrid,gap:12}}>
-                          <div><div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Definition</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{def}</p></div>
-                          <div><div style={{fontSize:10,fontWeight:700,color:C.green,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>What drives it high</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{drives}</p></div>
-                          <div><div style={{fontSize:10,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Low score means</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{low}</p></div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </Card>
               </>)}
@@ -1647,7 +1661,7 @@ export default function App(){
                       × Attention Norm Adjustment (±15 points)</span>
                     </div>
                   </div>
-                  <div style={{display:"grid",gap:10}}>
+                  <div style={{display:"grid",gap:8}}>
                     {[
                       {platform:"TV Broadcast",color:C.green,score:"Highest scores for long-form, emotional, high-production creatives",weights:"Duration: full-length favoured. Sound: always on. Attention: passive/lean-back. Amplifiers: high emotional peak, strong brand recall, cultural resonance."},
                       {platform:"CTV / OTT",color:C.cyan,score:"Similar to TV but with interactive potential",weights:"Duration: 15–60s optimal. Sound: usually on. Attention: semi-active. Amplifiers: same as TV + strong hook (viewer has remote control)."},
@@ -1658,15 +1672,28 @@ export default function App(){
                       {platform:"LinkedIn",color:C.blue,score:"Professional, rational context",weights:"System 2 score weighted up. Emotional Peak weighted down. Brand Safety weighted 1.5×. B2B creatives outperform here."},
                       {platform:"DOOH",color:C.purple,score:"Zero sound, 3–5 second viewing window",weights:"Only hook strength (first frame) + brand recall count. No audio score. No hold rate. Visual cortex + brand elements only."},
                       {platform:"Programmatic Display",color:C.teal,score:"Banner format — visual brand only",weights:"Brand elements score + visual cortex activation only. Attention curve irrelevant. Brand safety weighted heavily."},
-                    ].map(({platform,color,score,weights})=>(
-                      <div key={platform} style={{background:C.s2,borderRadius:10,padding:18,borderLeft:`3px solid ${color}`}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                          <span style={{fontSize:13,fontWeight:700,color:C.text}}>{platform}</span>
-                          <span style={{fontSize:11,color:color,fontWeight:600}}>{score}</span>
+                    ].map(({platform,color,score,weights})=>{
+                      const open=expandedPlatform===`platform:${platform}`;
+                      return(
+                        <div key={platform} style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden",transition:"all 0.2s ease"}}>
+                          <div
+                            onClick={()=>setExpandedPlatform(open?null:`platform:${platform}`)}
+                            style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"14px 16px",cursor:"pointer",background:open?C.s2:C.s1,borderLeft:`3px solid ${color||C.gold}`}}
+                          >
+                            <span style={{fontWeight:700,color:C.text,fontSize:14}}>{platform}</span>
+                            <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+                              <span style={{fontSize:11,color:color||C.gold,fontWeight:600,textAlign:"right",lineHeight:1.4}}>{score}</span>
+                              <span style={{color:C.dim,fontSize:14,transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s ease"}}>▾</span>
+                            </div>
+                          </div>
+                          {open&&(
+                            <div style={{padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,background:C.s1,animation:"fadeUp 0.2s ease both"}}>
+                              <p style={{fontSize:13,color:C.dim,lineHeight:1.6,margin:0}}>{weights}</p>
+                            </div>
+                          )}
                         </div>
-                        <p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{weights}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </Card>
               </>)}

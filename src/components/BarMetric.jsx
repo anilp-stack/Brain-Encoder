@@ -27,7 +27,21 @@ export default function BarMetric({ C, hex, label, value, color, maxW }) {
         </span>
         <span style={{ fontSize: 14, fontWeight: 700, color: c }}>{pct}</span>
       </div>
-      <div style={{ height: 5, borderRadius: 3, background: C.border, overflow: "hidden" }}>
+      <div
+        style={{
+          height: 5,
+          borderRadius: 3,
+          overflow: "hidden",
+          background: `linear-gradient(to right,
+            rgba(239,68,68,0.15) 0%,
+            rgba(239,68,68,0.15) 40%,
+            rgba(245,158,11,0.15) 40%,
+            rgba(245,158,11,0.15) 65%,
+            rgba(16,185,129,0.15) 65%,
+            rgba(16,185,129,0.15) 100%
+          )`,
+        }}
+      >
         <div
           style={{
             height: "100%",

@@ -1437,19 +1437,54 @@ export default function App(){
 
           {/* ===== STRATEGIC INSIGHTS ===== */}
           {tab==="strategy"&&(
-            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
-              {ins.map((n,i)=>{
-                const vc=n.vtype==="risk"?{bg:"rgba(231,76,60,0.1)",bd:C.red,c:"#ff7b7b"}:n.vtype==="win"?{bg:"rgba(46,204,113,0.1)",bd:C.green,c:"#6dffaa"}:n.vtype==="tip"?{bg:"rgba(0,200,255,0.1)",bd:C.cyan,c:C.cyan}:{bg:"rgba(241,196,0,0.1)",bd:C.amber,c:C.amber};
-                return(
-                  <Card C={C} key={i} delay={Math.min(i*70,500)}>
-                    <div style={{fontSize:13,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:C.gold,marginBottom:6}}>{n.num}</div>
-                    <h3 style={{fontSize:18,fontWeight:700,marginBottom:12,lineHeight:1.35}}>{n.title}</h3>
-                    <p style={{fontSize:14,color:C.dim,lineHeight:1.75}}>{n.body}</p>
-                    {n.verdict&&<div style={{marginTop:14,padding:"12px 16px",borderRadius:8,background:vc.bg,borderLeft:`4px solid ${vc.bd}`,fontSize:13,fontWeight:600,color:vc.c,lineHeight:1.6}}>{n.verdict}</div>}
-                  </Card>
-                );
-              })}
-            </div>
+            <>
+              <Card C={C} style={{marginBottom:24}}>
+                <CardTitle C={C} label={C.gold}>Strategic Signal Map</CardTitle>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,minmax(0,1fr))",gap:isMobile?14:10,alignItems:"stretch"}}>
+                  {[
+                    ["Brand Strength",C.green],
+                    ["Growth Barrier",C.red],
+                    ["Platform Opportunity",C.cyan],
+                    ["Action Focus",C.gold],
+                  ].map(([stageLabel,color],i)=>{
+                    const item=ins[i];
+                    if(!item)return null;
+                    const tone=item.vtype==="risk"?C.red:item.vtype==="win"?C.green:item.vtype==="tip"?C.cyan:color;
+                    return(
+                      <div key={stageLabel} style={{position:"relative",display:"grid",gridTemplateColumns:"1fr",gap:10}}>
+                        <div style={{height:"100%",border:`1px solid ${tone}44`,borderRadius:12,background:`linear-gradient(180deg,${tone}14,rgba(255,255,255,0.02))`,padding:16}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:14}}>
+                            <div style={{width:30,height:30,borderRadius:999,display:"grid",placeItems:"center",background:`${tone}1f`,border:`1px solid ${tone}55`,color:tone,fontSize:12,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{i+1}</div>
+                            <div style={{fontSize:10,color:tone,fontWeight:800,textTransform:"uppercase",letterSpacing:1.4,fontFamily:"'DM Mono',monospace",textAlign:"right"}}>{stageLabel}</div>
+                          </div>
+                          <div style={{fontSize:14,fontWeight:800,color:C.text,lineHeight:1.35,marginBottom:10}}>{item.title}</div>
+                          <div style={{fontSize:11,color:C.dim,lineHeight:1.55,minHeight:isMobile?"auto":50}}>
+                            {item.verdict||item.body}
+                          </div>
+                          {item.vtype&&<div style={{marginTop:12,display:"inline-flex",padding:"3px 9px",borderRadius:999,background:`${tone}18`,border:`1px solid ${tone}44`,color:tone,fontSize:10,fontWeight:800,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>{item.vtype}</div>}
+                        </div>
+                        {!isMobile&&i<Math.min(ins.length,4)-1&&(
+                          <div style={{position:"absolute",right:-18,top:"50%",transform:"translateY(-50%)",zIndex:2,width:28,height:28,borderRadius:999,display:"grid",placeItems:"center",background:C.s1,border:`1px solid ${C.border}`,color:C.gold,fontSize:16}}>→</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+              <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
+                {ins.map((n,i)=>{
+                  const vc=n.vtype==="risk"?{bg:"rgba(231,76,60,0.1)",bd:C.red,c:"#ff7b7b"}:n.vtype==="win"?{bg:"rgba(46,204,113,0.1)",bd:C.green,c:"#6dffaa"}:n.vtype==="tip"?{bg:"rgba(0,200,255,0.1)",bd:C.cyan,c:C.cyan}:{bg:"rgba(241,196,0,0.1)",bd:C.amber,c:C.amber};
+                  return(
+                    <Card C={C} key={i} delay={Math.min(i*70,500)}>
+                      <div style={{fontSize:13,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:C.gold,marginBottom:6}}>{n.num}</div>
+                      <h3 style={{fontSize:18,fontWeight:700,marginBottom:12,lineHeight:1.35}}>{n.title}</h3>
+                      <p style={{fontSize:14,color:C.dim,lineHeight:1.75}}>{n.body}</p>
+                      {n.verdict&&<div style={{marginTop:14,padding:"12px 16px",borderRadius:8,background:vc.bg,borderLeft:`4px solid ${vc.bd}`,fontSize:13,fontWeight:600,color:vc.c,lineHeight:1.6}}>{n.verdict}</div>}
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           {/* ===== CMO PLAYBOOK ===== */}
@@ -1458,6 +1493,46 @@ export default function App(){
               <div style={{fontSize:11,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:8}}>For the Marketing Head</div>
               <h2 style={{fontSize:32,fontWeight:200,marginBottom:8}}>The <span style={{fontWeight:700,color:C.gold}}>CMO Playbook</span></h2>
               <p style={{fontSize:14,color:C.dim,marginBottom:32}}>Prioritized actions mapped to metric gaps. Sorted by impact-to-effort ratio.</p>
+              <div style={{marginBottom:30,padding:isMobile?16:22,borderRadius:14,border:`1px solid ${C.gold}30`,background:`linear-gradient(180deg,${C.gold}0d,rgba(255,255,255,0.02))`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:isMobile?"flex-start":"center",gap:14,flexDirection:isMobile?"column":"row",marginBottom:18}}>
+                  <div>
+                    <div style={{fontSize:10,color:C.gold,fontWeight:900,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:6}}>CMO Action Flow</div>
+                    <div style={{fontSize:18,color:C.text,fontWeight:800}}>From creative gap to media decision</div>
+                  </div>
+                  <div style={{fontSize:11,color:C.dim,fontFamily:"'DM Mono',monospace",letterSpacing:1,textTransform:"uppercase"}}>{cmo.length} prioritized actions</div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,minmax(0,1fr))",gap:isMobile?14:10}}>
+                  {[
+                    ["Fix Hook",C.red],
+                    ["Adapt Platforms",C.cyan],
+                    ["Amplify Strengths",C.green],
+                    ["Scale Investment",C.gold],
+                  ].map(([stageLabel,color],i)=>{
+                    const action=cmo[i];
+                    if(!action)return null;
+                    const priorityColor=action.priority==="critical"?C.red:action.priority==="high"?C.amber:color;
+                    return(
+                      <div key={stageLabel} style={{position:"relative"}}>
+                        <div style={{height:"100%",padding:16,borderRadius:12,border:`1px solid ${priorityColor}44`,background:`${priorityColor}10`}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                            <div style={{width:26,height:26,borderRadius:8,display:"grid",placeItems:"center",background:`${priorityColor}22`,color:priorityColor,fontSize:12,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{action.num||i+1}</div>
+                            <div style={{fontSize:10,color:priorityColor,fontWeight:900,textTransform:"uppercase",letterSpacing:1.2,fontFamily:"'DM Mono',monospace"}}>{stageLabel}</div>
+                          </div>
+                          <div style={{fontSize:14,color:C.text,fontWeight:800,lineHeight:1.35,marginBottom:12}}>{action.title}</div>
+                          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                            {action.priority&&<span style={{padding:"3px 8px",borderRadius:999,background:`${priorityColor}18`,border:`1px solid ${priorityColor}44`,color:priorityColor,fontSize:10,fontWeight:800,fontFamily:"'DM Mono',monospace"}}>{action.priority}</span>}
+                            {action.effort&&<span style={{padding:"3px 8px",borderRadius:999,background:C.s3,border:`1px solid ${C.border}`,color:C.dim,fontSize:10,fontWeight:800,fontFamily:"'DM Mono',monospace"}}>{action.effort}</span>}
+                            {action.estimated_uplift_pct&&<span style={{padding:"3px 8px",borderRadius:999,background:`${C.green}18`,border:`1px solid ${C.green}44`,color:C.green,fontSize:10,fontWeight:800,fontFamily:"'DM Mono',monospace"}}>+{action.estimated_uplift_pct}%</span>}
+                          </div>
+                        </div>
+                        {!isMobile&&i<Math.min(cmo.length,4)-1&&(
+                          <div style={{position:"absolute",right:-18,top:"50%",transform:"translateY(-50%)",zIndex:2,width:28,height:28,borderRadius:999,display:"grid",placeItems:"center",background:C.s1,border:`1px solid ${C.border}`,color:C.gold,fontSize:16}}>→</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
               <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:16}}>
                 {cmo.map((a,i)=>
                   <div key={i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,padding:24}}>

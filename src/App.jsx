@@ -805,109 +805,157 @@ export default function App(){
   if(stage==="form"){
     const formGrid2=isMobile?"1fr":"1fr 1fr";
     const formGrid3=isMobile?"1fr":isTablet?"1fr 1fr":"1fr 1fr 1fr";
-    const inp={width:"100%",boxSizing:"border-box",padding:"14px 16px",borderRadius:10,border:`1px solid ${C.border}`,background:C.s2,color:C.text,fontSize:15,outline:"none",fontFamily:"inherit"};
-    const lbl={fontSize:11,fontWeight:700,letterSpacing:2,color:C.dim,textTransform:"uppercase",marginBottom:6,display:"block",fontFamily:"'JetBrains Mono',monospace"};
-    const selStyle={...inp,appearance:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a9e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,backgroundRepeat:"no-repeat",backgroundPosition:"right 14px center"};
-    return(
-      <div style={{minHeight:"100vh",background:`linear-gradient(180deg,${C.bg},${C.ink})`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif"}}>
-        <div style={{padding:isMobile?"18px 20px":"20px 40px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,position:"sticky",top:0,zIndex:20,background:"rgba(5,5,7,0.9)",backdropFilter:"blur(16px)"}}>
-          <span style={{fontSize:12,fontWeight:900,letterSpacing:2,color:C.gold,textTransform:"uppercase",cursor:"pointer",fontFamily:"'DM Mono',monospace"}} onClick={()=>setStage("landing")}>ADVantage Insights</span>
-          <span style={{fontSize:12,color:C.dim}}>·</span>
-          <span style={{fontSize:12,color:C.text,fontWeight:800}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
+    const fieldWrap={display:"grid",gap:8};
+    const panelStyle={background:`linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01)),${C.s1}`,border:`1px solid ${C.border}`,borderTop:"1px solid rgba(255,255,255,0.09)",borderRadius:20,boxShadow:`0 30px 90px ${C.shadow}`,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)"};
+    const sectionHead=(num,title,sub)=>(
+      <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:18}}>
+        <div style={{width:30,height:30,borderRadius:10,display:"grid",placeItems:"center",background:`${C.gold}18`,border:`1px solid ${C.gold}44`,color:C.gold,fontSize:11,fontWeight:900,fontFamily:"'DM Mono',monospace",flexShrink:0}}>{num}</div>
+        <div>
+          <div style={{fontSize:12,color:C.gold,fontWeight:900,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:4}}>{title}</div>
+          <div style={{fontSize:13,color:C.dim,lineHeight:1.55}}>{sub}</div>
         </div>
-        <div style={{maxWidth:920,margin:isMobile?"26px auto":"44px auto",padding:isMobile?"0 18px":"0 28px"}}>
-          <h2 style={{fontSize:isMobile?30:42,fontWeight:800,margin:"0 0 8px",fontFamily:"'Playfair Display',serif",letterSpacing:0}}>Upload Creative</h2>
-          <p style={{color:C.dim,fontSize:15,margin:"0 0 30px",lineHeight:1.7}}>Fill in the campaign context, token, and creative asset. Required fields are checked before analysis starts.</p>
-          {error&&<div style={{padding:"14px 18px",borderRadius:10,background:"rgba(231,76,60,0.12)",color:C.red,fontSize:14,marginBottom:20,border:`1px solid ${C.red}`}}>{error}</div>}
-          <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
-            <div><label style={lbl}>Brand Name *</label><input placeholder="e.g. Dabur, Nestlé, Coca-Cola" style={inp} value={form.brand} onChange={e=>u("brand",e.target.value)}/></div>
-            <div><label style={lbl}>Client / Advertiser</label><input placeholder="e.g. Dabur India Ltd" style={inp} value={form.client} onChange={e=>u("client",e.target.value)}/></div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
-            <div><label style={lbl}>Campaign Name</label><input placeholder="e.g. Immunity Winter 2026" style={inp} value={form.campaign} onChange={e=>u("campaign",e.target.value)}/></div>
-            <div><label style={lbl}>Agency / Team</label><input placeholder="e.g. Ogilvy, DDB, Wunderman" style={inp} value={form.agency} onChange={e=>u("agency",e.target.value)}/></div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:formGrid3,gap:18,marginBottom:18}}>
-            <div><label style={lbl}>Industry Vertical</label>
-              <select style={selStyle} value={form.industry} onChange={e=>u("industry",e.target.value)}>
-                {["FMCG / CPG","Pharma / Healthcare","Auto / Mobility","BFSI / Fintech","Technology","E-commerce","Retail / QSR","Telecom","Media / Entertainment","Real Estate","Education","Government / PSU","Other"].map(v=><option key={v} value={v}>{v}</option>)}
-              </select>
-            </div>
-            <div><label style={lbl}>Country *</label>
-              <select style={{...selStyle, borderColor: !form.country ? C.red : C.border}} value={form.country} onChange={e=>u("country",e.target.value)}>
-                {["India","UAE","Saudi Arabia","Singapore","USA","UK","Australia","Indonesia","Bangladesh","Sri Lanka","Malaysia","Other"].map(v=><option key={v} value={v}>{v}</option>)}
-              </select>
-            </div>
-            <div><label style={lbl}>Target Market</label>
-              <select style={selStyle} value={form.market} onChange={e=>u("market",e.target.value)}>
-                {["India","India — Tier 1","India — Tier 2/3","Pan-India","Urban India","Rural India","USA","UK","UAE / MENA","Southeast Asia","Global","Other"].map(v=><option key={v} value={v}>{v}</option>)}
-              </select>
-            </div>
-            <div><label style={lbl}>Target Audience</label><input placeholder="e.g. Males 35-55, SEC A/B" style={inp} value={form.audience} onChange={e=>u("audience",e.target.value)}/></div>
-          </div>
-          <div style={{marginBottom:18}}>
-            <label style={lbl}>Creative Type</label>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-              {[["video","Video Ad"],["display","Display / Banner"],["social","Social Post"],["ctv","CTV / OTT"],["bumper","6s Bumper"],["preroll","Pre-Roll"]].map(([k,v])=>
-                <button key={k} onClick={()=>u("type",k)} style={{padding:"10px 20px",borderRadius:8,border:`1px solid ${form.type===k?C.cyan:C.border}`,background:form.type===k?"rgba(0,200,255,0.08)":C.s2,color:form.type===k?C.cyan:C.dim,fontSize:13,fontWeight:600,cursor:"pointer"}}>{v}</button>
-              )}
+      </div>
+    );
+    const inp={width:"100%",boxSizing:"border-box",height:56,padding:"0 18px",borderRadius:14,border:`1px solid ${C.border}`,borderTop:"1px solid rgba(255,255,255,0.08)",background:`linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01)),${C.s2}`,color:C.text,fontSize:15,outline:"none",fontFamily:"inherit",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.03)",transition:"border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease"};
+    const lbl={fontSize:10,fontWeight:900,letterSpacing:2.4,color:C.dim,textTransform:"uppercase",marginBottom:0,display:"block",fontFamily:"'DM Mono',monospace"};
+    const selStyle={...inp,appearance:"none",backgroundImage:`linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d8b45a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,backgroundColor:C.s2,backgroundRepeat:"no-repeat",backgroundPosition:"right 16px center"};
+    return(
+      <div style={{minHeight:"100vh",background:`radial-gradient(circle at 18% 0%,${C.gold}12 0%,transparent 30%),radial-gradient(circle at 100% 15%,${C.purple}10 0%,transparent 26%),linear-gradient(180deg,${C.bg},${C.ink})`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",position:"relative",overflow:"hidden"}}>
+        <div aria-hidden="true" style={{position:"absolute",top:-220,right:-180,width:520,height:520,borderRadius:"50%",background:"radial-gradient(circle, rgba(216,180,90,0.08), transparent 66%)",pointerEvents:"none"}}/>
+        <div aria-hidden="true" style={{position:"absolute",bottom:-260,left:-180,width:620,height:620,borderRadius:"50%",background:"radial-gradient(circle, rgba(45,212,191,0.055), transparent 64%)",pointerEvents:"none"}}/>
+
+        <div style={{padding:isMobile?"16px 18px":"18px 42px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,position:"sticky",top:0,zIndex:20,background:"rgba(5,5,7,0.82)",backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
+          <div onClick={()=>setStage("landing")} style={{display:"flex",alignItems:"center",gap:14,cursor:"pointer",minWidth:0}}>
+            <img src="/advantage-logo.png" alt="ADVantage Insights" onError={e=>{e.target.style.display="none";}} style={{height:28,width:"auto",display:"block"}}/>
+            <div style={{display:"grid",gap:2}}>
+              <span style={{fontSize:10,fontWeight:900,letterSpacing:2,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>ADVantage Insights<sup style={{fontSize:6}}>TM</sup></span>
+              <span style={{fontSize:12,color:C.text,fontWeight:800}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
             </div>
           </div>
-          <div style={{marginBottom:18}}>
-            <label style={lbl}>Additional Notes / Brief</label>
-            <textarea placeholder="Any context for the analysis: objectives, KPIs, competitive context, specific questions..." style={{...inp,height:80,resize:"vertical"}} value={form.notes} onChange={e=>u("notes",e.target.value)}/>
-          </div>
-          <div style={{marginBottom:18}}>
-            <label style={lbl}>Upload Creative *</label>
-            <div onClick={()=>fileRef.current?.click()} style={{border:`2px dashed ${file?C.gold:C.border}`,borderRadius:14,padding:file?20:isMobile?28:44,textAlign:"center",cursor:"pointer",background:file?`${C.gold}08`:C.s1,transition:"all .2s",boxShadow:`0 18px 50px ${C.shadow}`}}>
-              {file?(
-                <div style={{display:"flex",alignItems:"center",gap:16}}>
-                  {preview&&file.type.startsWith("image/")&&<img src={preview} style={{width:140,height:80,objectFit:"cover",borderRadius:8}} alt=""/>}
-                  {preview&&file.type.startsWith("video/")&&<video src={preview} style={{width:140,height:80,objectFit:"cover",borderRadius:8}}/>}
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontSize:15,fontWeight:600,color:C.text}}>{file.name}</div>
-                    <div style={{fontSize:13,color:C.dim}}>{(file.size/1024/1024).toFixed(1)} MB · {file.type}</div>
-                    <div style={{fontSize:12,color:C.gold,marginTop:4}}>Click to change file</div>
-                  </div>
-                </div>
-              ):(
-                <>
-                  <div style={{fontSize:34,marginBottom:8,color:C.gold}}>Upload</div>
-                  <div style={{fontSize:16,fontWeight:600,color:C.text}}>Drop file here or click to browse</div>
-                  <div style={{fontSize:13,color:C.dim,marginTop:6}}>MP4, MOV, AVI, WEBM, JPG, PNG</div>
-                </>
-              )}
-            </div>
-            <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleFile} style={{display:"none"}}/>
-          </div>
-          <div style={{marginBottom:16}}>
-            <label style={lbl}>
-              Analysis Token *&nbsp;
-              <span style={{fontSize:11,color:C.dim,fontWeight:400}}>
-                — <span style={{color:C.gold,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowPricing(true)}>Buy credits</span>
-              </span>
-            </label>
-            <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <input
-                style={{...inp,flex:1,fontFamily:"monospace",letterSpacing:1}}
-                placeholder="Paste your token here..."
-                value={token}
-                onChange={e=>{
-                  setToken(e.target.value);
-                  localStorage.setItem("adcritiq_token",e.target.value);
-                }}
-              />
-              {credits!==null&&(
-                <div style={{padding:"10px 14px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,fontSize:13,color:C.green,fontWeight:700,whiteSpace:"nowrap"}}>
-                  {credits===999?"∞ demo":`${credits} credit${credits!==1?"s":""} left`}
-                </div>
-              )}
-            </div>
-          </div>
-          <button onClick={handleAnalyze} disabled={!file||!form.brand} onMouseDown={e=>{if(file&&form.brand)e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:C.gold,color:(!file||!form.brand)?C.dim:C.ink,fontSize:17,fontWeight:900,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":`0 14px 34px ${C.gold}24`,transition:"transform 0.12s ease"}}>
-            Run AdCritIQ Analysis
+          <button onClick={()=>setShowPricing(true)} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{padding:isMobile?"10px 13px":"11px 18px",borderRadius:999,border:`1px solid ${C.gold}55`,background:`${C.gold}12`,color:C.gold,fontSize:12,fontWeight:900,cursor:"pointer",whiteSpace:"nowrap",transition:"transform 0.12s ease",fontFamily:"'DM Sans',sans-serif"}}>
+            Buy Credits
           </button>
         </div>
+
+        <main style={{position:"relative",zIndex:1,maxWidth:1180,margin:"0 auto",padding:isMobile?"28px 18px 56px":"54px 32px 80px"}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,0.85fr) minmax(320px,0.55fr)",gap:isMobile?24:42,alignItems:"end",marginBottom:30}}>
+            <div>
+              <div style={{display:"inline-flex",alignItems:"center",gap:9,padding:"6px 11px",borderRadius:999,background:`${C.gold}10`,border:`1px solid ${C.gold}33`,color:C.gold,fontSize:10,fontWeight:900,letterSpacing:1.6,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:18}}>
+                Creative Intelligence Intake
+              </div>
+              <h2 style={{fontSize:isMobile?42:isTablet?58:72,fontWeight:800,margin:"0 0 14px",fontFamily:"'Playfair Display',serif",letterSpacing:0,lineHeight:0.96}}>Upload Creative</h2>
+              <p style={{color:C.dim,fontSize:isMobile?15:17,margin:0,lineHeight:1.75,maxWidth:660}}>Prepare the campaign context, creative file, and analysis token for an AdCritIQ neural creative readout.</p>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              {["17 neural metrics","15 platform scores","CMO playbook","PDF ready"].map(t=>(
+                <div key={t} style={{padding:"11px 12px",borderRadius:12,background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,color:C.dim,fontSize:11,fontWeight:800,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1,textAlign:"center"}}>{t}</div>
+              ))}
+            </div>
+          </div>
+
+          {error&&<div style={{padding:"15px 18px",borderRadius:14,background:"rgba(251,113,133,0.12)",color:C.red,fontSize:14,marginBottom:20,border:`1px solid ${C.red}55`,boxShadow:`0 18px 40px ${C.shadow}`}}>{error}</div>}
+
+          <div style={{...panelStyle,padding:isMobile?18:30}}>
+            <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
+              {sectionHead("01","Campaign Context","Define the brand, audience and market inputs used to frame the analysis.")}
+              <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
+                <div style={fieldWrap}><label style={lbl}>Brand Name *</label><input placeholder="e.g. Dabur, Nestlé, Coca-Cola" style={inp} value={form.brand} onChange={e=>u("brand",e.target.value)}/></div>
+                <div style={fieldWrap}><label style={lbl}>Client / Advertiser</label><input placeholder="e.g. Dabur India Ltd" style={inp} value={form.client} onChange={e=>u("client",e.target.value)}/></div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
+                <div style={fieldWrap}><label style={lbl}>Campaign Name</label><input placeholder="e.g. Immunity Winter 2026" style={inp} value={form.campaign} onChange={e=>u("campaign",e.target.value)}/></div>
+                <div style={fieldWrap}><label style={lbl}>Agency / Team</label><input placeholder="e.g. Ogilvy, DDB, Wunderman" style={inp} value={form.agency} onChange={e=>u("agency",e.target.value)}/></div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:formGrid3,gap:18}}>
+                <div style={fieldWrap}><label style={lbl}>Industry Vertical</label>
+                  <select style={selStyle} value={form.industry} onChange={e=>u("industry",e.target.value)}>
+                    {["FMCG / CPG","Pharma / Healthcare","Auto / Mobility","BFSI / Fintech","Technology","E-commerce","Retail / QSR","Telecom","Media / Entertainment","Real Estate","Education","Government / PSU","Other"].map(v=><option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div style={fieldWrap}><label style={lbl}>Country *</label>
+                  <select style={{...selStyle,borderColor:!form.country?C.red:C.border}} value={form.country} onChange={e=>u("country",e.target.value)}>
+                    {["India","UAE","Saudi Arabia","Singapore","USA","UK","Australia","Indonesia","Bangladesh","Sri Lanka","Malaysia","Other"].map(v=><option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div style={fieldWrap}><label style={lbl}>Target Market</label>
+                  <select style={selStyle} value={form.market} onChange={e=>u("market",e.target.value)}>
+                    {["India","India — Tier 1","India — Tier 2/3","Pan-India","Urban India","Rural India","USA","UK","UAE / MENA","Southeast Asia","Global","Other"].map(v=><option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div style={fieldWrap}><label style={lbl}>Target Audience</label><input placeholder="e.g. Males 35-55, SEC A/B" style={inp} value={form.audience} onChange={e=>u("audience",e.target.value)}/></div>
+              </div>
+            </section>
+
+            <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
+              {sectionHead("02","Creative Format","Select the primary creative environment and add any strategic context.")}
+              <div style={{marginBottom:20}}>
+                <label style={{...lbl,marginBottom:10}}>Creative Type</label>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":isTablet?"repeat(3,1fr)":"repeat(6,1fr)",gap:10}}>
+                  {[["video","Video Ad"],["display","Display / Banner"],["social","Social Post"],["ctv","CTV / OTT"],["bumper","6s Bumper"],["preroll","Pre-Roll"]].map(([k,v])=>
+                    <button key={k} onClick={()=>u("type",k)} style={{padding:"13px 12px",borderRadius:12,border:`1px solid ${form.type===k?C.gold:C.border}`,background:form.type===k?`linear-gradient(180deg,${C.gold}20,${C.gold}0d)`:C.s2,color:form.type===k?C.gold:C.dim,fontSize:13,fontWeight:800,cursor:"pointer",boxShadow:form.type===k?`0 12px 28px ${C.gold}12`:"none",transition:"all 0.18s ease"}}>{v}</button>
+                  )}
+                </div>
+              </div>
+              <div style={fieldWrap}>
+                <label style={lbl}>Additional Notes / Brief</label>
+                <textarea placeholder="Any context for the analysis: objectives, KPIs, competitive context, specific questions..." style={{...inp,height:110,padding:"16px 18px",resize:"vertical",lineHeight:1.6}} value={form.notes} onChange={e=>u("notes",e.target.value)}/>
+              </div>
+            </section>
+
+            <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
+              {sectionHead("03","Upload Asset","Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
+              <div onClick={()=>fileRef.current?.click()} style={{border:`1.5px dashed ${file?C.gold:C.border2}`,borderRadius:18,padding:file?20:isMobile?34:52,textAlign:"center",cursor:"pointer",background:file?`${C.gold}08`:`linear-gradient(180deg,rgba(216,180,90,0.055),rgba(255,255,255,0.015))`,transition:"all .2s",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
+                {file?(
+                  <div style={{display:"flex",alignItems:"center",gap:16,justifyContent:isMobile?"flex-start":"center",flexDirection:isMobile?"column":"row"}}>
+                    {preview&&file.type.startsWith("image/")&&<img src={preview} style={{width:160,height:92,objectFit:"cover",borderRadius:12,border:`1px solid ${C.border}`}} alt=""/>}
+                    {preview&&file.type.startsWith("video/")&&<video src={preview} style={{width:160,height:92,objectFit:"cover",borderRadius:12,border:`1px solid ${C.border}`}}/>}
+                    <div style={{textAlign:isMobile?"center":"left"}}>
+                      <div style={{fontSize:16,fontWeight:800,color:C.text}}>{file.name}</div>
+                      <div style={{fontSize:13,color:C.dim,marginTop:4}}>{(file.size/1024/1024).toFixed(1)} MB · {file.type}</div>
+                      <div style={{fontSize:12,color:C.gold,marginTop:6,fontWeight:800}}>Click to change file</div>
+                    </div>
+                  </div>
+                ):(
+                  <>
+                    <div style={{fontSize:isMobile?38:50,marginBottom:8,color:C.gold,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Upload</div>
+                    <div style={{fontSize:18,fontWeight:900,color:C.text}}>Drop file here or click to browse</div>
+                    <div style={{fontSize:13,color:C.dim,marginTop:8}}>MP4, MOV, AVI, WEBM, JPG, PNG</div>
+                  </>
+                )}
+              </div>
+              <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleFile} style={{display:"none"}}/>
+            </section>
+
+            <section>
+              {sectionHead("04","Access Token","Enter the analysis token tied to your purchased credits.")}
+              <label style={lbl}>
+                Analysis Token *&nbsp;
+                <span style={{fontSize:11,color:C.dim,fontWeight:400}}>
+                  — <span style={{color:C.gold,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowPricing(true)}>Buy credits</span>
+                </span>
+              </label>
+              <div style={{display:"flex",gap:10,alignItems:"center",flexDirection:isMobile?"column":"row",marginTop:8,marginBottom:18}}>
+                <input
+                  style={{...inp,flex:1,fontFamily:"monospace",letterSpacing:1,width:"100%"}}
+                  placeholder="Paste your token here..."
+                  value={token}
+                  onChange={e=>{
+                    setToken(e.target.value);
+                    localStorage.setItem("adcritiq_token",e.target.value);
+                  }}
+                />
+                {credits!==null&&(
+                  <div style={{padding:"12px 15px",background:`${C.green}12`,border:`1px solid ${C.green}33`,borderRadius:12,fontSize:13,color:C.green,fontWeight:900,whiteSpace:"nowrap",width:isMobile?"100%":"auto",textAlign:"center"}}>
+                    {credits===999?"∞ demo":`${credits} credit${credits!==1?"s":""} left`}
+                  </div>
+                )}
+              </div>
+              <button onClick={handleAnalyze} disabled={!file||!form.brand} onMouseDown={e=>{if(file&&form.brand)e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{width:"100%",padding:isMobile?17:20,borderRadius:14,border:"none",background:(!file||!form.brand)?C.s3:`linear-gradient(135deg,${C.goldL},${C.gold})`,color:(!file||!form.brand)?C.dim:C.ink,fontSize:isMobile?16:18,fontWeight:900,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":`0 18px 46px ${C.gold}28`,transition:"transform 0.12s ease, box-shadow 0.18s ease"}}>
+                Run AdCritIQ Analysis
+              </button>
+            </section>
+          </div>
+        </main>
         {pricingModal}
       </div>
     );

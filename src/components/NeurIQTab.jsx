@@ -121,10 +121,14 @@ export default function NeurIQTab({ results, C }) {
             onClick={() => sendMessage(question)}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = C.gold;
+              e.currentTarget.style.background = `${C.gold}14`;
+              e.currentTarget.style.color = C.text;
               e.currentTarget.style.opacity = "1";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = C.border2;
+              e.currentTarget.style.background = C.s2;
+              e.currentTarget.style.color = C.text;
               e.currentTarget.style.opacity = loading ? "0.6" : "0.8";
             }}
             style={chipStyle}
@@ -140,21 +144,27 @@ export default function NeurIQTab({ results, C }) {
         {messages.map((message, index) => {
           const isUser = message.role === "user";
           return (
-            <div key={`${message.role}-${index}`} style={{ alignSelf: isUser ? "flex-end" : "flex-start", maxWidth: isUser ? "75%" : "80%" }}>
+            <div key={`${message.role}-${index}`} style={{ alignSelf: isUser ? "flex-end" : "flex-start", maxWidth: isUser ? "75%" : "80%", animation: "fadeUp 0.25s ease both" }}>
               <div style={{ ...labelBase, color: isUser ? C.dim : C.gold, textAlign: isUser ? "right" : "left" }}>
                 {isUser ? "You" : "NeurIQ™"}
               </div>
               <div
                 style={{
-                  background: isUser ? C.s3 : C.s2,
-                  border: isUser ? `1px solid ${C.border2}` : "none",
-                  borderLeft: isUser ? undefined : `3px solid ${C.gold}`,
+                  background: isUser
+                    ? C.s3
+                    : `linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0) 100%), ${C.s2}`,
+                  border: isUser ? `1px solid ${C.border2}` : `1px solid ${C.border}`,
+                  borderTop: isUser ? undefined : "1px solid rgba(255,255,255,0.08)",
+                  borderLeft: isUser ? undefined : `2px solid ${C.gold}`,
                   borderRadius: isUser ? "10px 0 10px 10px" : "0 10px 10px 10px",
                   padding: "12px 16px",
                   fontSize: 14,
                   color: isUser ? C.dim : C.text,
                   lineHeight: 1.75,
                   whiteSpace: "pre-wrap",
+                  boxShadow: isUser ? "none" : "0 8px 32px rgba(0,0,0,0.35)",
+                  backdropFilter: isUser ? undefined : "blur(12px)",
+                  WebkitBackdropFilter: isUser ? undefined : "blur(12px)",
                 }}
               >
                 {message.content}
@@ -165,8 +175,21 @@ export default function NeurIQTab({ results, C }) {
         {loading && (
           <div style={{ alignSelf: "flex-start", maxWidth: "80%" }}>
             <div style={{ ...labelBase, color: C.gold }}>NeurIQ™</div>
-            <div style={{ background: C.s2, borderLeft: `3px solid ${C.gold}`, borderRadius: "0 10px 10px 10px", padding: "12px 16px", fontSize: 14, color: C.text, lineHeight: 1.75 }}>
-              NeurIQ™ is thinking{dots}
+            <div style={{ background: `linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0) 100%), ${C.s2}`, border:`1px solid ${C.border}`, borderLeft: `2px solid ${C.gold}`, borderTop:"1px solid rgba(255,255,255,0.08)", borderRadius: "0 10px 10px 10px", padding: "14px 18px", fontSize: 14, color: C.text, lineHeight: 1.75, boxShadow:"0 8px 32px rgba(0,0,0,0.35)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)" }}>
+              <div style={{ display: "flex", gap: 5 }}>
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: C.gold,
+                      animation: `pulse 1s ease-in-out ${i * 0.18}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}

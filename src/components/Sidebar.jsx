@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const SidebarIcon = {
   new: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -15,6 +17,8 @@ const SidebarIcon = {
 };
 
 export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDownload, downloading, NAV_TABS, isMobile, isTablet }) {
+  const [hoveredTab, setHoveredTab] = useState(null);
+
   if (isMobile) return null;
 
   const gc =
@@ -114,10 +118,13 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
       <nav style={{ flex: 1, padding: "14px 10px" }}>
         {NAV_TABS.map((n) => {
           const active = tab === n.id;
+          const hovered = hoveredTab === n.id;
           return (
             <button
               key={n.id}
               onClick={() => setTab(n.id)}
+              onMouseEnter={() => setHoveredTab(n.id)}
+              onMouseLeave={() => setHoveredTab(null)}
               style={{
                 width: "100%",
                 display: "flex",
@@ -125,12 +132,19 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
                 gap: 10,
                 padding: "11px 12px",
                 marginBottom: 4,
-                background: active ? `linear-gradient(135deg,${C.gold}1f,${C.gold}09)` : "transparent",
-                border: active ? `1px solid ${C.gold}44` : `1px solid transparent`,
-                borderRadius: 10,
+                background: active
+                  ? "linear-gradient(90deg, rgba(245,158,11,0.10) 0%, transparent 100%)"
+                  : hovered
+                    ? "rgba(255,255,255,0.03)"
+                    : "transparent",
+                borderLeft: active ? `3px solid ${C.gold}` : "3px solid transparent",
+                borderRight: "none",
+                borderTop: "none",
+                borderBottom: "none",
+                borderRadius: 0,
                 cursor: "pointer",
                 color: active ? C.gold : C.text,
-                opacity: active ? 1 : 0.55,
+                opacity: active || hovered ? 1 : 0.55,
                 fontSize: 12,
                 fontWeight: active ? 700 : 500,
                 transition: "all 0.15s ease",

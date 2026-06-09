@@ -13,6 +13,7 @@ export default function CardTitle({ C, label, sub, children, style }) {
             height: 16,
             borderRadius: 2,
             background: C.gold,
+            boxShadow: "0 0 8px rgba(245,158,11,0.5)",
             flexShrink: 0,
           }}
         />

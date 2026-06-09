@@ -44,11 +44,33 @@
       0%, 100% { opacity: 1; }
       50%       { opacity: 0.5; }
     }
+    @keyframes ringDraw {
+      to { stroke-dashoffset: var(--ring-target); }
+    }
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(-40px, 30px) scale(1.08); }
+    }
     .fade-up {
       animation: fadeUp 0.45s ease both;
     }
     .fade-in {
       animation: fadeIn 0.35s ease both;
+    }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #07070F; }
+    ::-webkit-scrollbar-thumb {
+      background: #2A2A45;
+      border-radius: 5px;
+      border: 2px solid #07070F;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: #3A3A5C; }
+    ::selection { background: rgba(245,158,11,0.30); color: #fff; }
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>

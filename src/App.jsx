@@ -77,6 +77,74 @@ const NAV_TABS = [
   {id:"methodology",label:"Methodology",      icon:Icon.glossary},
 ];
 
+const PLATFORM_META = {
+  "TV Broadcast": { abbr: "TV", color: "#10B981" },
+  "CTV / OTT": { abbr: "OTT", color: "#22D3EE" },
+  "YouTube In-Stream": { abbr: "YT", color: "#FF0033" },
+  "YouTube 6s Bumper": { abbr: "YT", color: "#FF0033" },
+  "YouTube Shorts": { abbr: "YT", color: "#FF0033" },
+  "Instagram Reels": { abbr: "IG", color: "#E1306C" },
+  "Instagram Feed": { abbr: "IG", color: "#E1306C" },
+  "Instagram Stories": { abbr: "IG", color: "#E1306C" },
+  "Facebook Feed": { abbr: "FB", color: "#1877F2" },
+  "Meta Feed": { abbr: "META", color: "#1877F2" },
+  TikTok: { abbr: "TT", color: "#69C9D0" },
+  LinkedIn: { abbr: "IN", color: "#0A66C2" },
+  "X / Twitter": { abbr: "X", color: "#E7E9EA" },
+  Snapchat: { abbr: "SC", color: "#FFFC00" },
+  "Connected TV": { abbr: "CTV", color: "#22D3EE" },
+};
+
+function PlatformChip({ name }) {
+  const cleanName = String(name || "").replace(/_/g, " ");
+  const lower = cleanName.toLowerCase();
+  const found = Object.entries(PLATFORM_META).find(([key]) => {
+    const keyLower = key.toLowerCase();
+    const firstWord = keyLower.split(/\s|\/|-/)[0];
+    return lower.includes(keyLower) || lower.includes(firstWord);
+  });
+  const meta = found?.[1] || { abbr: cleanName.slice(0, 2).toUpperCase(), color: C.gold };
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: 34,
+        height: 22,
+        padding: "0 7px",
+        marginRight: 10,
+        borderRadius: 6,
+        fontSize: 9,
+        fontWeight: 800,
+        fontFamily: "monospace",
+        letterSpacing: "0.08em",
+        color: meta.color,
+        background: `${meta.color}15`,
+        border: `1px solid ${meta.color}40`,
+        flexShrink: 0,
+      }}
+    >
+      {meta.abbr}
+    </span>
+  );
+}
+
+function gradeToVisualScore(g) {
+  if (g === "A+") return 95;
+  if (g === "A") return 88;
+  if (g === "A-") return 82;
+  if (g === "B+") return 78;
+  if (g === "B") return 72;
+  if (g === "B-") return 67;
+  if (g === "C+") return 62;
+  if (g === "C") return 57;
+  if (g === "C-") return 52;
+  if (g === "D") return 43;
+  if (g === "F") return 30;
+  return 65;
+}
+
 // ============================================================
 // TAKEAWAY DATA GENERATOR
 // ============================================================
@@ -292,6 +360,7 @@ export default function App(){
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
   const [isTablet, setIsTablet] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 && window.innerWidth < 1120 : false);
   const [expandedPlatform, setExpandedPlatform] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
   const fileRef=useRef(null);
 
   useEffect(()=>{
@@ -303,6 +372,13 @@ export default function App(){
     syncViewport();
     window.addEventListener("resize",syncViewport);
     return()=>window.removeEventListener("resize",syncViewport);
+  },[]);
+
+  useEffect(()=>{
+    const onScroll=()=>setScrolled(window.scrollY>180);
+    window.addEventListener("scroll",onScroll,{passive:true});
+    onScroll();
+    return()=>window.removeEventListener("scroll",onScroll);
   },[]);
 
   const handleFile=(e)=>{
@@ -638,7 +714,9 @@ export default function App(){
   // ============================================================
   if(stage==="landing"){
     return(
-      <div style={{minHeight:"100vh",background:`linear-gradient(180deg,${C.bg} 0%,${C.ink} 100%)`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
+      <div style={{minHeight:"100vh",background:`linear-gradient(180deg,${C.bg} 0%,${C.ink} 100%)`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
+        <div aria-hidden="true" style={{position:"absolute",top:"-20%",right:"-10%",width:600,height:600,borderRadius:"50%",background:"radial-gradient(circle, rgba(245,158,11,0.07) 0%, transparent 65%)",animation:"drift 14s ease-in-out infinite alternate",pointerEvents:"none"}}/>
+        <div aria-hidden="true" style={{position:"absolute",bottom:"-30%",left:"-10%",width:700,height:700,borderRadius:"50%",background:"radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 65%)",animation:"drift 18s ease-in-out infinite alternate-reverse",pointerEvents:"none"}}/>
         <header style={{position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:isMobile?"18px 20px":"22px 48px",borderBottom:`1px solid ${C.border}`,background:"rgba(5,5,7,0.9)",backdropFilter:"blur(16px)"}}>
           <div style={{display:"flex",alignItems:"center",gap:14,minWidth:0}}>
             <img src="/advantage-logo.png" alt="ADVantage Insights" onError={e=>{e.target.style.display="none";}} style={{height:isMobile?26:32,maxWidth:isMobile?140:190,objectFit:"contain",display:"block"}}/>
@@ -652,21 +730,24 @@ export default function App(){
           </button>
         </header>
 
-        <main style={{flex:1,display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.08fr) minmax(340px,0.92fr)",gap:isMobile?36:56,alignItems:"center",padding:isMobile?"44px 20px 28px":"72px 48px 44px",maxWidth:1280,width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+        <main style={{flex:1,display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.08fr) minmax(340px,0.92fr)",gap:isMobile?36:56,alignItems:"center",padding:isMobile?"44px 20px 28px":"72px 48px 44px",maxWidth:1280,width:"100%",margin:"0 auto",boxSizing:"border-box",position:"relative",zIndex:1}}>
           <section>
             <div style={{fontSize:11,fontWeight:900,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:18}}>Neural Creative Intelligence</div>
             <h1 style={{fontSize:isMobile?34:isTablet?50:64,fontWeight:800,color:C.text,lineHeight:1.08,letterSpacing:0,margin:"0 0 24px",fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif"}}>
               Know if your creative works<br/>
-              <span style={{color:C.gold}}>before you go live.</span>
+              <span style={{color:C.gold,position:"relative",display:"inline-block"}}>
+                before you go live.
+                <span aria-hidden="true" style={{position:"absolute",left:0,right:0,bottom:-6,height:2,borderRadius:999,background:`linear-gradient(90deg,transparent,${C.goldL},${C.gold},transparent)`,backgroundSize:"200% 100%",animation:"shimmer 1.5s ease 0.6s both"}}/>
+              </span>
             </h1>
             <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.75,maxWidth:620,margin:"0 0 32px"}}>
               AdCritIQ™ analyses advertising creatives using multimodal AI trained on neuroscience research — delivering 17 neural metrics, 15 platform scores, and CMO-level strategic recommendations in under 2 minutes. Built for brand teams and agencies worldwide.
             </p>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:34}}>
-              <button onClick={()=>setStage("form")} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:`0 16px 40px ${C.gold}24`}}>
+              <button onClick={()=>setStage("form")} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:`0 16px 40px ${C.gold}24`,transition:"transform 0.12s ease"}}>
                 Start Analysis
               </button>
-              <button onClick={()=>setShowPricing(true)} style={{background:C.s1,color:C.text,border:`1px solid ${C.border}`,padding:"15px 24px",borderRadius:10,fontSize:15,fontWeight:800,cursor:"pointer"}}>
+              <button onClick={()=>setShowPricing(true)} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.s1,color:C.text,border:`1px solid ${C.border}`,padding:"15px 24px",borderRadius:10,fontSize:15,fontWeight:800,cursor:"pointer",transition:"transform 0.12s ease"}}>
                 Buy Analysis Credits
               </button>
             </div>
@@ -708,7 +789,7 @@ export default function App(){
           </section>
         </main>
 
-        <footer style={{padding:isMobile?"20px":"24px 48px",borderTop:`1px solid ${C.border}`,color:C.dim,fontSize:12,display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
+        <footer style={{padding:isMobile?"20px":"24px 48px",borderTop:`1px solid ${C.border}`,color:C.dim,fontSize:12,display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase",position:"relative",zIndex:1}}>
           <span>ADVantage Insights<sup>TM</sup></span>
           <span>Predictive, not biometric</span>
           <span>Built for creative decisions</span>
@@ -823,7 +904,7 @@ export default function App(){
               )}
             </div>
           </div>
-          <button onClick={handleAnalyze} disabled={!file||!form.brand} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:C.gold,color:(!file||!form.brand)?C.dim:C.ink,fontSize:17,fontWeight:900,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":`0 14px 34px ${C.gold}24`}}>
+          <button onClick={handleAnalyze} disabled={!file||!form.brand} onMouseDown={e=>{if(file&&form.brand)e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:C.gold,color:(!file||!form.brand)?C.dim:C.ink,fontSize:17,fontWeight:900,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":`0 14px 34px ${C.gold}24`,transition:"transform 0.12s ease"}}>
             Run AdCritIQ Analysis
           </button>
         </div>
@@ -881,6 +962,20 @@ export default function App(){
     const scoreGrid=isMobile?"repeat(2,minmax(0,1fr))":"repeat(auto-fit,minmax(180px,1fr))";
     const platformGrid=isMobile?"repeat(2,minmax(0,1fr))":"repeat(auto-fit,minmax(160px,1fr))";
     const repoFilterGrid=isMobile?"1fr":isTablet?"1fr 140px":"1fr 160px auto";
+    const metricScoreValues=[
+      r.viral_potential,r.hook_strength,r.hold_rate,r.emotional_peak,
+      r.brand_recall,r.memory_encoding,r.sound_off_survival,r.share_intent,
+      r.creative_efficiency
+    ].filter(v=>typeof v==="number");
+    const visualOverallScore=typeof r.overall_score==="number"
+      ? r.overall_score
+      : metricScoreValues.length
+        ? Math.round(metricScoreValues.reduce((a,b)=>a+b,0)/metricScoreValues.length)
+        : gradeToVisualScore(r.overall_grade);
+    const ringScore=Math.min(100,Math.max(0,visualOverallScore||65));
+    const circumference=2*Math.PI*34;
+    const ringColor=ringScore>=75?C.green:ringScore>=60?C.gold:ringScore>=40?C.orange:C.red;
+    const miniLeft=isMobile?0:isTablet?208:C.sideW;
 
     // FIX 1: dynamic heatmap label spacing — max 12 labels regardless of duration
     const heatmapLabelCount = Math.min(attn.length, 12);
@@ -892,6 +987,19 @@ export default function App(){
 
     return(
       <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'Inter','DM Sans',sans-serif",color:C.text,animation:"fadeIn 0.5s ease both"}}>
+        {scrolled&&(
+          <div style={{position:"fixed",top:0,left:miniLeft,right:0,zIndex:80,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,padding:isMobile?"10px 16px":"10px 28px",background:"rgba(7,7,15,0.82)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:`1px solid ${C.border}`,animation:"fadeIn 0.2s ease both"}}>
+            <span style={{fontWeight:700,color:C.text,fontSize:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {form.brand||"AdCritIQ"}
+              <span style={{color:C.dim,fontWeight:400,fontSize:11,marginLeft:10,fontFamily:"monospace"}}>
+                {form.industry||"Creative"} · {form.country||form.market||"India"}
+              </span>
+            </span>
+            <span style={{padding:"3px 12px",borderRadius:8,fontWeight:800,fontFamily:"monospace",color:ringColor,border:`1px solid ${ringColor}55`,background:`${ringColor}12`,flexShrink:0}}>
+              {r.overall_grade||grade(ringScore)}
+            </span>
+          </div>
+        )}
 
         {/* ── LEFT SIDEBAR ── */}
         <Sidebar
@@ -937,10 +1045,33 @@ export default function App(){
                     onMouseEnter={()=>setGradeTooltipVisible(true)}
                     onMouseLeave={()=>setGradeTooltipVisible(false)}
                   >
-                    <div style={{background:`${gc}18`,border:`1px solid ${gc}66`,borderRadius:12,padding:"10px 20px",textAlign:"center",cursor:"help",boxShadow:`0 0 20px ${gc}33`}}>
-                      <div style={{fontSize:9,color:gc,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:3}}>Grade</div>
-                      <div style={{fontSize:28,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{r.overall_grade}</div>
-                      <div style={{fontSize:8,color:C.muted,marginTop:4,letterSpacing:0.5}}>hover for scale</div>
+                    <div style={{display:"grid",justifyItems:"center",gap:6,cursor:"help"}}>
+                      <div style={{position:"relative",width:88,height:88}}>
+                        <svg width="88" height="88" style={{transform:"rotate(-90deg)"}}>
+                          <circle cx="44" cy="44" r="34" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="5"/>
+                          <circle
+                            cx="44"
+                            cy="44"
+                            r="34"
+                            fill="none"
+                            stroke={ringColor}
+                            strokeWidth="5"
+                            strokeLinecap="round"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={circumference}
+                            style={{
+                              animation:"ringDraw 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards",
+                              "--ring-target":circumference*(1-ringScore/100),
+                              filter:`drop-shadow(0 0 6px ${ringColor}66)`,
+                            }}
+                          />
+                        </svg>
+                        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                          <span style={{fontSize:26,fontWeight:800,color:ringColor,fontFamily:"monospace",letterSpacing:0,animation:"fadeIn 0.5s ease 1.2s both"}}>{r.overall_grade}</span>
+                          <span style={{fontSize:7,color:C.dim,letterSpacing:"0.15em",fontFamily:"monospace"}}>GRADE</span>
+                        </div>
+                      </div>
+                      <div style={{fontSize:8,color:C.muted,letterSpacing:0.5}}>hover for scale</div>
                     </div>
 
                     {/* Tooltip */}
@@ -977,8 +1108,8 @@ export default function App(){
                         </div>
                       </div>
 	                    )}
-	                    <button onClick={saveCurrentAnalysis} disabled={r.__saveStatus==="saving"}
-	                      style={{width:"100%",marginTop:10,padding:"9px 12px",borderRadius:10,border:`1px solid ${C.gold}44`,background:r.__saveStatus==="saved"?`${C.green}18`:r.__saveStatus==="error"?`${C.red}18`:`${C.gold}14`,color:r.__saveStatus==="saved"?C.green:r.__saveStatus==="error"?C.red:C.gold,fontSize:11,fontWeight:800,cursor:r.__saveStatus==="saving"?"wait":"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+	                    <button onClick={saveCurrentAnalysis} disabled={r.__saveStatus==="saving"} onMouseDown={e=>{if(r.__saveStatus!=="saving")e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+	                      style={{width:"100%",marginTop:10,padding:"9px 12px",borderRadius:10,border:`1px solid ${C.gold}44`,background:r.__saveStatus==="saved"?`${C.green}18`:r.__saveStatus==="error"?`${C.red}18`:`${C.gold}14`,color:r.__saveStatus==="saved"?C.green:r.__saveStatus==="error"?C.red:C.gold,fontSize:11,fontWeight:800,cursor:r.__saveStatus==="saving"?"wait":"pointer",fontFamily:"'DM Sans',sans-serif",transition:"transform 0.12s ease"}}>
 	                      {r.__saveStatus==="saving"?"Saving...":r.__saveStatus==="saved"?"Saved ✓":"Save to Repository"}
 	                    </button>
 	                    {r.__saveError&&<div style={{fontSize:10,color:C.red,marginTop:6,maxWidth:140,lineHeight:1.4}}>{r.__saveError}</div>}
@@ -1203,7 +1334,7 @@ export default function App(){
           {tab==="scenes"&&(<>
             <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:18}}>
               {sc.map((s,i)=>
-                <Card C={C} key={i} style={{position:"relative",overflow:"hidden"}}>
+                <Card C={C} key={i} delay={Math.min(i*70,500)} style={{position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:5,background:`linear-gradient(90deg,${hex(s.attention||50)},${C.cyan})`}}/>
                   <div style={{fontSize:12,fontFamily:"'JetBrains Mono',monospace",color:C.cyan,fontWeight:600,marginBottom:4}}>{s.ts}</div>
                   <div style={{fontSize:17,fontWeight:700,marginBottom:10,lineHeight:1.3}}>{s.name}</div>
@@ -1233,10 +1364,13 @@ export default function App(){
           {/* ===== PLATFORM SCORES ===== */}
           {tab==="platforms"&&(<>
             <div style={{display:"grid",gridTemplateColumns:platformGrid,gap:isMobile?12:16}}>
-              {Object.entries(ps).map(([k,v])=>
-                <Card C={C} key={k} style={{textAlign:"center",padding:24}}>
+              {Object.entries(ps).map(([k,v],i)=>
+                <Card C={C} key={k} delay={Math.min(i*70,500)} style={{textAlign:"center",padding:24}}>
                   <div style={{fontSize:38,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(v),lineHeight:1}}>{v}</div>
-                  <div style={{fontSize:12,color:C.dim,marginTop:10,textTransform:"capitalize",lineHeight:1.3}}>{k.replace(/_/g," ")}</div>
+                  <div style={{fontSize:12,color:C.dim,marginTop:10,textTransform:"capitalize",lineHeight:1.3,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <PlatformChip name={k.replace(/_/g," ")}/>
+                    <span>{k.replace(/_/g," ")}</span>
+                  </div>
                   <div style={{marginTop:10,fontSize:11,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:hex(v)}}>{grade(v)}</div>
                 </Card>
               )}
@@ -1307,7 +1441,7 @@ export default function App(){
               {ins.map((n,i)=>{
                 const vc=n.vtype==="risk"?{bg:"rgba(231,76,60,0.1)",bd:C.red,c:"#ff7b7b"}:n.vtype==="win"?{bg:"rgba(46,204,113,0.1)",bd:C.green,c:"#6dffaa"}:n.vtype==="tip"?{bg:"rgba(0,200,255,0.1)",bd:C.cyan,c:C.cyan}:{bg:"rgba(241,196,0,0.1)",bd:C.amber,c:C.amber};
                 return(
-                  <Card C={C} key={i}>
+                  <Card C={C} key={i} delay={Math.min(i*70,500)}>
                     <div style={{fontSize:13,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:C.gold,marginBottom:6}}>{n.num}</div>
                     <h3 style={{fontSize:18,fontWeight:700,marginBottom:12,lineHeight:1.35}}>{n.title}</h3>
                     <p style={{fontSize:14,color:C.dim,lineHeight:1.75}}>{n.body}</p>
@@ -1387,7 +1521,7 @@ export default function App(){
                   const gr=a.overall_grade||a.full_result?.overall_grade||"—";
                   const gc=gr==="A+"||gr==="A"||gr==="A-"?C.green:String(gr).startsWith("B")?C.amber:String(gr).startsWith("C")?C.gold:C.red;
                   return(
-                    <Card C={C} key={a.id} style={{padding:22}}>
+                    <Card C={C} key={a.id} delay={Math.min(savedAnalyses.indexOf(a)*70,500)} style={{padding:22}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:12}}>
                         <div style={{minWidth:0}}>
                           <div style={{fontSize:18,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{a.brand||"Untitled Brand"}</div>
@@ -1680,7 +1814,10 @@ export default function App(){
                             onClick={()=>setExpandedPlatform(open?null:`platform:${platform}`)}
                             style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"14px 16px",cursor:"pointer",background:open?C.s2:C.s1,borderLeft:`3px solid ${color||C.gold}`}}
                           >
-                            <span style={{fontWeight:700,color:C.text,fontSize:14}}>{platform}</span>
+                            <span style={{fontWeight:700,color:C.text,fontSize:14,display:"flex",alignItems:"center",minWidth:0}}>
+                              <PlatformChip name={platform}/>
+                              <span>{platform}</span>
+                            </span>
                             <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
                               <span style={{fontSize:11,color:color||C.gold,fontWeight:600,textAlign:"right",lineHeight:1.4}}>{score}</span>
                               <span style={{color:C.dim,fontSize:14,transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s ease"}}>▾</span>
@@ -1790,7 +1927,7 @@ export default function App(){
           </div>
 
           {/* FOOTER */}
-          <div style={{padding:"20px 36px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:1,marginTop:"auto"}}>
+          <div style={{padding:"24px 36px 20px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginTop:"auto"}}>
             ADVantage Insights™ · AdCritIQ™ · Neural Creative Intelligence · {new Date().getFullYear()}
           </div>
         </div>

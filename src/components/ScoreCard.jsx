@@ -37,15 +37,22 @@ export default function ScoreCard({ C, hex, label, value, note, pct, benchmark }
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: hovered ? C.s2 : C.s1,
+        background: hovered
+          ? `linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 100%), ${C.s2}`
+          : `linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0) 100%), ${C.s1}`,
         border: `1px solid ${hovered ? `${c}88` : C.border}`,
+        borderTop: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 12,
         padding: "20px 18px 16px",
         position: "relative",
         overflow: "visible",
-        transition: "all 0.2s ease",
+        transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease",
         transform: hovered ? "translateY(-2px)" : "translateY(0)",
-        boxShadow: hovered ? `0 8px 24px ${c}22` : "none",
+        boxShadow: hovered
+          ? `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${c}22`
+          : "0 8px 32px rgba(0,0,0,0.35)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         animation: "fadeUp 0.4s ease both",
       }}
     >

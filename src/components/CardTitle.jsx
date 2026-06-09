@@ -1,30 +1,39 @@
-export default function CardTitle({ C, label, children }) {
-  const accent = label || C.gold;
+export default function CardTitle({ C, label, sub, children, style }) {
   return (
     <div
       style={{
-        fontSize: 13,
-        fontWeight: 700,
-        letterSpacing: 1.5,
-        color: accent,
-        textTransform: "uppercase",
         marginBottom: 20,
-        fontFamily: "'DM Mono',monospace",
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
+        ...style,
       }}
     >
-      <span
-        style={{
-          width: 3,
-          height: 16,
-          borderRadius: 2,
-          background: accent,
-          display: "inline-block",
-        }}
-      />
-      {children}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            width: 3,
+            height: 16,
+            borderRadius: 2,
+            background: C.gold,
+            flexShrink: 0,
+          }}
+        />
+        <span
+          style={{
+            fontSize: 10,
+            color: C.dim,
+            fontFamily: "monospace",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            fontWeight: 600,
+          }}
+        >
+          {children || label}
+        </span>
+      </div>
+      {sub && (
+        <p style={{ fontSize: 12, color: C.muted, margin: "5px 0 0 13px", lineHeight: 1.5 }}>
+          {sub}
+        </p>
+      )}
     </div>
   );
 }

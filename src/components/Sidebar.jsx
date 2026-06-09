@@ -14,7 +14,9 @@ const SidebarIcon = {
   ),
 };
 
-export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDownload, downloading, NAV_TABS }) {
+export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDownload, downloading, NAV_TABS, isMobile, isTablet }) {
+  if (isMobile) return null;
+
   const gc =
     gr === "A+" || gr === "A" || gr === "A-"
       ? C.green
@@ -26,9 +28,9 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
   return (
     <div
       style={{
-        width: C.sideW,
-        minWidth: C.sideW,
-        background: C.s1,
+        width: isTablet ? 208 : C.sideW,
+        minWidth: isTablet ? 208 : C.sideW,
+        background: C.ink,
         borderRight: `1px solid ${C.border}`,
         height: "100vh",
         position: "sticky",
@@ -38,30 +40,35 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
         overflowY: "auto",
         flexShrink: 0,
         zIndex: 50,
-        fontFamily: "'DM Sans',sans-serif",
+        fontFamily: "'Inter','DM Sans',sans-serif",
+        boxShadow: `18px 0 48px ${C.shadow}`,
       }}
     >
       {/* Brand header */}
-      <div style={{ padding: "24px 20px 20px", borderBottom: `1px solid ${C.border}` }}>
-        <div
-          style={{
-            fontSize: 8,
-            fontWeight: 700,
-            letterSpacing: 4,
-            color: C.gold,
-            textTransform: "uppercase",
-            marginBottom: 6,
-            fontFamily: "'DM Mono',monospace",
+      <div style={{ padding: "26px 20px 22px", borderBottom: `1px solid ${C.border}` }}>
+        <img
+          src="/advantage-logo.png"
+          alt="ADVantage Insights"
+          onError={(e) => {
+            e.target.style.display = "none";
           }}
-        >
+          style={{
+            height: 28,
+            maxWidth: "100%",
+            objectFit: "contain",
+            marginBottom: 14,
+            display: "block",
+          }}
+        />
+        <div style={{ fontSize: 10, fontWeight: 800, color: C.gold, textTransform: "uppercase", marginBottom: 8, fontFamily: "'DM Mono',monospace", letterSpacing: 1.8 }}>
           ADVantage Insights<sup style={{ fontSize: 6, color: C.gold, verticalAlign: "super" }}>TM</sup>
         </div>
         <div
           style={{
-            fontSize: 16,
-            fontWeight: 700,
+            fontSize: 22,
+            fontWeight: 800,
             color: C.text,
-            letterSpacing: -0.3,
+            letterSpacing: 0,
             lineHeight: 1.2,
             fontFamily: "'Playfair Display',serif",
           }}
@@ -72,8 +79,8 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
           <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>
             <div
               style={{
-                background: `${gc}18`,
-                border: `1px solid ${gc}44`,
+                background: `${gc}16`,
+                border: `1px solid ${gc}55`,
                 borderRadius: 8,
                 padding: "4px 12px",
                 fontSize: 14,
@@ -104,7 +111,7 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
       </div>
 
       {/* Nav items */}
-      <nav style={{ flex: 1, padding: "10px 0" }}>
+      <nav style={{ flex: 1, padding: "14px 10px" }}>
         {NAV_TABS.map((n) => {
           const active = tab === n.id;
           return (
@@ -116,23 +123,22 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
-                padding: "10px 20px",
-                background: active ? `${C.gold}12` : "transparent",
-                borderLeft: `3px solid ${active ? C.gold : "transparent"}`,
-                borderRight: "none",
-                borderTop: "none",
-                borderBottom: "none",
+                padding: "11px 12px",
+                marginBottom: 4,
+                background: active ? `linear-gradient(135deg,${C.gold}1f,${C.gold}09)` : "transparent",
+                border: active ? `1px solid ${C.gold}44` : `1px solid transparent`,
+                borderRadius: 10,
                 cursor: "pointer",
-                textAlign: "left",
                 color: active ? C.gold : C.dim,
                 fontSize: 12,
                 fontWeight: active ? 700 : 500,
                 transition: "all 0.15s ease",
-                fontFamily: "'DM Sans',sans-serif",
-                letterSpacing: 0.2,
+                fontFamily: "'Inter','DM Sans',sans-serif",
+                letterSpacing: 0,
+                textAlign: "left",
               }}
             >
-              <span style={{ display: "flex", opacity: active ? 1 : 0.55, flexShrink: 0 }}>{n.icon}</span>
+              <span style={{ display: "flex", opacity: active ? 1 : 0.62, flexShrink: 0, color: active ? C.gold : C.dim }}>{n.icon}</span>
               <span style={{ lineHeight: 1.3 }}>{n.label}</span>
             </button>
           );
@@ -147,11 +153,11 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
             disabled={downloading}
             style={{
               width: "100%",
-              background: downloading ? `${C.gold}22` : `linear-gradient(135deg,${C.gold},${C.goldD})`,
+              background: downloading ? `${C.gold}22` : C.gold,
               border: "none",
               borderRadius: 10,
               padding: "11px 14px",
-              color: downloading ? C.gold : C.bg,
+              color: downloading ? C.gold : C.ink,
               fontSize: 12,
               fontWeight: 800,
               cursor: downloading ? "wait" : "pointer",
@@ -159,8 +165,8 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              fontFamily: "'DM Sans',sans-serif",
-              letterSpacing: 0.3,
+              fontFamily: "'Inter','DM Sans',sans-serif",
+              letterSpacing: 0,
               marginBottom: 10,
               transition: "all 0.2s",
               boxShadow: downloading ? "none" : `0 4px 16px ${C.gold}30`,
@@ -185,8 +191,8 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
-            fontFamily: "'DM Sans',sans-serif",
-            letterSpacing: 0.3,
+            fontFamily: "'Inter','DM Sans',sans-serif",
+            letterSpacing: 0,
             transition: "all 0.2s",
           }}
         >

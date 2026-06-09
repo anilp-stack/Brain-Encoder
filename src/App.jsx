@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { generateBrainEncoderPDF } from "./generatePDF";
 import Card from "./components/Card";
 import ScoreCard from "./components/ScoreCard";
@@ -13,21 +13,17 @@ import NeurIQTab from "./components/NeurIQTab";
 // Palette: Deep Onyx · Champagne Gold · Malachite · Slate
 // ============================================================
 const C = {
-  // Surfaces
-  bg:"#060810",s1:"#0a0d1e",s2:"#0f1228",s3:"#141730",
-  // Borders
-  border:"#1c2040",border2:"#252850",
-  // Text
-  text:"#f0f0f8",dim:"#8890b0",muted:"#454870",
-  // Brand accents
-  gold:"#c9a84c",goldL:"#e8c97a",goldD:"#8a6f2e",
-  // Signal colours
-  cyan:"#00d4b8",blue:"#4f8ef7",green:"#22d472",
-  red:"#f05a6a",amber:"#f5a623",orange:"#e8793a",
-  purple:"#9b7fea",pink:"#e84393",teal:"#00b8a9",
-  rose:"#f43f5e",lime:"#84cc16",sky:"#38bdf8",
-  // Sidebar
-  sideW: 220,
+  bg:"#050507",ink:"#09090b",s1:"#101014",s2:"#17171d",s3:"#22222a",
+  panel:"#101014",panel2:"#17171d",
+  border:"#26262d",border2:"#3a3627",
+  text:"#f7f3e8",dim:"#b8b2a5",muted:"#706c63",
+  gold:"#d8b45a",goldL:"#f0d58a",goldD:"#9b7930",
+  cyan:"#2dd4bf",blue:"#60a5fa",green:"#34d399",
+  red:"#fb7185",amber:"#fbbf24",orange:"#fb923c",
+  purple:"#a78bfa",pink:"#f472b6",teal:"#14b8a6",
+  rose:"#fb7185",lime:"#a3e635",sky:"#38bdf8",
+  shadow:"rgba(0,0,0,0.52)",
+  sideW:240,
 };
 const hex=(v)=>v>=80?C.green:v>=60?C.amber:v>=40?C.orange:C.red;
 const grade=(v)=>v>=90?"A+":v>=85?"A":v>=80?"A-":v>=75?"B+":v>=70?"B":v>=65?"B-":v>=60?"C+":v>=55?"C":v>=50?"C-":v>=40?"D":"F";
@@ -41,7 +37,7 @@ if(typeof document !== "undefined" && !document.getElementById("be-fonts")){
   const l = document.createElement("link");
   l.id = "be-fonts";
   l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap";
+  l.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap";
   document.head.appendChild(l);
 }
 
@@ -293,7 +289,20 @@ export default function App(){
   const [token, setToken] = useState(localStorage.getItem("adcritiq_token") || "");
   const [credits, setCredits] = useState(null);
   const [showPricing, setShowPricing] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
+  const [isTablet, setIsTablet] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 && window.innerWidth < 1120 : false);
   const fileRef=useRef(null);
+
+  useEffect(()=>{
+    const syncViewport=()=>{
+      const w=window.innerWidth;
+      setIsMobile(w<768);
+      setIsTablet(w>=768&&w<1120);
+    };
+    syncViewport();
+    window.addEventListener("resize",syncViewport);
+    return()=>window.removeEventListener("resize",syncViewport);
+  },[]);
 
   const handleFile=(e)=>{
     const f=e.target.files[0];if(!f)return;
@@ -628,44 +637,80 @@ export default function App(){
   // ============================================================
   if(stage==="landing"){
     return(
-      <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",fontFamily:"'DM Sans',sans-serif",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 70%)",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40%",background:"radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,212,184,0.04) 0%, transparent 70%)",pointerEvents:"none"}}/>
-        <div style={{marginBottom:40,position:"relative"}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:10,fontFamily:"'DM Mono',monospace"}}>
-            ADVantage Insights<sup style={{fontSize:7,color:C.gold,verticalAlign:"super",marginLeft:1}}>TM</sup>
+      <div style={{minHeight:"100vh",background:`linear-gradient(180deg,${C.bg} 0%,${C.ink} 100%)`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
+        <header style={{position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:isMobile?"18px 20px":"22px 48px",borderBottom:`1px solid ${C.border}`,background:"rgba(5,5,7,0.9)",backdropFilter:"blur(16px)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:14,minWidth:0}}>
+            <img src="/advantage-logo.png" alt="ADVantage Insights" onError={e=>{e.target.style.display="none";}} style={{height:isMobile?26:32,maxWidth:isMobile?140:190,objectFit:"contain",display:"block"}}/>
+            <div style={{display:"grid",gap:2}}>
+              <span style={{fontSize:10,fontWeight:900,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1.4}}>ADVantage Insights<sup style={{fontSize:6}}>TM</sup></span>
+              <span style={{fontSize:12,color:C.dim,fontWeight:700}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
+            </div>
           </div>
-          <div style={{width:40,height:1,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`,margin:"0 auto"}}/>
-        </div>
-        <h1 style={{fontSize:clamp(42,6,72),fontWeight:800,lineHeight:1.0,maxWidth:700,marginBottom:12,position:"relative",fontFamily:"'Playfair Display',serif",letterSpacing:-1,color:C.text}}>
-          AdCritIQ<sup style={{fontSize:16,color:C.gold,verticalAlign:"super",fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>TM</sup>
-        </h1>
-        <div style={{fontSize:16,fontWeight:600,color:C.gold,letterSpacing:2,textTransform:"uppercase",marginBottom:28,fontFamily:"'DM Mono',monospace"}}>
-          Neural Creative Intelligence Platform
-        </div>
-        <p style={{fontSize:17,color:C.dim,maxWidth:560,lineHeight:1.8,marginBottom:48,position:"relative",fontWeight:400}}>
-          Upload any video ad, display creative, or social content. Receive a complete neural performance report — 17 metrics, 15 platform scores, scene intelligence, and a CMO action playbook.
-        </p>
-        <button onClick={()=>setStage("form")}
-          style={{background:`linear-gradient(135deg,${C.gold},${C.goldD})`,color:C.bg,border:"none",padding:"18px 56px",borderRadius:12,fontSize:16,fontWeight:800,cursor:"pointer",letterSpacing:0.5,position:"relative",boxShadow:`0 8px 32px ${C.gold}40`,fontFamily:"'DM Sans',sans-serif",transition:"all 0.2s",marginBottom:56}}>
-          Start Analysis →
-        </button>
-        <button
-          style={{marginTop:12,padding:"12px 28px",background:"transparent",border:`1px solid ${C.gold}`,borderRadius:8,color:C.gold,fontSize:14,fontWeight:600,cursor:"pointer"}}
-          onClick={()=>setShowPricing(true)}
-        >
-          💳 Buy Analysis Credits
-        </button>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:48,maxWidth:680}}>
-          {["17 Neural Metrics","15 Platform Scores","Attention Heatmap","Scene Intelligence","Privacy & DPDP","CMO Playbook","No Duration Limit","System 1 / System 2"].map(t=>(
-            <span key={t} style={{padding:"7px 14px",background:C.s2,borderRadius:100,border:`1px solid ${C.border2}`,fontSize:11,fontWeight:600,color:C.dim,letterSpacing:0.3,fontFamily:"'DM Sans',sans-serif"}}>{t}</span>
-          ))}
-        </div>
-        <div style={{display:"flex",gap:40,color:C.muted,fontSize:11,fontFamily:"'DM Mono',monospace",letterSpacing:1.5,textTransform:"uppercase"}}>
-          <span>Full Explainability</span><span style={{color:C.border}}>·</span>
-          <span>Platform-Specific</span><span style={{color:C.border}}>·</span>
-          <span>No Duration Cap</span>
-        </div>
+          <button onClick={()=>setShowPricing(true)} style={{padding:isMobile?"10px 14px":"11px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:"transparent",color:C.gold,fontSize:12,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
+            Buy Credits
+          </button>
+        </header>
+
+        <main style={{flex:1,display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.08fr) minmax(340px,0.92fr)",gap:isMobile?36:56,alignItems:"center",padding:isMobile?"44px 20px 28px":"72px 48px 44px",maxWidth:1280,width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+          <section>
+            <div style={{fontSize:11,fontWeight:900,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:18}}>Neural Creative Intelligence</div>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:isMobile?46:isTablet?62:76,lineHeight:0.98,fontWeight:800,color:C.text,letterSpacing:0,margin:"0 0 24px"}}>
+              AdCritIQ<sup style={{fontSize:isMobile?16:22,color:C.gold,verticalAlign:"super",fontFamily:"'Inter','DM Sans',sans-serif"}}>TM</sup>
+            </h1>
+            <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.75,maxWidth:620,margin:"0 0 32px"}}>
+              Premium advertising intelligence for teams that need to know whether a creative will hold attention, encode memory, and work by platform before media money is committed.
+            </p>
+            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:34}}>
+              <button onClick={()=>setStage("form")} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:`0 16px 40px ${C.gold}24`}}>
+                Start Analysis
+              </button>
+              <button onClick={()=>setShowPricing(true)} style={{background:C.s1,color:C.text,border:`1px solid ${C.border}`,padding:"15px 24px",borderRadius:10,fontSize:15,fontWeight:800,cursor:"pointer"}}>
+                Buy Analysis Credits
+              </button>
+            </div>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:720}}>
+              {["17 neural metrics","15 platform scores","scene intelligence","CMO playbook","NeurIQ chat","repository"].map(t=>(
+                <span key={t} style={{padding:"8px 12px",background:C.s1,borderRadius:8,border:`1px solid ${C.border}`,fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>{t}</span>
+              ))}
+            </div>
+          </section>
+
+          <section style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:isMobile?22:28,boxShadow:`0 24px 80px ${C.shadow}`}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,borderBottom:`1px solid ${C.border}`,paddingBottom:18,marginBottom:20}}>
+              <div>
+                <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1.4,textTransform:"uppercase"}}>Live Output</div>
+                <div style={{fontSize:22,fontWeight:900,color:C.text,marginTop:6}}>Creative Diagnostic</div>
+              </div>
+              <div style={{width:58,height:58,borderRadius:14,background:`${C.gold}14`,border:`1px solid ${C.gold}44`,display:"grid",placeItems:"center",fontSize:24,fontWeight:900,color:C.gold,fontFamily:"'DM Mono',monospace"}}>A</div>
+            </div>
+            {[
+              ["Attention hold",82,C.green],
+              ["Memory encoding",76,C.gold],
+              ["Sound-off survival",64,C.amber],
+              ["Platform fit",88,C.cyan],
+            ].map(([label,value,color])=>(
+              <div key={label} style={{marginBottom:16}}>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.dim,fontWeight:800,marginBottom:8,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>
+                  <span>{label}</span><span style={{color}}>{value}</span>
+                </div>
+                <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${value}%`,background:color,borderRadius:999}}/>
+                </div>
+              </div>
+            ))}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:24}}>
+              {["Re-edit brief","Risk flags","Benchmarking","PDF report"].map(item=>(
+                <div key={item} style={{padding:14,borderRadius:10,background:C.s2,border:`1px solid ${C.border}`,fontSize:13,color:C.text,fontWeight:700}}>{item}</div>
+              ))}
+            </div>
+          </section>
+        </main>
+
+        <footer style={{padding:isMobile?"20px":"24px 48px",borderTop:`1px solid ${C.border}`,color:C.muted,fontSize:12,display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
+          <span>ADVantage Insights<sup>TM</sup></span>
+          <span>Predictive, not biometric</span>
+          <span>Built for creative decisions</span>
+        </footer>
         {pricingModal}
       </div>
     );
@@ -675,29 +720,31 @@ export default function App(){
   // UPLOAD FORM
   // ============================================================
   if(stage==="form"){
-    const inp={width:"100%",padding:"14px 16px",borderRadius:10,border:`1px solid ${C.border}`,background:C.s2,color:C.text,fontSize:15,outline:"none",fontFamily:"inherit"};
+    const formGrid2=isMobile?"1fr":"1fr 1fr";
+    const formGrid3=isMobile?"1fr":isTablet?"1fr 1fr":"1fr 1fr 1fr";
+    const inp={width:"100%",boxSizing:"border-box",padding:"14px 16px",borderRadius:10,border:`1px solid ${C.border}`,background:C.s2,color:C.text,fontSize:15,outline:"none",fontFamily:"inherit"};
     const lbl={fontSize:11,fontWeight:700,letterSpacing:2,color:C.dim,textTransform:"uppercase",marginBottom:6,display:"block",fontFamily:"'JetBrains Mono',monospace"};
     const selStyle={...inp,appearance:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a9e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,backgroundRepeat:"no-repeat",backgroundPosition:"right 14px center"};
     return(
-      <div style={{minHeight:"100vh",background:C.bg}}>
-        <div style={{padding:"20px 40px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:12}}>
-          <span style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",cursor:"pointer"}} onClick={()=>setStage("landing")}>ADVantage Insights</span>
+      <div style={{minHeight:"100vh",background:`linear-gradient(180deg,${C.bg},${C.ink})`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif"}}>
+        <div style={{padding:isMobile?"18px 20px":"20px 40px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,position:"sticky",top:0,zIndex:20,background:"rgba(5,5,7,0.9)",backdropFilter:"blur(16px)"}}>
+          <span style={{fontSize:12,fontWeight:900,letterSpacing:2,color:C.gold,textTransform:"uppercase",cursor:"pointer",fontFamily:"'DM Mono',monospace"}} onClick={()=>setStage("landing")}>ADVantage Insights</span>
           <span style={{fontSize:12,color:C.dim}}>·</span>
-          <span style={{fontSize:12,color:C.cyan,fontWeight:600}}>AdCritIQ</span>
+          <span style={{fontSize:12,color:C.text,fontWeight:800}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
         </div>
-        <div style={{maxWidth:760,margin:"40px auto",padding:"0 24px"}}>
-          <h2 style={{fontSize:34,fontWeight:200,marginBottom:6}}>Upload <span style={{fontWeight:700}}>Creative</span></h2>
-          <p style={{color:C.dim,fontSize:15,marginBottom:32}}>Fill in the brief and upload your creative for analysis.</p>
+        <div style={{maxWidth:920,margin:isMobile?"26px auto":"44px auto",padding:isMobile?"0 18px":"0 28px"}}>
+          <h2 style={{fontSize:isMobile?30:42,fontWeight:800,margin:"0 0 8px",fontFamily:"'Playfair Display',serif",letterSpacing:0}}>Upload Creative</h2>
+          <p style={{color:C.dim,fontSize:15,margin:"0 0 30px",lineHeight:1.7}}>Fill in the campaign context, token, and creative asset. Required fields are checked before analysis starts.</p>
           {error&&<div style={{padding:"14px 18px",borderRadius:10,background:"rgba(231,76,60,0.12)",color:C.red,fontSize:14,marginBottom:20,border:`1px solid ${C.red}`}}>{error}</div>}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
+          <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
             <div><label style={lbl}>Brand Name *</label><input placeholder="e.g. Dabur, Nestlé, Coca-Cola" style={inp} value={form.brand} onChange={e=>u("brand",e.target.value)}/></div>
             <div><label style={lbl}>Client / Advertiser</label><input placeholder="e.g. Dabur India Ltd" style={inp} value={form.client} onChange={e=>u("client",e.target.value)}/></div>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
+          <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
             <div><label style={lbl}>Campaign Name</label><input placeholder="e.g. Immunity Winter 2026" style={inp} value={form.campaign} onChange={e=>u("campaign",e.target.value)}/></div>
             <div><label style={lbl}>Agency / Team</label><input placeholder="e.g. Ogilvy, DDB, Wunderman" style={inp} value={form.agency} onChange={e=>u("agency",e.target.value)}/></div>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:18,marginBottom:18}}>
+          <div style={{display:"grid",gridTemplateColumns:formGrid3,gap:18,marginBottom:18}}>
             <div><label style={lbl}>Industry Vertical</label>
               <select style={selStyle} value={form.industry} onChange={e=>u("industry",e.target.value)}>
                 {["FMCG / CPG","Pharma / Healthcare","Auto / Mobility","BFSI / Fintech","Technology","E-commerce","Retail / QSR","Telecom","Media / Entertainment","Real Estate","Education","Government / PSU","Other"].map(v=><option key={v} value={v}>{v}</option>)}
@@ -729,7 +776,7 @@ export default function App(){
           </div>
           <div style={{marginBottom:18}}>
             <label style={lbl}>Upload Creative *</label>
-            <div onClick={()=>fileRef.current?.click()} style={{border:`2px dashed ${file?C.cyan:C.border}`,borderRadius:14,padding:file?20:44,textAlign:"center",cursor:"pointer",background:file?"rgba(0,200,255,0.03)":C.s1,transition:"all .2s"}}>
+            <div onClick={()=>fileRef.current?.click()} style={{border:`2px dashed ${file?C.gold:C.border}`,borderRadius:14,padding:file?20:isMobile?28:44,textAlign:"center",cursor:"pointer",background:file?`${C.gold}08`:C.s1,transition:"all .2s",boxShadow:`0 18px 50px ${C.shadow}`}}>
               {file?(
                 <div style={{display:"flex",alignItems:"center",gap:16}}>
                   {preview&&file.type.startsWith("image/")&&<img src={preview} style={{width:140,height:80,objectFit:"cover",borderRadius:8}} alt=""/>}
@@ -737,12 +784,12 @@ export default function App(){
                   <div style={{textAlign:"left"}}>
                     <div style={{fontSize:15,fontWeight:600,color:C.text}}>{file.name}</div>
                     <div style={{fontSize:13,color:C.dim}}>{(file.size/1024/1024).toFixed(1)} MB · {file.type}</div>
-                    <div style={{fontSize:12,color:C.cyan,marginTop:4}}>Click to change file</div>
+                    <div style={{fontSize:12,color:C.gold,marginTop:4}}>Click to change file</div>
                   </div>
                 </div>
               ):(
                 <>
-                  <div style={{fontSize:40,marginBottom:8}}>📁</div>
+                  <div style={{fontSize:34,marginBottom:8,color:C.gold}}>Upload</div>
                   <div style={{fontSize:16,fontWeight:600,color:C.text}}>Drop file here or click to browse</div>
                   <div style={{fontSize:13,color:C.dim,marginTop:6}}>MP4, MOV, AVI, WEBM, JPG, PNG</div>
                 </>
@@ -754,7 +801,7 @@ export default function App(){
             <label style={lbl}>
               Analysis Token *&nbsp;
               <span style={{fontSize:11,color:C.dim,fontWeight:400}}>
-                — <span style={{color:C.cyan,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowPricing(true)}>Buy credits</span>
+                — <span style={{color:C.gold,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowPricing(true)}>Buy credits</span>
               </span>
             </label>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -774,8 +821,8 @@ export default function App(){
               )}
             </div>
           </div>
-          <button onClick={handleAnalyze} disabled={!file||!form.brand} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:`linear-gradient(135deg,${C.cyan},${C.blue})`,color:(!file||!form.brand)?C.dim:"white",fontSize:17,fontWeight:700,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":"0 4px 20px rgba(0,200,255,0.25)"}}>
-            🧠 Run AdCritIQ Analysis
+          <button onClick={handleAnalyze} disabled={!file||!form.brand} style={{width:"100%",padding:18,borderRadius:12,border:"none",background:(!file||!form.brand)?C.s3:C.gold,color:(!file||!form.brand)?C.dim:C.ink,fontSize:17,fontWeight:900,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":`0 14px 34px ${C.gold}24`}}>
+            Run AdCritIQ Analysis
           </button>
         </div>
         {pricingModal}
@@ -788,16 +835,18 @@ export default function App(){
   // ============================================================
   if(stage==="analyzing"){
     return(
-      <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40}}>
+      <div style={{minHeight:"100vh",background:`linear-gradient(180deg,${C.bg},${C.ink})`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:isMobile?24:40,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif"}}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}`}</style>
-        <div style={{width:80,height:80,borderRadius:"50%",border:`3px solid ${C.s3}`,borderTopColor:C.cyan,animation:"spin 1s linear infinite",marginBottom:32}}/>
-        <div style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:12}}>ADVantage Insights</div>
-        <h2 style={{fontSize:28,fontWeight:200,marginBottom:28}}>Encoding <span style={{fontWeight:700,color:C.cyan}}>Brain Activity</span></h2>
-        <div style={{width:440,maxWidth:"90%",height:8,borderRadius:4,background:C.s3,marginBottom:16,overflow:"hidden"}}>
-          <div style={{height:"100%",borderRadius:4,background:`linear-gradient(90deg,${C.cyan},${C.blue})`,width:`${progress}%`,transition:"width 0.5s"}}/>
+        <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:18,padding:isMobile?26:38,width:"100%",maxWidth:520,textAlign:"center",boxShadow:`0 28px 90px ${C.shadow}`}}>
+          <div style={{width:78,height:78,borderRadius:"50%",border:`3px solid ${C.s3}`,borderTopColor:C.gold,animation:"spin 1s linear infinite",margin:"0 auto 30px"}}/>
+          <div style={{fontSize:12,fontWeight:900,letterSpacing:2,color:C.gold,textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace"}}>ADVantage Insights</div>
+          <h2 style={{fontSize:isMobile?25:31,fontWeight:800,margin:"0 0 26px",fontFamily:"'Playfair Display',serif",letterSpacing:0}}>Encoding Creative Signals</h2>
+          <div style={{width:"100%",height:8,borderRadius:999,background:C.s3,marginBottom:16,overflow:"hidden"}}>
+            <div style={{height:"100%",borderRadius:999,background:C.gold,width:`${progress}%`,transition:"width 0.5s"}}/>
+          </div>
+          <div style={{fontSize:14,color:C.dim,animation:"pulse 2s infinite",minHeight:22}}>{progressMsg}</div>
+          <div style={{fontSize:12,color:C.muted,marginTop:8,fontFamily:"'DM Mono',monospace"}}>{progress}%</div>
         </div>
-        <div style={{fontSize:14,color:C.dim,animation:"pulse 2s infinite"}}>{progressMsg}</div>
-        <div style={{fontSize:12,color:C.muted,marginTop:8,fontFamily:"'JetBrains Mono',monospace"}}>{progress}%</div>
       </div>
     );
   }
@@ -825,6 +874,11 @@ export default function App(){
     const comp=r.competitive_context||{};
     const s1s2=r.system1_vs_system2||60;
     const tw=getTakeaways(r);
+    const pairGrid=isMobile?"1fr":"1fr 1fr";
+    const threeGrid=isMobile?"1fr":isTablet?"1fr 1fr":"1fr 1fr 1fr";
+    const scoreGrid=isMobile?"repeat(2,minmax(0,1fr))":"repeat(auto-fit,minmax(180px,1fr))";
+    const platformGrid=isMobile?"repeat(2,minmax(0,1fr))":"repeat(auto-fit,minmax(160px,1fr))";
+    const repoFilterGrid=isMobile?"1fr":isTablet?"1fr 140px":"1fr 160px auto";
 
     // FIX 1: dynamic heatmap label spacing — max 12 labels regardless of duration
     const heatmapLabelCount = Math.min(attn.length, 12);
@@ -835,7 +889,7 @@ export default function App(){
     );
 
     return(
-      <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'Inter','DM Sans',sans-serif",color:C.text}}>
 
         {/* ── LEFT SIDEBAR ── */}
         <Sidebar
@@ -853,19 +907,21 @@ export default function App(){
             catch(e){ alert("PDF generation failed: "+e.message); }
             finally{ setDownloading(false); }
           }}
+          isMobile={isMobile}
+          isTablet={isTablet}
         />
 
         {/* ── MAIN CONTENT ── */}
-        <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflowY:"auto"}}>
+        <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflowY:"auto",width:"100%"}}>
 
           {/* Top header bar */}
-          <div style={{background:C.s1,borderBottom:`1px solid ${C.border}`,padding:"20px 36px",position:"sticky",top:0,zIndex:40}}>
-            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:16}}>
+          <div style={{background:"rgba(16,16,20,0.94)",borderBottom:`1px solid ${C.border}`,padding:isMobile?"16px 18px":"20px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
+            <div style={{display:"flex",alignItems:isMobile?"stretch":"flex-start",justifyContent:"space-between",gap:16,flexDirection:isMobile?"column":"row"}}>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:5,fontFamily:"'DM Mono',monospace"}}>
                   {form.industry||""}{form.market?` · ${form.market}`:""}{form.type?` · ${form.type}`:""} · {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
                 </div>
-                <h1 style={{fontSize:22,fontWeight:800,color:C.text,margin:0,letterSpacing:-0.5,fontFamily:"'Playfair Display',serif",lineHeight:1.2}}>
+                <h1 style={{fontSize:isMobile?20:22,fontWeight:800,color:C.text,margin:0,letterSpacing:0,fontFamily:"'Playfair Display',serif",lineHeight:1.2}}>
                   {form.brand}{form.campaign?<span style={{fontWeight:400,color:C.dim}}> — {form.campaign}</span>:""}
                 </h1>
                 {r.headline_verdict&&<div style={{fontSize:13,color:C.gold,marginTop:6,fontStyle:"italic",opacity:0.9}}>"{r.headline_verdict}"</div>}
@@ -930,12 +986,23 @@ export default function App(){
             </div>
           </div>
 
+          {isMobile&&(
+            <div style={{display:"flex",gap:8,overflowX:"auto",padding:"12px 14px",borderBottom:`1px solid ${C.border}`,background:C.ink,position:"sticky",top:92,zIndex:35}}>
+              {NAV_TABS.map(n=>(
+                <button key={n.id} onClick={()=>setDashboardTab(n.id)}
+                  style={{display:"flex",alignItems:"center",gap:7,flex:"0 0 auto",padding:"9px 12px",borderRadius:10,border:`1px solid ${tab===n.id?C.gold:C.border}`,background:tab===n.id?`${C.gold}18`:C.s1,color:tab===n.id?C.gold:C.dim,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"'Inter','DM Sans',sans-serif"}}>
+                  <span style={{display:"flex"}}>{n.icon}</span><span>{n.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Tab content */}
-          <div style={{padding:"32px 36px",maxWidth:1300,width:"100%",boxSizing:"border-box"}}>
+          <div style={{padding:isMobile?"22px 14px":"32px 36px",maxWidth:1300,width:"100%",boxSizing:"border-box",margin:"0 auto"}}>
 
           {/* ===== EXECUTIVE SUMMARY ===== */}
           {tab==="summary"&&(<>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:16,marginBottom:36}}>
+            <div style={{display:"grid",gridTemplateColumns:scoreGrid,gap:isMobile?12:16,marginBottom:isMobile?24:36}}>
               {[
                 ["Viral Potential",r.viral_potential],["Hook Strength",r.hook_strength],["Hold Rate",r.hold_rate],
                 ["Emotional Peak",r.emotional_peak],["Brand Recall",r.brand_recall],["Memory Encoding",r.memory_encoding],
@@ -966,7 +1033,7 @@ export default function App(){
               </svg>
             </Card>
 
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:24}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,minmax(0,1fr))":"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:24}}>
               {[
                 ["Ad Fatigue Risk",r.ad_fatigue_risk],["Cultural Resonance",r.cultural_resonance],
                 ["Celebrity/Talent",r.celebrity_talent_index],["Brand Safety",r.brand_safety],
@@ -992,7 +1059,7 @@ export default function App(){
 
           {/* ===== NEURAL MAP ===== */}
           {tab==="neural"&&(<>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
+            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20,marginBottom:24}}>
               <Card C={C}>
                 <CardTitle C={C} label={C.purple}>Brain Region Activation</CardTitle>
                 {Object.entries(br).map(([k,v])=><BarMetric C={C} hex={hex} key={k} label={k.replace(/_/g," ")} value={v}/>)}
@@ -1059,7 +1126,7 @@ export default function App(){
               </div>
             </Card>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
               <Card C={C}>
                 <CardTitle C={C} label={C.green}>Attention Stats</CardTitle>
                 <div style={{fontSize:14,color:C.dim,lineHeight:1.8}}>
@@ -1109,7 +1176,7 @@ export default function App(){
                 </g>
               </svg>
             </Card>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
               <Card C={C}>
                 <CardTitle C={C} label={C.rose}>Dominant Emotion by Section</CardTitle>
                 {Object.entries(emotTypes).map(([k,arr])=>{
@@ -1132,7 +1199,7 @@ export default function App(){
 
           {/* ===== SCENE INTELLIGENCE ===== */}
           {tab==="scenes"&&(<>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:18}}>
               {sc.map((s,i)=>
                 <Card C={C} key={i} style={{position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:5,background:`linear-gradient(90deg,${hex(s.attention||50)},${C.cyan})`}}/>
@@ -1163,7 +1230,7 @@ export default function App(){
 
           {/* ===== PLATFORM SCORES ===== */}
           {tab==="platforms"&&(<>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
+            <div style={{display:"grid",gridTemplateColumns:platformGrid,gap:isMobile?12:16}}>
               {Object.entries(ps).map(([k,v])=>
                 <Card C={C} key={k} style={{textAlign:"center",padding:24}}>
                   <div style={{fontSize:38,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(v),lineHeight:1}}>{v}</div>
@@ -1177,7 +1244,7 @@ export default function App(){
 
           {/* ===== SOUND & SENSORY ===== */}
           {tab==="sound"&&(<>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
               <Card C={C}>
                 <CardTitle C={C} label={C.purple}>Sound Analysis Metrics</CardTitle>
                 {[["Sound Dependency",snd.sound_dependency],["Music Effectiveness",snd.music_effectiveness],["Voiceover Clarity",snd.voiceover_clarity],["Sound-Off Text Quality",snd.sound_off_text_quality],["ASMR Trigger",snd.asmr_trigger],["Sonic Branding",snd.sonic_branding]].filter(([,v])=>v!==undefined).map(([l,v])=>
@@ -1198,7 +1265,7 @@ export default function App(){
 
           {/* ===== PRIVACY & COMPLIANCE ===== */}
           {tab==="privacy"&&(<>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
               <Card C={C}>
                 <CardTitle C={C} label={C.amber}>Privacy & Data Audit</CardTitle>
                 <div style={{fontSize:14,color:C.dim,lineHeight:2}}>
@@ -1234,7 +1301,7 @@ export default function App(){
 
           {/* ===== STRATEGIC INSIGHTS ===== */}
           {tab==="strategy"&&(
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
               {ins.map((n,i)=>{
                 const vc=n.vtype==="risk"?{bg:"rgba(231,76,60,0.1)",bd:C.red,c:"#ff7b7b"}:n.vtype==="win"?{bg:"rgba(46,204,113,0.1)",bd:C.green,c:"#6dffaa"}:n.vtype==="tip"?{bg:"rgba(0,200,255,0.1)",bd:C.cyan,c:C.cyan}:{bg:"rgba(241,196,0,0.1)",bd:C.amber,c:C.amber};
                 return(
@@ -1251,11 +1318,11 @@ export default function App(){
 
           {/* ===== CMO PLAYBOOK ===== */}
           {tab==="cmo"&&(
-            <div style={{background:C.s1,borderRadius:16,padding:40,border:`1px solid ${C.border}`}}>
+            <div style={{background:C.s1,borderRadius:16,padding:isMobile?22:40,border:`1px solid ${C.border}`}}>
               <div style={{fontSize:11,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:8}}>For the Marketing Head</div>
               <h2 style={{fontSize:32,fontWeight:200,marginBottom:8}}>The <span style={{fontWeight:700,color:C.gold}}>CMO Playbook</span></h2>
               <p style={{fontSize:14,color:C.dim,marginBottom:32}}>Prioritized actions mapped to metric gaps. Sorted by impact-to-effort ratio.</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+              <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:16}}>
                 {cmo.map((a,i)=>
                   <div key={i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,padding:24}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
@@ -1284,7 +1351,7 @@ export default function App(){
           {tab==="repository"&&(<>
             <Card C={C} style={{marginBottom:20}}>
               <CardTitle C={C} label={C.gold}>Saved Analysis Repository</CardTitle>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 160px auto",gap:12,alignItems:"end"}}>
+              <div style={{display:"grid",gridTemplateColumns:repoFilterGrid,gap:12,alignItems:"end"}}>
                 <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
                   Brand
                   <input id="repoBrandFilter" onChange={(e)=>loadRepository({brand:e.target.value,grade:document.getElementById("repoGradeFilter")?.value||""})}
@@ -1313,7 +1380,7 @@ export default function App(){
                 <div style={{fontSize:14,color:C.dim}}>Saved analysis reports will appear here.</div>
               </Card>
             ):(
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
                 {savedAnalyses.map(a=>{
                   const gr=a.overall_grade||a.full_result?.overall_grade||"—";
                   const gc=gr==="A+"||gr==="A"||gr==="A-"?C.green:String(gr).startsWith("B")?C.amber:String(gr).startsWith("C")?C.gold:C.red;
@@ -1371,7 +1438,7 @@ export default function App(){
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.cyan}>What AdCritIQ Does</CardTitle>
                   <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:24}}>AdCritIQ is a predictive neural creative intelligence platform. It does not measure actual brain activity — it <b style={{color:C.text}}>predicts</b> how the human brain is likely to respond to an advertising creative based on visual signals, advertising science, and platform-specific norms.</p>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
+                  <div style={{display:"grid",gridTemplateColumns:threeGrid,gap:16}}>
                     {[
                       [C.cyan,"STAGE 1","Frame Extraction","1–3 key frames are extracted from your creative at optimal intervals. For videos, frames are sampled at the beginning, middle, and near the end to capture the full narrative arc."],
                       [C.purple,"STAGE 2","Neural Analysis","Each frame is analysed by a multimodal AI vision model against 17 advertising science constructs — attention, memory, emotion, brand recall, cognitive load, and more."],
@@ -1387,7 +1454,7 @@ export default function App(){
                 </Card>
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.amber}>What You Get — Full Output Map</CardTitle>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+                  <div style={{display:"grid",gridTemplateColumns:threeGrid,gap:12}}>
                     {[
                       [C.cyan,"17 Neural Metrics","Viral Potential, Hook Strength, Hold Rate, Emotional Peak, Brand Recall, Memory Encoding, Sound-Off Survival, Share Intent, Creative Efficiency, Ad Fatigue Risk, Cultural Resonance, Celebrity Index, Brand Safety, Regulatory Compliance, 1P Data Opportunity, Carbon Signal, System 1/2 Balance"],
                       [C.purple,"15 Platform Scores","YouTube 6s, YouTube 15s, YouTube In-Stream, Instagram Reels, Instagram Stories, Instagram Feed, Meta Feed, Meta Stories, TikTok, LinkedIn, Twitter/X, TV Broadcast, CTV/OTT, DOOH, Programmatic Display"],
@@ -1457,7 +1524,7 @@ export default function App(){
                 </Card>
                 <Card C={C}>
                   <CardTitle C={C} label={C.purple}>Why These 7 Metrics Drive the Grade</CardTitle>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                  <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:12}}>
                     {[
                       ["Memory Encoding","20%",C.gold,"The single most important predictor of long-term brand building. If the creative is not encoded into long-term memory, all media spend is wasted. Requires simultaneous activation of visual cortex, amygdala, and hippocampus."],
                       ["Brand Recall","20%",C.gold,"Memory encoding without brand linkage is worthless. Brand recall measures whether the memory formed is correctly attributed to the brand. Driven by logo visibility, product presence, and distinctive brand asset frequency."],
@@ -1509,7 +1576,7 @@ export default function App(){
                           <span style={{fontSize:14,fontWeight:700,color:C.text}}>{name}</span>
                           <span style={{fontSize:11,fontWeight:700,color:color,fontFamily:"'DM Mono',monospace",padding:"2px 10px",background:`${color}15`,borderRadius:6}}>Good: {good}</span>
                         </div>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+                        <div style={{display:"grid",gridTemplateColumns:threeGrid,gap:12}}>
                           <div><div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Definition</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{def}</p></div>
                           <div><div style={{fontSize:10,fontWeight:700,color:C.green,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>What drives it high</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{drives}</p></div>
                           <div><div style={{fontSize:10,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Low score means</div><p style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{low}</p></div>
@@ -1525,7 +1592,7 @@ export default function App(){
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.purple}>Brain Region Activation — What Each Region Means</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>AdCritIQ predicts activation levels across 8 brain regions based on visual stimuli present in the creative. These predictions are derived from established neuromarketing research mapping visual advertising stimuli to neural activation patterns.</p>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                  <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:14}}>
                     {[
                       ["Visual Cortex","Primary visual processing centre.","High activation (70+): Complex visual scenes, high colour saturation, motion, faces. This is the entry point for all visual advertising. Without visual cortex engagement, nothing else fires.","Good range: 60–85. Below 50 = visually flat creative. Above 90 = potential cognitive overload."],
                       ["Prefrontal Cortex","Rational decision-making and claim evaluation.","High activation (70+): Product claims, price callouts, comparative messaging, text-heavy frames, logical arguments. This is System 2 territory.","Optimal: 45–65. Too high relative to amygdala = the viewer is thinking, not feeling. Ideal for B2B; risky for FMCG."],
@@ -1547,7 +1614,7 @@ export default function App(){
                 </Card>
                 <Card C={C}>
                   <CardTitle C={C} label={C.orange}>System 1 vs System 2 — The Balance That Drives Effectiveness</CardTitle>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+                  <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
                     <div style={{background:C.s2,borderRadius:12,padding:24,borderTop:`4px solid ${C.blue}`}}>
                       <div style={{fontSize:14,fontWeight:700,color:C.blue,marginBottom:12}}>System 2 — Rational Processing</div>
                       <p style={{fontSize:13,color:C.dim,lineHeight:1.8}}>Slow, deliberate, effortful thinking. Activates when the creative contains product claims, prices, feature comparisons, or text-heavy information. The viewer is consciously evaluating the message. <br/><br/><b style={{color:C.text}}>Score range: 0–64</b><br/>Good for: B2B, high-consideration purchases, pharmaceutical, financial services.<br/>Risk: In FMCG/CPG, forcing System 2 causes scroll-away. Viewers don't want to think about detergent.</p>
@@ -1633,7 +1700,7 @@ export default function App(){
               {methTab==="limits"&&(<>
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.red}>What AdCritIQ Is — and Is Not</CardTitle>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+                  <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:16,marginBottom:20}}>
                     <div style={{background:"rgba(34,212,114,0.06)",border:`1px solid ${C.green}33`,borderRadius:12,padding:20}}>
                       <div style={{fontSize:13,fontWeight:700,color:C.green,marginBottom:12}}>AdCritIQ IS</div>
                       {["A predictive pre-screening tool for creative effectiveness","A directional intelligence system to prioritise re-edits","A platform suitability guide for media planning","A structured framework for creative briefing and feedback","A consistent benchmark across multiple creatives","A fast, scalable alternative to qualitative research for go/no-go decisions"].map((s,i)=>(
@@ -1672,7 +1739,7 @@ export default function App(){
                 </Card>
                 <Card C={C}>
                   <CardTitle C={C} label={C.gold}>How to Use AdCritIQ Responsibly</CardTitle>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
+                  <div style={{display:"grid",gridTemplateColumns:threeGrid,gap:14}}>
                     {[
                       [C.cyan,"Use it for GO/NO-GO","Run AdCritIQ before any creative goes to production or media. A C+ or below should trigger a mandatory re-edit conversation with the creative team."],
                       [C.amber,"Use it for RE-EDIT BRIEFING","The Scene Intelligence and CMO Playbook tabs give the creative team specific, actionable re-edit instructions. Use them as a creative brief, not just a score."],

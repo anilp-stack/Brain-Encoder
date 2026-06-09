@@ -4,8 +4,8 @@ export default function Card({ C, children, style, ...p }) {
       style={{
         background: C.s1,
         border: `1px solid ${C.border}`,
-        borderRadius: 16,
-        padding: 28,
+        borderRadius: 12,
+        padding: 24,
         ...style,
       }}
       {...p}

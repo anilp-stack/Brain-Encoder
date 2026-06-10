@@ -287,13 +287,58 @@ function makeArea(arr,x1,x2,yT,yB){
 // ============================================================
 // FRAME EXTRACTION — FIX 1: capture video duration
 // ============================================================
+const FILE_LIMITS={
+  image:10*1024*1024,
+  video:100*1024*1024,
+};
+
+function validateCreativeFile(file){
+  if(!file)return null;
+  const isImage=file.type.startsWith("image/");
+  const isVideo=file.type.startsWith("video/");
+  if(!isImage&&!isVideo)return "Unsupported file type. Please upload JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM.";
+  if(isImage&&file.size>FILE_LIMITS.image)return "Image creatives can be up to 10 MB. Please compress this image or export a smaller JPG/PNG/WEBP.";
+  if(isVideo&&file.size>FILE_LIMITS.video)return "Video creatives can be up to 100 MB. Please upload MP4, MOV, or WEBM under 100 MB.";
+  return null;
+}
+
+function compressImageFrame(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const maxEdge=1280;
+      const scale=Math.min(1,maxEdge/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+      const width=Math.max(1,Math.round((img.naturalWidth||img.width)*scale));
+      const height=Math.max(1,Math.round((img.naturalHeight||img.height)*scale));
+      const canvas=document.createElement("canvas");
+      canvas.width=width;
+      canvas.height=height;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0,width,height);
+      URL.revokeObjectURL(url);
+      resolve({
+        frames:[canvas.toDataURL("image/jpeg",0.75).split(",")[1]],
+        duration:0,
+        duration_seconds:0,
+        video_duration:0,
+        width,
+        height,
+        isImage:true,
+        original_size:file.size,
+      });
+    };
+    img.onerror=()=>{
+      URL.revokeObjectURL(url);
+      reject(new Error("Cannot read image"));
+    };
+    img.src=url;
+  });
+}
+
 function extractFrames(file){
   if(file.type.startsWith("image/")){
-    return new Promise(r=>{
-      const rd=new FileReader();
-      rd.onload=e=>r({frames:[e.target.result.split(",")[1]],duration:0,duration_seconds:0,video_duration:0,width:0,height:0,isImage:true});
-      rd.readAsDataURL(file);
-    });
+    return compressImageFrame(file);
   }
   return new Promise((resolve,reject)=>{
     const v=document.createElement("video");
@@ -392,6 +437,9 @@ export default function App(){
 
   const handleFile=(e)=>{
     const f=e.target.files[0];if(!f)return;
+    const fileError=validateCreativeFile(f);
+    if(fileError){setError(fileError);e.target.value="";return;}
+    setError(null);
     setFile(f);
     if(f.type.startsWith("image/")){
       const r=new FileReader();
@@ -403,6 +451,9 @@ export default function App(){
   };
   const handleFileB=(e)=>{
     const f=e.target.files[0];if(!f)return;
+    const fileError=validateCreativeFile(f);
+    if(fileError){setError(fileError);e.target.value="";return;}
+    setError(null);
     setFileB(f);
     if(f.type.startsWith("image/")){
       const r=new FileReader();
@@ -431,6 +482,12 @@ export default function App(){
     if(compareMode && compareType==="brands" && !formB.brand.trim()){
       setError("Please enter Brand B name for comparison.");
       return;
+    }
+    const fileError=validateCreativeFile(file);
+    if(fileError){setError(fileError);return;}
+    if(compareMode&&fileB){
+      const fileBError=validateCreativeFile(fileB);
+      if(fileBError){setError(`Creative B: ${fileBError}`);return;}
     }
     if (!token.trim()) {
       setError("Please enter your analysis token. Don't have one? Click 'Buy credits' above.");
@@ -468,7 +525,19 @@ export default function App(){
       setProgressMsg("Reading creative file...");setProgress(5);
       const frameData=await extractFrames(file);
       // FIX 1: duration_seconds and video_duration are now in frameData
-      const payload={ frames:frameData.frames, metadata:{...form,...frameData} };
+      const payload={
+        frames:frameData.frames,
+        metadata:{
+          ...form,
+          duration:frameData.duration,
+          duration_seconds:frameData.duration_seconds,
+          video_duration:frameData.video_duration,
+          width:frameData.width,
+          height:frameData.height,
+          isImage:frameData.isImage,
+          original_size:frameData.original_size||file.size,
+        }
+      };
 
       setProgressMsg("Extracting visual signals...");setProgress(12);
 
@@ -509,7 +578,13 @@ export default function App(){
         const fastText=await fastResp.text();
         let fd;
         try{fd=JSON.parse(fastText);}catch(e){throw new Error("Fast analysis failed: "+fastText.substring(0,100));}
-        if(!fastResp.ok||!fd.success){throw new Error(fd.error||"Metrics analysis failed");}
+        if(!fastResp.ok||!fd.success){
+          const rawError=fd.error||"Metrics analysis failed";
+          const friendly=String(rawError).includes("FUNCTION_PAYLOAD_TOO_LARGE")||String(rawError).includes("Request Entity Too Large")
+            ? "This creative was too large to send for analysis. We compress images automatically; for videos, upload MP4/MOV/WEBM under 100 MB."
+            : rawError;
+          throw new Error(friendly);
+        }
         fastData=fd.analysis;
         setProgressMsg("Metrics computed. Generating insights...");setProgress(72);
 
@@ -569,9 +644,14 @@ export default function App(){
               country:form.country,
               market:form.market,
               audience:form.audience,
-              duration_seconds:framesB.duration||30,
-              video_duration:framesB.duration||30,
-              isImage:fileB.type.startsWith("image/")
+              notes:form.notes,
+              duration:framesB.duration,
+              duration_seconds:framesB.duration_seconds||framesB.duration||30,
+              video_duration:framesB.video_duration||framesB.duration||30,
+              width:framesB.width,
+              height:framesB.height,
+              isImage:framesB.isImage,
+              original_size:framesB.original_size||fileB.size
             }
           };
           const respB=await fetch("/api/analyze-fast",{
@@ -580,6 +660,12 @@ export default function App(){
             body:JSON.stringify(payloadB)
           });
           const dataB=await respB.json();
+          if(!respB.ok||dataB?.error){
+            const rawError=dataB?.error||"Creative B analysis failed";
+            throw new Error(String(rawError).includes("FUNCTION_PAYLOAD_TOO_LARGE")||String(rawError).includes("Request Entity Too Large")
+              ? "This creative was too large to send for analysis. We compress images automatically; for videos, upload MP4/MOV/WEBM under 100 MB."
+              : rawError);
+          }
           if(dataB&&!dataB.error){
             const fastDataB=dataB.analysis||dataB.result||dataB;
             const combinedB={
@@ -1073,6 +1159,19 @@ export default function App(){
 
             <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
               {sectionHead("03","Upload Asset","Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10,marginBottom:18}}>
+                {[
+                  ["Images","JPG, PNG, WEBP, GIF","Up to 10 MB · compressed before analysis",C.gold],
+                  ["Videos","MP4, MOV, WEBM","Up to 100 MB · 1-2 frames sampled",C.cyan],
+                  ["Animated","GIF / motion assets","Static first frame unless video-readable",C.purple],
+                ].map(([title,types,limit,color])=>(
+                  <div key={title} style={{padding:"12px 13px",borderRadius:12,background:`${color}0b`,border:`1px solid ${color}33`}}>
+                    <div style={{fontSize:11,color:color,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1,marginBottom:5}}>{title}</div>
+                    <div style={{fontSize:12,color:C.text,fontWeight:800,marginBottom:4}}>{types}</div>
+                    <div style={{fontSize:11,color:C.dim,lineHeight:1.4}}>{limit}</div>
+                  </div>
+                ))}
+              </div>
               {compareMode&&(
                 <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:14,marginBottom:18}}>
                   <div style={fieldWrap}>
@@ -1101,11 +1200,11 @@ export default function App(){
                   <>
                     <div style={{fontSize:isMobile?38:50,marginBottom:8,color:C.gold,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Upload</div>
                     <div style={{fontSize:18,fontWeight:900,color:C.text}}>Drop file here or click to browse</div>
-                    <div style={{fontSize:13,color:C.dim,marginTop:8}}>MP4, MOV, AVI, WEBM, JPG, PNG</div>
+                    <div style={{fontSize:13,color:C.dim,marginTop:8}}>JPG, PNG, WEBP, GIF up to 10 MB · MP4, MOV, WEBM up to 100 MB</div>
                   </>
                 )}
               </div>
-              <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleFile} style={{display:"none"}}/>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" onChange={handleFile} style={{display:"none"}}/>
               {compareMode&&(
                 <div style={{marginTop:18}}>
                   <label style={{...lbl,marginBottom:10}}>Creative B — Upload File *</label>
@@ -1124,11 +1223,11 @@ export default function App(){
                       <>
                         <div style={{fontSize:isMobile?34:44,marginBottom:8,color:C.cyan,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Creative B</div>
                         <div style={{fontSize:17,fontWeight:900,color:C.text}}>Click to upload second creative</div>
-                        <div style={{fontSize:13,color:C.dim,marginTop:8}}>MP4, MOV, AVI, WEBM, JPG, PNG</div>
+                        <div style={{fontSize:13,color:C.dim,marginTop:8}}>JPG, PNG, WEBP, GIF up to 10 MB · MP4, MOV, WEBM up to 100 MB</div>
                       </>
                     )}
                   </div>
-                  <input id="fileBInput" type="file" accept="video/*,image/*" onChange={handleFileB} style={{display:"none"}}/>
+                  <input id="fileBInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" onChange={handleFileB} style={{display:"none"}}/>
                   {compareType==="brands"&&(
                     <div style={{marginTop:18,padding:18,background:C.s2,border:`1px solid ${C.border}`,borderRadius:14}}>
                       <div style={{fontSize:10,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginBottom:14,fontWeight:900,textTransform:"uppercase"}}>

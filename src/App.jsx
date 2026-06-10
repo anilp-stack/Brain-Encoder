@@ -200,6 +200,31 @@ function getTakeaways(r){
 
   // ATTENTION
   t.attention=[];
+  var fmt=r.creative_format||"video";
+  var fm=r.format_metrics||{};
+  if(fmt==="static_image"){
+    var stopping=fm.stopping_power||r.hook_strength||0;
+    var hierarchy=fm.visual_hierarchy||r.creative_efficiency||0;
+    var brand=fm.brand_prominence||r.brand_recall||0;
+    var clarity=fm.message_clarity||r.memory_encoding||0;
+    var cta=fm.cta_clarity||r.share_intent||0;
+    var clutter=fm.clutter_risk||r.ad_fatigue_risk||0;
+    t.attention.push({type:stopping>=70?"win":"fix",label:"Stopping power: "+stopping+"/100.",text:stopping>=70?"The image has strong first-glance pull. Preserve the dominant focal point.":"Strengthen the first-glance focal point with contrast, scale, or a simpler hero element."});
+    t.attention.push({type:brand>=70?"win":"fix",label:"Brand prominence: "+brand+"/100.",text:brand>=70?"Brand linkage is visible enough to support recall.":"Increase logo/product prominence or place brand assets closer to the main focal area."});
+    if(clarity<65||cta<65)t.attention.push({type:"fix",label:"Message or CTA clarity needs work.",text:"Simplify the headline, reduce competing copy, and make the next action visible within the first scan."});
+    if(clutter>55)t.attention.push({type:"warn",label:"Clutter risk: "+clutter+"/100.",text:"Reduce secondary elements so the eye can move from hero visual to brand to message without friction."});
+    t.attention.push({type:hierarchy>=70?"win":"warn",label:"Visual hierarchy: "+hierarchy+"/100.",text:hierarchy>=70?"The scan path is structured for fast decoding.":"Rebalance layout hierarchy so the most important message receives the strongest visual weight."});
+    return t;
+  }
+  if(fmt==="text"||fmt==="audio"){
+    var headline=fm.headline_strength||fm.voice_clarity||r.hook_strength||0;
+    var proposition=fm.proposition_clarity||fm.script_fluency||r.creative_efficiency||0;
+    var recall=fm.cta_recall||fm.cta_strength||r.brand_recall||0;
+    t.attention.push({type:headline>=70?"win":"fix",label:(fmt==="audio"?"Opening / voice clarity: ":"Headline strength: ")+headline+"/100.",text:headline>=70?"The opening is strong enough to earn initial attention.":"Sharpen the opening line so the audience understands the payoff immediately."});
+    t.attention.push({type:proposition>=70?"win":"fix",label:"Proposition clarity: "+proposition+"/100.",text:proposition>=70?"The core promise is easy to process.":"Reduce abstraction and make the value proposition more concrete."});
+    t.attention.push({type:recall>=70?"win":"fix",label:"CTA / recall strength: "+recall+"/100.",text:recall>=70?"The response cue is likely to be remembered.":"Make the CTA more specific, repeated, or easier to act on."});
+    return t;
+  }
   var attn=r.attention_curve||[];
   if(attn.length>0){
     var peak=Math.max.apply(null,attn);
@@ -1443,6 +1468,16 @@ export default function App(){
     const miniLeft=isMobile?0:isTablet?208:C.sideW;
     const resultFormat=r.creative_format||getCreativeFormat(form.type,file);
     const impactLabel=formatImpactLabel(resultFormat);
+    const formatMetrics=r.format_metrics||{};
+    const staticAttentionMetrics=[
+      ["Stopping Power",formatMetrics.stopping_power??formatMetrics.first_frame_strength??formatMetrics.headline_strength??formatMetrics.voice_clarity??r.hook_strength,C.gold],
+      ["Visual Hierarchy",formatMetrics.visual_hierarchy??formatMetrics.proposition_clarity??formatMetrics.script_fluency??r.creative_efficiency,C.cyan],
+      ["Brand Prominence",formatMetrics.brand_prominence??r.brand_recall,C.green],
+      ["Message Clarity",formatMetrics.message_clarity??formatMetrics.proposition_clarity??r.memory_encoding,C.purple],
+      ["CTA Clarity",formatMetrics.cta_clarity??formatMetrics.cta_strength??formatMetrics.cta_recall??r.share_intent,C.amber],
+      ["Clutter Risk",formatMetrics.clutter_risk??formatMetrics.claim_risk??r.ad_fatigue_risk,C.red],
+    ].map(([label,value,color])=>[label,typeof value==="number"?value:0,color]);
+    const isTimelineAttention=resultFormat==="video"||resultFormat==="motion_static";
     const compareReady=compareMode&&resultsB;
     const compareLabelA=compareType==="brands"?(form.brand||labelA):labelA;
     const compareLabelB=compareType==="brands"?(formB.brand||labelB):labelB;
@@ -1894,70 +1929,93 @@ export default function App(){
 
           {/* ===== ATTENTION ECONOMICS ===== */}
           {tab==="attention"&&(<>
-            <Card C={C} style={{marginBottom:24}}>
-              <CardTitle C={C} label={C.amber}>Second-by-Second Attention Heatmap</CardTitle>
-
-              {/* FIX 1: Dynamic heatmap grid — renders full video duration */}
-              <div style={{
-                display:"grid",
-                gridTemplateColumns:`repeat(${attn.length},1fr)`,
-                gap:attn.length>30?2:4
-              }}>
-                {attn.map((v,i)=>
-                  <div key={i} title={`${i}s — ${v}%`}
-                    style={{
-                      height:56,
-                      borderRadius:attn.length>40?3:6,
-                      cursor:"pointer",
-                      background:hex(v),
-                      opacity:Math.max(.3,v/100),
-                      transition:"transform .15s"
-                    }}
-                    onMouseEnter={e=>e.target.style.transform="scaleY(1.3)"}
-                    onMouseLeave={e=>e.target.style.transform="scaleY(1)"}
-                  />
-                )}
-              </div>
-
-              {/* FIX 1: Dynamic timeline labels — smart spacing up to 12 labels */}
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11,color:C.dim,fontFamily:"'JetBrains Mono',monospace"}}>
-                {heatmapLabels.map(s=>(
-                  <span key={s}>{s}s</span>
-                ))}
-              </div>
-
-              {/* FIX 1: Duration badge */}
-              <div style={{textAlign:"right",marginTop:6}}>
-                <span style={{fontSize:9,color:C.gold,fontWeight:700,letterSpacing:2,textTransform:"uppercase",opacity:0.7,fontFamily:"'DM Mono',monospace"}}>
-                  Full {attn.length}s analysed
-                </span>
-              </div>
-            </Card>
-
-            <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
-              <Card C={C}>
-                <CardTitle C={C} label={C.green}>Attention Stats</CardTitle>
-                <div style={{fontSize:14,color:C.dim,lineHeight:1.8}}>
-                  <p>Peak Attention: <b style={{color:C.green}}>{Math.max(...attn)}%</b> at ~{attn.indexOf(Math.max(...attn))}s</p>
-                  <p>Lowest Point: <b style={{color:C.red}}>{Math.min(...attn)}%</b> at ~{attn.indexOf(Math.min(...attn))}s</p>
-                  <p>Average Attention: <b style={{color:C.cyan}}>{Math.round(attn.reduce((a,b)=>a+b,0)/attn.length)}%</b></p>
-                  <p>Drop Zones: <b style={{color:C.amber}}>{attn.filter((v,i)=>i>0&&v<attn[i-1]-10).length}</b> significant drops detected</p>
-                  <p>Duration Analysed: <b style={{color:C.gold}}>{attn.length}s</b></p>
+            {isTimelineAttention?(
+              <>
+                <Card C={C} style={{marginBottom:24}}>
+                  <CardTitle C={C} label={C.amber}>Second-by-Second Attention Heatmap</CardTitle>
+                  <div style={{display:"grid",gridTemplateColumns:`repeat(${attn.length},1fr)`,gap:attn.length>30?2:4}}>
+                    {attn.map((v,i)=>
+                      <div key={i} title={`${i}s — ${v}%`} style={{height:56,borderRadius:attn.length>40?3:6,cursor:"pointer",background:hex(v),opacity:Math.max(.3,v/100),transition:"transform .15s"}} onMouseEnter={e=>e.target.style.transform="scaleY(1.3)"} onMouseLeave={e=>e.target.style.transform="scaleY(1)"}/>
+                    )}
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11,color:C.dim,fontFamily:"'JetBrains Mono',monospace"}}>
+                    {heatmapLabels.map(s=><span key={s}>{s}s</span>)}
+                  </div>
+                  <div style={{textAlign:"right",marginTop:6}}>
+                    <span style={{fontSize:9,color:C.gold,fontWeight:700,letterSpacing:2,textTransform:"uppercase",opacity:0.7,fontFamily:"'DM Mono',monospace"}}>Full {attn.length}s analysed</span>
+                  </div>
+                </Card>
+                <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
+                  <Card C={C}>
+                    <CardTitle C={C} label={C.green}>Attention Stats</CardTitle>
+                    <div style={{fontSize:14,color:C.dim,lineHeight:1.8}}>
+                      <p>Peak Attention: <b style={{color:C.green}}>{Math.max(...attn)}%</b> at ~{attn.indexOf(Math.max(...attn))}s</p>
+                      <p>Lowest Point: <b style={{color:C.red}}>{Math.min(...attn)}%</b> at ~{attn.indexOf(Math.min(...attn))}s</p>
+                      <p>Average Attention: <b style={{color:C.cyan}}>{Math.round(attn.reduce((a,b)=>a+b,0)/attn.length)}%</b></p>
+                      <p>Drop Zones: <b style={{color:C.amber}}>{attn.filter((v,i)=>i>0&&v<attn[i-1]-10).length}</b> significant drops detected</p>
+                      <p>Duration Analysed: <b style={{color:C.gold}}>{attn.length}s</b></p>
+                    </div>
+                  </Card>
+                  <Card C={C}>
+                    <CardTitle C={C} label={C.red}>Predicted View-Through Rate</CardTitle>
+                    {[25,50,75,100].map(pct=>{
+                      const idx=Math.round((pct/100)*(attn.length-1));
+                      const v=attn[idx]||0;
+                      return <div key={pct} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+                        <span style={{width:60,fontSize:13,color:C.dim,fontFamily:"'JetBrains Mono',monospace"}}>{pct}%</span>
+                        <div style={{flex:1,height:8,borderRadius:4,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,background:hex(v),width:`${v}%`}}/></div>
+                        <span style={{width:40,fontSize:13,fontWeight:700,color:hex(v),fontFamily:"'JetBrains Mono',monospace"}}>{v}%</span>
+                      </div>;
+                    })}
+                  </Card>
                 </div>
-              </Card>
-              <Card C={C}>
-                <CardTitle C={C} label={C.red}>Predicted View-Through Rate</CardTitle>
-                {[25,50,75,100].map(pct=>{
-                  const idx=Math.round((pct/100)*(attn.length-1));
-                  const v=attn[idx]||0;
-                  return <div key={pct} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-                    <span style={{width:60,fontSize:13,color:C.dim,fontFamily:"'JetBrains Mono',monospace"}}>{pct}%</span>
-                    <div style={{flex:1,height:8,borderRadius:4,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,background:hex(v),width:`${v}%`}}/></div>
-                    <span style={{width:40,fontSize:13,fontWeight:700,color:hex(v),fontFamily:"'JetBrains Mono',monospace"}}>{v}%</span>
-                  </div>;
-                })}
-              </Card>
-            </div>
+              </>
+            ):(
+              <>
+                <Card C={C} style={{marginBottom:24}}>
+                  <CardTitle C={C} label={C.amber}>{resultFormat==="static_image"?"Static Attention Diagnostics":resultFormat==="audio"?"Audio Attention Diagnostics":"Copy Attention Diagnostics"}</CardTitle>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,minmax(0,1fr))",gap:12,marginBottom:22}}>
+                    {[
+                      ["First Glance",staticAttentionMetrics[0]?.[1]||0,C.gold],
+                      ["Brand Linkage",staticAttentionMetrics[2]?.[1]||0,C.green],
+                      ["Message Decode",staticAttentionMetrics[3]?.[1]||0,C.cyan],
+                      ["CTA / Memory",staticAttentionMetrics[4]?.[1]||0,C.purple],
+                    ].map(([label,value,color],i)=>(
+                      <div key={label} style={{position:"relative",padding:16,borderRadius:12,background:`${color}12`,border:`1px solid ${color}44`}}>
+                        <div style={{width:26,height:26,borderRadius:999,display:"grid",placeItems:"center",background:`${color}20`,color,fontSize:11,fontWeight:900,fontFamily:"'DM Mono',monospace",marginBottom:10}}>{i+1}</div>
+                        <div style={{fontSize:11,color:color,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1,marginBottom:8}}>{label}</div>
+                        <div style={{fontSize:26,color:hex(value),fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{value}</div>
+                        {!isMobile&&i<3&&<div style={{position:"absolute",right:-16,top:"50%",transform:"translateY(-50%)",color:C.gold,fontSize:18,zIndex:2}}>→</div>}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{fontSize:13,color:C.dim,lineHeight:1.7}}>
+                    {resultFormat==="static_image"
+                      ? "Static creatives are judged by how quickly the eye finds the focal point, links it to the brand, decodes the message, and remembers the CTA. No time-series or second-by-second retention is applied."
+                      : resultFormat==="audio"
+                        ? "Audio attention is judged from the script/transcript: opening pull, proposition clarity, mnemonic strength, and CTA recall. Raw audio listening duration is not inferred."
+                        : "Copy attention is judged by headline pull, proposition clarity, persuasion, memorability, and CTA strength. No video timeline is applied."}
+                  </div>
+                </Card>
+                <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
+                  <Card C={C}>
+                    <CardTitle C={C} label={C.green}>{resultFormat==="static_image"?"Static Attention Metrics":"Attention Metrics"}</CardTitle>
+                    {staticAttentionMetrics.map(([label,value,color])=>(
+                      <BarMetric C={C} hex={hex} key={label} label={label} value={value} color={color}/>
+                    ))}
+                  </Card>
+                  <Card C={C}>
+                    <CardTitle C={C} label={C.red}>{resultFormat==="static_image"?"Risk Signals":"Attention Risk Signals"}</CardTitle>
+                    <div style={{fontSize:14,color:C.dim,lineHeight:1.85}}>
+                      <p>Strongest Signal: <b style={{color:C.green}}>{staticAttentionMetrics.slice().sort((a,b)=>b[1]-a[1])[0]?.[0]||"—"}</b></p>
+                      <p>Weakest Signal: <b style={{color:C.red}}>{staticAttentionMetrics.slice().sort((a,b)=>a[1]-b[1])[0]?.[0]||"—"}</b></p>
+                      <p>Attention Readiness: <b style={{color:C.cyan}}>{Math.round(staticAttentionMetrics.reduce((a,b)=>a+b[1],0)/staticAttentionMetrics.length)}%</b></p>
+                      {resultFormat==="static_image"&&<p>Clutter Risk: <b style={{color:hex(100-(staticAttentionMetrics.find(([l])=>l==="Clutter Risk")?.[1]||0))}}>{staticAttentionMetrics.find(([l])=>l==="Clutter Risk")?.[1]||0}/100</b></p>}
+                    </div>
+                  </Card>
+                </div>
+              </>
+            )}
             <Takeaway C={C} icon="👁" title="Attention Economics — Actions" color={C.amber} items={tw.attention}/>
           </>)}
 

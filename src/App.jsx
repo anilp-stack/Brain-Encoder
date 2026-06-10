@@ -460,6 +460,12 @@ export default function App(){
   const [formB, setFormB] = useState({brand:"",client:"",campaign:"",script:""});
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
+  const [isSharedMode, setIsSharedMode] = useState(false);
+  const [shareToken, setShareToken] = useState(null);
+  const [shareUrl, setShareUrl] = useState("");
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const fileRef=useRef(null);
 
   useEffect(()=>{
@@ -478,6 +484,47 @@ export default function App(){
     window.addEventListener("scroll",onScroll,{passive:true});
     onScroll();
     return()=>window.removeEventListener("scroll",onScroll);
+  },[]);
+
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    const shareParam=params.get("share");
+    if(!shareParam)return;
+    window.history.replaceState({},"","/");
+    (async()=>{
+      try{
+        const resp=await fetch(`/api/get-shared-report?token=${encodeURIComponent(shareParam)}`);
+        const data=await resp.json();
+        if(!resp.ok||!data.found||!data.results)return;
+        const combined={
+          ...data.results,
+          scenes:data.results.scenes||[],
+          strategic_insights:data.results.strategic_insights||[],
+          cmo_actions:data.results.cmo_actions||[],
+        };
+        setForm(prev=>({
+          ...prev,
+          brand:data.metadata?.brand||"",
+          client:data.metadata?.client||"",
+          campaign:data.metadata?.campaign||"",
+          agency:data.metadata?.agency||"",
+          industry:data.metadata?.industry||prev.industry||"FMCG / CPG",
+          country:data.metadata?.country||prev.country||"India",
+          market:data.metadata?.market||prev.market||"India",
+          type:data.metadata?.type||combined.creative_format||"video",
+        }));
+        setResults(combined);
+        setShareToken(shareParam);
+        setIsSharedMode(true);
+        setIsDemoMode(false);
+        setCompareMode(false);
+        setResultsB(null);
+        setStage("results");
+        setTab("summary");
+      }catch(err){
+        console.error("Shared report load failed:",err);
+      }
+    })();
   },[]);
 
   const handleFile=(e)=>{
@@ -779,7 +826,7 @@ export default function App(){
 
   const saveCurrentAnalysis=async()=>{
     if(!results)return;
-    if(isDemoMode)return;
+    if(isDemoMode||isSharedMode)return;
     const fullResult=cleanResultForSave(results);
     setResults(p=>({...p,__saveStatus:"saving",__saveError:""}));
     try{
@@ -860,6 +907,11 @@ export default function App(){
       setFormB({brand:"",client:"",campaign:"",script:""});
       setResults({...cleanResult,creative_format:cleanResult.creative_format||creativeType});
       setIsDemoMode(true);
+      setIsSharedMode(false);
+      setShareToken(null);
+      setShareUrl("");
+      setShowShareModal(false);
+      setShareCopied(false);
       setStage("results");
       setTab("summary");
     }catch(e){
@@ -867,6 +919,42 @@ export default function App(){
       setStage("form");
     }finally{
       setDemoLoading(false);
+    }
+  };
+
+  const handleShareReport=async()=>{
+    if(shareLoading||!results||isSharedMode||isDemoMode)return;
+    setShareLoading(true);
+    setShowShareModal(false);
+    setShareCopied(false);
+    try{
+      const resp=await fetch("/api/create-share-token",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          results:cleanResultForSave(results),
+          metadata:{
+            brand:form.brand,
+            client:form.client,
+            campaign:form.campaign,
+            agency:form.agency,
+            industry:form.industry,
+            country:form.country,
+            market:form.market,
+            type:form.type,
+          },
+        }),
+      });
+      const data=await resp.json();
+      if(!resp.ok||!data.token)throw new Error(data.error||"Token generation failed");
+      const url=`${window.location.origin}/?share=${data.token}`;
+      setShareToken(data.token);
+      setShareUrl(url);
+      setShowShareModal(true);
+    }catch(err){
+      alert("Could not generate share link: "+err.message);
+    }finally{
+      setShareLoading(false);
     }
   };
 
@@ -922,6 +1010,12 @@ export default function App(){
     setFormB({brand:"",client:"",campaign:"",script:""});
     setIsDemoMode(false);
     setDemoLoading(false);
+    setIsSharedMode(false);
+    setShareToken(null);
+    setShareUrl("");
+    setShowShareModal(false);
+    setShareLoading(false);
+    setShareCopied(false);
     localStorage.removeItem("adcritiq_token");
   };
 
@@ -1022,6 +1116,66 @@ export default function App(){
         <div style={{fontSize:11,color:C.muted,marginTop:16,textAlign:"center",lineHeight:1.6}}>
           🔒 Secure payment via Razorpay &nbsp;•&nbsp; Credits never expire<br/>
           Token displayed immediately after payment
+        </div>
+      </div>
+    </div>
+  );
+
+  const shareModal = showShareModal && shareUrl && (
+    <div
+      style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.78)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+      onClick={()=>setShowShareModal(false)}
+    >
+      <div
+        onClick={e=>e.stopPropagation()}
+        style={{background:C.s1,border:`1px solid ${C.border2}`,borderRadius:16,padding:28,width:"100%",maxWidth:480,boxShadow:"0 24px 64px rgba(0,0,0,0.6)",animation:"fadeUp 0.2s ease both"}}
+      >
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:20}}>
+          <div>
+            <div style={{fontWeight:900,color:C.text,fontSize:17,marginBottom:5}}>🔗 Report Link Ready</div>
+            <div style={{fontSize:12,color:C.dim,lineHeight:1.5}}>Anyone with this link can view the full report. No login or token needed.</div>
+          </div>
+          <button
+            onClick={()=>setShowShareModal(false)}
+            style={{background:"transparent",border:"none",color:C.dim,fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1}}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          <div style={{flex:1,padding:"10px 12px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,fontSize:11,color:C.dim,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            {shareUrl}
+          </div>
+          <button
+            onClick={()=>{
+              navigator.clipboard.writeText(shareUrl).then(()=>{
+                setShareCopied(true);
+                setTimeout(()=>setShareCopied(false),2500);
+              });
+            }}
+            style={{padding:"10px 16px",background:shareCopied?"rgba(16,185,129,0.15)":C.gold,border:"none",borderRadius:8,color:shareCopied?"#10B981":C.ink,fontSize:12,fontWeight:900,cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.2s ease",flexShrink:0}}
+          >
+            {shareCopied?"✓ Copied!":"Copy"}
+          </button>
+        </div>
+
+        <a
+          href={`https://wa.me/?text=${encodeURIComponent(`Check out this AdCritIQ™ neural creative analysis:\n${shareUrl}`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"11px 16px",background:"rgba(37,211,102,0.08)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25D366",fontSize:13,fontWeight:800,textDecoration:"none",marginBottom:12,transition:"all 0.15s ease",boxSizing:"border-box"}}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.025.506 3.93 1.395 5.6L0 24l6.549-1.371A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.652-.502-5.178-1.381l-.371-.22-3.886.814.826-3.795-.241-.389A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+          </svg>
+          Share on WhatsApp
+        </a>
+
+        <div style={{fontSize:10,color:C.muted,textAlign:"center",lineHeight:1.6}}>
+          This link is permanent · No login required to view<br/>
+          Powered by AdCritIQ™ | ADVantage Insights™
         </div>
       </div>
     </div>
@@ -1137,6 +1291,7 @@ export default function App(){
           <span>Built for creative decisions</span>
         </footer>
         {pricingModal}
+        {shareModal}
       </div>
     );
   }
@@ -1484,8 +1639,9 @@ export default function App(){
             </section>
           </div>
         </main>
-        {pricingModal}
-      </div>
+      {pricingModal}
+      {shareModal}
+    </div>
     );
   }
 
@@ -1682,6 +1838,32 @@ export default function App(){
               </div>
               <button onClick={resetToForm} style={{alignSelf:isMobile?"stretch":"center",padding:"10px 15px",borderRadius:10,border:`1px solid ${C.gold}66`,background:C.gold,color:C.ink,fontSize:12,fontWeight:900,cursor:"pointer",whiteSpace:"nowrap"}}>
                 Analyse Your Creative
+              </button>
+            </div>
+          )}
+          {isSharedMode&&(
+            <div style={{margin:isMobile?"14px 14px 0":"18px 36px 0",padding:isMobile?"14px 16px":"15px 20px",borderRadius:14,border:"1px solid rgba(16,185,129,0.32)",background:"linear-gradient(90deg,rgba(16,185,129,0.09),rgba(255,255,255,0.025))",boxShadow:"0 18px 48px rgba(16,185,129,0.08)",display:"flex",alignItems:isMobile?"stretch":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row"}}>
+              <div style={{display:"flex",alignItems:"center",gap:11,minWidth:0}}>
+                <span style={{fontSize:17,flexShrink:0}}>🔗</span>
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:10,fontFamily:"'DM Mono',monospace",fontWeight:900,color:"#10B981",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:4}}>Shared Report</div>
+                  <div style={{fontSize:12,color:C.dim,lineHeight:1.5}}>Neural creative intelligence report by AdCritIQ™ · ADVantage Insights™</div>
+                </div>
+              </div>
+              <button
+                onClick={()=>{
+                  setIsSharedMode(false);
+                  setResults(null);
+                  setShareToken(null);
+                  setShareUrl("");
+                  setShowShareModal(false);
+                  setShareCopied(false);
+                  setStage("landing");
+                  setTab("summary");
+                }}
+                style={{alignSelf:isMobile?"stretch":"center",padding:"9px 16px",border:"none",borderRadius:9,background:"#10B981",color:C.ink,fontSize:12,fontWeight:900,cursor:"pointer",whiteSpace:"nowrap"}}
+              >
+                Analyse Your Creative →
               </button>
             </div>
           )}
@@ -1917,10 +2099,22 @@ export default function App(){
                         </div>
                       </div>
 	                    )}
-	                    <button onClick={saveCurrentAnalysis} disabled={isDemoMode||r.__saveStatus==="saving"} onMouseDown={e=>{if(!isDemoMode&&r.__saveStatus!=="saving")e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-	                      style={{width:"100%",marginTop:10,padding:"9px 12px",borderRadius:10,border:`1px solid ${isDemoMode?C.border:C.gold+"44"}`,background:isDemoMode?C.s2:r.__saveStatus==="saved"?`${C.green}18`:r.__saveStatus==="error"?`${C.red}18`:`${C.gold}14`,color:isDemoMode?C.dim:r.__saveStatus==="saved"?C.green:r.__saveStatus==="error"?C.red:C.gold,fontSize:11,fontWeight:800,cursor:isDemoMode?"not-allowed":r.__saveStatus==="saving"?"wait":"pointer",fontFamily:"'DM Sans',sans-serif",transition:"transform 0.12s ease"}}>
-	                      {isDemoMode?"Already saved":r.__saveStatus==="saving"?"Saving...":r.__saveStatus==="saved"?"Saved ✓":"Save to Repository"}
+	                    <button onClick={saveCurrentAnalysis} disabled={isDemoMode||isSharedMode||r.__saveStatus==="saving"} onMouseDown={e=>{if(!isDemoMode&&!isSharedMode&&r.__saveStatus!=="saving")e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+	                      style={{width:"100%",marginTop:10,padding:"9px 12px",borderRadius:10,border:`1px solid ${isDemoMode||isSharedMode?C.border:C.gold+"44"}`,background:isDemoMode||isSharedMode?C.s2:r.__saveStatus==="saved"?`${C.green}18`:r.__saveStatus==="error"?`${C.red}18`:`${C.gold}14`,color:isDemoMode||isSharedMode?C.dim:r.__saveStatus==="saved"?C.green:r.__saveStatus==="error"?C.red:C.gold,fontSize:11,fontWeight:800,cursor:isDemoMode||isSharedMode?"not-allowed":r.__saveStatus==="saving"?"wait":"pointer",fontFamily:"'DM Sans',sans-serif",transition:"transform 0.12s ease",opacity:isDemoMode||isSharedMode?0.7:1}}>
+	                      {isSharedMode?"Shared view":isDemoMode?"Already saved":r.__saveStatus==="saving"?"Saving...":r.__saveStatus==="saved"?"Saved ✓":"Save to Repository"}
 	                    </button>
+	                    {!isDemoMode&&!isSharedMode&&(
+	                      <button
+	                        onClick={handleShareReport}
+	                        disabled={shareLoading}
+	                        onMouseDown={e=>{if(!shareLoading)e.currentTarget.style.transform="scale(0.98)";}}
+	                        onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}
+	                        onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+	                        style={{width:"100%",marginTop:8,padding:"9px 12px",borderRadius:10,border:`1px solid ${shareLoading?C.border:"rgba(16,185,129,0.35)"}`,background:shareLoading?C.s2:"rgba(16,185,129,0.08)",color:shareLoading?C.muted:"#10B981",fontSize:11,fontWeight:800,cursor:shareLoading?"wait":"pointer",fontFamily:"'DM Sans',sans-serif",transition:"transform 0.12s ease"}}
+	                      >
+	                        {shareLoading?"Generating link...":"🔗 Share Report"}
+	                      </button>
+	                    )}
 	                    {r.__saveError&&<div style={{fontSize:10,color:C.red,marginTop:6,maxWidth:140,lineHeight:1.4}}>{r.__saveError}</div>}
 	                  </div>
 	                );
@@ -2843,6 +3037,7 @@ export default function App(){
             </>
           )}
         </div>
+        {shareModal}
       </div>
     );
   }

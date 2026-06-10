@@ -16,7 +16,7 @@ const SidebarIcon = {
   ),
 };
 
-export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDownload, downloading, NAV_TABS, isMobile, isTablet }) {
+export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDownload, downloading, NAV_TABS, isMobile, isTablet, compareMode, resultsB }) {
   const [hoveredTab, setHoveredTab] = useState(null);
 
   if (isMobile) return null;
@@ -110,6 +110,24 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
                 {brand}
               </div>
             )}
+          </div>
+        )}
+        {compareMode && resultsB && (
+          <div
+            style={{
+              marginTop: 10,
+              padding: "6px 10px",
+              background: `${C.gold}12`,
+              border: `1px solid ${C.gold}33`,
+              borderRadius: 6,
+              fontSize: 9,
+              color: C.gold,
+              fontFamily: "'DM Mono',monospace",
+              letterSpacing: "0.1em",
+              textAlign: "center",
+            }}
+          >
+            ⚖️ A/B MODE ACTIVE
           </div>
         )}
       </div>

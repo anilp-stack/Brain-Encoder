@@ -361,6 +361,13 @@ export default function App(){
   const [isTablet, setIsTablet] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 && window.innerWidth < 1120 : false);
   const [expandedPlatform, setExpandedPlatform] = useState(null);
   const [scrolled, setScrolled] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [fileB, setFileB] = useState(null);
+  const [previewB, setPreviewB] = useState(null);
+  const [resultsB, setResultsB] = useState(null);
+  const [labelA, setLabelA] = useState("Creative A");
+  const [labelB, setLabelB] = useState("Creative B");
+  const [compareTab, setCompareTab] = useState("overview");
   const fileRef=useRef(null);
 
   useEffect(()=>{
@@ -392,6 +399,19 @@ export default function App(){
       setPreview(URL.createObjectURL(f));
     }
   };
+  const handleFileB=(e)=>{
+    const f=e.target.files[0];if(!f)return;
+    setFileB(f);
+    if(f.type.startsWith("image/")){
+      const r=new FileReader();
+      r.onload=ev=>setPreviewB(ev.target.result);
+      r.readAsDataURL(f);
+    }else if(f.type.startsWith("video/")){
+      setPreviewB(URL.createObjectURL(f));
+    }else{
+      setPreviewB(f.name);
+    }
+  };
   const u=(k,v)=>setForm(p=>({...p,[k]:v}));
 
   const handleAnalyze=useCallback(async()=>{
@@ -401,6 +421,7 @@ export default function App(){
     if(!form.industry) missingFields.push("Industry Vertical");
     if(!form.type) missingFields.push("Creative Type");
     if(!file) missingFields.push("Creative File");
+    if(compareMode && !fileB) missingFields.push("Creative B File");
     if(missingFields.length > 0){
       setError(`Please fill in required fields: ${missingFields.join(", ")}`);
       return;
@@ -426,6 +447,11 @@ export default function App(){
 
     if (!creditData.valid) {
       setError(creditData.error || "Invalid token. Please check or purchase credits.");
+      setShowPricing(true);
+      return;
+    }
+    if(compareMode && !creditData.bypass && creditData.credits < 2){
+      setError(`Comparison mode requires 2 credits. You have ${creditData.credits}. Please purchase more.`);
       setShowPricing(true);
       return;
     }
@@ -518,10 +544,55 @@ export default function App(){
           .then(d => { if (d.credits_remaining !== undefined) setCredits(d.credits_remaining); })
           .catch(() => {});
       }
+      if(compareMode && fileB){
+        setProgressMsg("Analysing Creative B...");
+        try{
+          const framesB=await extractFrames(fileB);
+          const payloadB={
+            frames:framesB.frames,
+            metadata:{
+              ...form,
+              type:form.type||"video",
+              duration_seconds:framesB.duration||30,
+              video_duration:framesB.duration||30,
+              isImage:fileB.type.startsWith("image/"),
+              label:labelB
+            }
+          };
+          const respB=await fetch("/api/analyze-fast",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(payloadB)
+          });
+          const dataB=await respB.json();
+          if(dataB&&!dataB.error){
+            const fastDataB=dataB.analysis||dataB.result||dataB;
+            const combinedB={
+              ...fastDataB,
+              scenes:fastDataB?.scenes||[],
+              strategic_insights:fastDataB?.strategic_insights||[],
+              cmo_actions:fastDataB?.cmo_actions||[],
+            };
+            setResultsB(combinedB);
+            if(token.trim()){
+              fetch("/api/deduct-credit",{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({token:token.trim()})
+              })
+                .then(r=>r.json())
+                .then(d=>{if(d.credits_remaining!==undefined)setCredits(d.credits_remaining);})
+                .catch(()=>{});
+            }
+          }
+        }catch(err){
+          console.error("Creative B analysis failed:",err);
+        }
+      }
       setStage("results");setTab("summary");
 
     }catch(e){setError(e.message);setStage("form");}
-  },[file,form,token]);
+  },[file,fileB,form,token,compareMode,labelB]);
 
   const cleanResultForSave=(source)=>{
     const clean={};
@@ -750,6 +821,16 @@ export default function App(){
               <button onClick={()=>setShowPricing(true)} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.s1,color:C.text,border:`1px solid ${C.border}`,padding:"15px 24px",borderRadius:10,fontSize:15,fontWeight:800,cursor:"pointer",transition:"transform 0.12s ease"}}>
                 Buy Analysis Credits
               </button>
+              <button
+                onClick={()=>{setCompareMode(true);setStage("form");}}
+                onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"}
+                onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}
+                onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor=C.border2;e.currentTarget.style.color=C.dim;}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=C.gold+"88";e.currentTarget.style.color=C.text;}}
+                style={{background:"transparent",color:C.dim,border:`1px solid ${C.border2}`,padding:"15px 24px",borderRadius:10,fontSize:15,fontWeight:800,cursor:"pointer",transition:"transform 0.12s ease,border-color 0.18s ease,color 0.18s ease"}}
+              >
+                ⚖️ Compare 2 Creatives
+              </button>
             </div>
             <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:720}}>
               {["17 neural metrics","15 platform scores","scene intelligence","CMO playbook","NeurIQ chat","repository"].map(t=>(
@@ -856,6 +937,16 @@ export default function App(){
           {error&&<div style={{padding:"15px 18px",borderRadius:14,background:"rgba(251,113,133,0.12)",color:C.red,fontSize:14,marginBottom:20,border:`1px solid ${C.red}55`,boxShadow:`0 18px 40px ${C.shadow}`}}>{error}</div>}
 
           <div style={{...panelStyle,padding:isMobile?18:30}}>
+            {compareMode&&(
+              <div style={{background:`${C.gold}0f`,border:`1px solid ${C.gold}44`,borderRadius:14,padding:"14px 16px",marginBottom:24,display:"flex",alignItems:"center",gap:12,boxShadow:`0 16px 40px ${C.gold}0f`}}>
+                <span style={{fontSize:20,flexShrink:0}}>⚖️</span>
+                <div style={{minWidth:0}}>
+                  <div style={{fontWeight:900,color:C.gold,fontSize:13,letterSpacing:1,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>A/B Comparison Mode</div>
+                  <div style={{fontSize:12,color:C.dim,marginTop:4,lineHeight:1.5}}>Upload two creatives. AdCritIQ™ will analyse both and declare a winner per metric, platform, and overall.</div>
+                </div>
+                <button onClick={()=>{setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setCompareTab("overview");}} style={{marginLeft:"auto",background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:18,padding:"4px 8px",flexShrink:0}}>×</button>
+              </div>
+            )}
             <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
               {sectionHead("01","Campaign Context","Define the brand, audience and market inputs used to frame the analysis.")}
               <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
@@ -904,6 +995,19 @@ export default function App(){
 
             <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
               {sectionHead("03","Upload Asset","Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
+              {compareMode&&(
+                <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:14,marginBottom:18}}>
+                  <div style={fieldWrap}>
+                    <label style={lbl}>Creative A Label</label>
+                    <input style={inp} placeholder="e.g. Version A — Emotional" value={labelA} onChange={e=>setLabelA(e.target.value||"Creative A")}/>
+                  </div>
+                  <div style={fieldWrap}>
+                    <label style={lbl}>Creative B Label</label>
+                    <input style={inp} placeholder="e.g. Version B — Product Focus" value={labelB} onChange={e=>setLabelB(e.target.value||"Creative B")}/>
+                  </div>
+                </div>
+              )}
+              {compareMode&&<label style={{...lbl,marginBottom:10}}>Creative A — Upload File *</label>}
               <div onClick={()=>fileRef.current?.click()} style={{border:`1.5px dashed ${file?C.gold:C.border2}`,borderRadius:18,padding:file?20:isMobile?34:52,textAlign:"center",cursor:"pointer",background:file?`${C.gold}08`:`linear-gradient(180deg,rgba(216,180,90,0.055),rgba(255,255,255,0.015))`,transition:"all .2s",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
                 {file?(
                   <div style={{display:"flex",alignItems:"center",gap:16,justifyContent:isMobile?"flex-start":"center",flexDirection:isMobile?"column":"row"}}>
@@ -924,6 +1028,31 @@ export default function App(){
                 )}
               </div>
               <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleFile} style={{display:"none"}}/>
+              {compareMode&&(
+                <div style={{marginTop:18}}>
+                  <label style={{...lbl,marginBottom:10}}>Creative B — Upload File *</label>
+                  <div onClick={()=>document.getElementById("fileBInput")?.click()} style={{border:`1.5px dashed ${fileB?C.gold:C.border2}`,borderRadius:18,padding:fileB?20:isMobile?30:42,textAlign:"center",cursor:"pointer",background:fileB?`${C.gold}08`:`linear-gradient(180deg,rgba(45,212,191,0.045),rgba(255,255,255,0.015))`,transition:"all .2s",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
+                    {fileB?(
+                      <div style={{display:"flex",alignItems:"center",gap:16,justifyContent:isMobile?"flex-start":"center",flexDirection:isMobile?"column":"row"}}>
+                        {previewB&&fileB.type.startsWith("image/")&&<img src={previewB} style={{width:160,height:92,objectFit:"cover",borderRadius:12,border:`1px solid ${C.border}`}} alt=""/>}
+                        {previewB&&fileB.type.startsWith("video/")&&<video src={previewB} style={{width:160,height:92,objectFit:"cover",borderRadius:12,border:`1px solid ${C.border}`}}/>}
+                        <div style={{textAlign:isMobile?"center":"left"}}>
+                          <div style={{fontSize:16,fontWeight:800,color:C.text}}>{fileB.name}</div>
+                          <div style={{fontSize:13,color:C.dim,marginTop:4}}>{(fileB.size/1024/1024).toFixed(1)} MB · {fileB.type}</div>
+                          <div style={{fontSize:12,color:C.gold,marginTop:6,fontWeight:800}}>Click to change Creative B</div>
+                        </div>
+                      </div>
+                    ):(
+                      <>
+                        <div style={{fontSize:isMobile?34:44,marginBottom:8,color:C.cyan,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Creative B</div>
+                        <div style={{fontSize:17,fontWeight:900,color:C.text}}>Click to upload second creative</div>
+                        <div style={{fontSize:13,color:C.dim,marginTop:8}}>MP4, MOV, AVI, WEBM, JPG, PNG</div>
+                      </>
+                    )}
+                  </div>
+                  <input id="fileBInput" type="file" accept="video/*,image/*" onChange={handleFileB} style={{display:"none"}}/>
+                </div>
+              )}
             </section>
 
             <section>
@@ -950,7 +1079,8 @@ export default function App(){
                   </div>
                 )}
               </div>
-              <button onClick={handleAnalyze} disabled={!file||!form.brand} onMouseDown={e=>{if(file&&form.brand)e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{width:"100%",padding:isMobile?17:20,borderRadius:14,border:"none",background:(!file||!form.brand)?C.s3:`linear-gradient(135deg,${C.goldL},${C.gold})`,color:(!file||!form.brand)?C.dim:C.ink,fontSize:isMobile?16:18,fontWeight:900,cursor:(!file||!form.brand)?"not-allowed":"pointer",boxShadow:(!file||!form.brand)?"none":`0 18px 46px ${C.gold}28`,transition:"transform 0.12s ease, box-shadow 0.18s ease"}}>
+              {compareMode&&<div style={{fontSize:12,color:C.amber,marginTop:-8,marginBottom:16,fontWeight:800}}>⚡ Comparison mode uses 2 credits (one per creative)</div>}
+              <button onClick={handleAnalyze} disabled={!file||!form.brand||(compareMode&&!fileB)} onMouseDown={e=>{if(file&&form.brand&&(!compareMode||fileB))e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{width:"100%",padding:isMobile?17:20,borderRadius:14,border:"none",background:(!file||!form.brand||(compareMode&&!fileB))?C.s3:`linear-gradient(135deg,${C.goldL},${C.gold})`,color:(!file||!form.brand||(compareMode&&!fileB))?C.dim:C.ink,fontSize:isMobile?16:18,fontWeight:900,cursor:(!file||!form.brand||(compareMode&&!fileB))?"not-allowed":"pointer",boxShadow:(!file||!form.brand||(compareMode&&!fileB))?"none":`0 18px 46px ${C.gold}28`,transition:"transform 0.12s ease, box-shadow 0.18s ease"}}>
                 Run AdCritIQ Analysis
               </button>
             </section>
@@ -1024,6 +1154,63 @@ export default function App(){
     const circumference=2*Math.PI*34;
     const ringColor=ringScore>=75?C.green:ringScore>=60?C.gold:ringScore>=40?C.orange:C.red;
     const miniLeft=isMobile?0:isTablet?208:C.sideW;
+    const compareReady=compareMode&&resultsB;
+    const cmpNum=(obj,key)=>typeof obj?.[key]==="number"?obj[key]:0;
+    const compareMetricList=[
+      ["Viral Potential","viral_potential"],
+      ["Hook Strength","hook_strength"],
+      ["Hold Rate","hold_rate"],
+      ["Emotional Peak","emotional_peak"],
+      ["Brand Recall","brand_recall"],
+      ["Memory Encoding","memory_encoding"],
+      ["Sound-Off Survival","sound_off_survival"],
+      ["Share Intent","share_intent"],
+      ["Creative Efficiency","creative_efficiency"],
+    ];
+    const gradeRank=(g)=>{
+      const order=["A+","A","A-","B+","B","B-","C+","C","C-","D","F"];
+      const idx=order.indexOf(g||"C");
+      return idx<0?order.length:idx;
+    };
+    const compareWinnerLabel=()=>{
+      const a=gradeRank(results?.overall_grade);
+      const b=gradeRank(resultsB?.overall_grade);
+      if(a<b)return labelA;
+      if(b<a)return labelB;
+      const avgA=compareMetricList.reduce((sum,[,key])=>sum+cmpNum(results,key),0)/compareMetricList.length;
+      const avgB=compareMetricList.reduce((sum,[,key])=>sum+cmpNum(resultsB,key),0)/compareMetricList.length;
+      if(avgA>avgB)return labelA;
+      if(avgB>avgA)return labelB;
+      return "Tied";
+    };
+    const compareScoreColor=(v)=>v>=75?C.green:v>=60?C.amber:v>=40?C.orange:C.red;
+    const comparePlatforms=[
+      ["YouTube 6s Bumper","youtube_preroll_6s"],
+      ["YouTube In-Stream","youtube_instream"],
+      ["Instagram Reels","instagram_reels"],
+      ["Instagram Stories","instagram_stories"],
+      ["Instagram Feed","instagram_feed"],
+      ["Meta Feed","meta_feed"],
+      ["TikTok","tiktok"],
+      ["LinkedIn Feed","linkedin_feed"],
+      ["Twitter/X","twitter_x"],
+      ["TV Broadcast","tv_broadcast"],
+      ["CTV/OTT","ctv_ott"],
+      ["YouTube 15s Pre-Roll","youtube_preroll_15s"],
+      ["Meta Stories","meta_stories"],
+      ["DOOH","dooh"],
+      ["Programmatic Display","programmatic_display"],
+    ].map(([name,key])=>{
+      const a=cmpNum(results?.platform_scores,key);
+      const b=cmpNum(resultsB?.platform_scores,key);
+      return {name,key,a,b,diff:Math.abs(a-b),winner:a>b?"A":b>a?"B":"—"};
+    }).sort((a,b)=>b.diff-a.diff);
+    const domainWinner=(aKeys,bKeys=aKeys)=>{
+      const a=aKeys.reduce((sum,key)=>sum+cmpNum(results,key),0)/aKeys.length;
+      const b=bKeys.reduce((sum,key)=>sum+cmpNum(resultsB,key),0)/bKeys.length;
+      return a>b?labelA:b>a?labelB:"Tied";
+    };
+    const otherLabel=compareWinnerLabel()===labelA?labelB:labelA;
 
     // FIX 1: dynamic heatmap label spacing — max 12 labels regardless of duration
     const heatmapLabelCount = Math.min(attn.length, 12);
@@ -1057,7 +1244,9 @@ export default function App(){
           setTab={setDashboardTab}
           grade={r.overall_grade}
           brand={form.brand}
-          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);setToken("");setCredits(null);localStorage.removeItem("adcritiq_token");}}
+          compareMode={compareMode}
+          resultsB={resultsB}
+          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);setToken("");setCredits(null);setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setLabelA("Creative A");setLabelB("Creative B");setCompareTab("overview");localStorage.removeItem("adcritiq_token");}}
           downloading={downloading}
           onDownload={async()=>{
             setDownloading(true);
@@ -1071,6 +1260,149 @@ export default function App(){
 
         {/* ── MAIN CONTENT ── */}
         <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflowY:"auto",width:"100%"}}>
+          {compareReady ? (
+            <>
+              <div style={{background:"rgba(16,16,20,0.94)",borderBottom:`1px solid ${C.border}`,padding:isMobile?"18px":"24px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
+                <div style={{fontSize:11,color:C.gold,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",fontWeight:900,marginBottom:8}}>A/B Creative Comparison</div>
+                <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:16,flexDirection:isMobile?"column":"row"}}>
+                  <div>
+                    <h1 style={{fontSize:isMobile?24:32,fontWeight:900,margin:0,fontFamily:"'Playfair Display',serif",letterSpacing:0}}>Which creative should you run?</h1>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.6,margin:"8px 0 0"}}>{labelA} vs {labelB} · {form.industry||"Creative"} · {form.country||form.market||"India"}</p>
+                  </div>
+                  <div style={{padding:"10px 16px",borderRadius:12,background:`${C.gold}12`,border:`1px solid ${C.gold}44`,color:C.gold,fontSize:12,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1,textTransform:"uppercase"}}>
+                    Winner: {compareWinnerLabel()}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{display:"flex",gap:8,padding:isMobile?"14px 14px 0":"18px 28px 0",borderBottom:`1px solid ${C.border}`,overflowX:"auto",background:C.bg}}>
+                {["overview","metrics","platforms","recommendation"].map(t=>(
+                  <button
+                    key={t}
+                    onClick={()=>setCompareTab(t)}
+                    style={{
+                      padding:"9px 16px",
+                      background:compareTab===t?`${C.gold}18`:"transparent",
+                      border:`1px solid ${compareTab===t?C.gold+"66":C.border}`,
+                      borderRadius:9,
+                      color:compareTab===t?C.gold:C.dim,
+                      fontSize:12,
+                      fontWeight:compareTab===t?900:700,
+                      cursor:"pointer",
+                      whiteSpace:"nowrap",
+                      textTransform:"capitalize",
+                      transition:"all 0.15s ease",
+                      fontFamily:"'Inter','DM Sans',sans-serif"
+                    }}
+                  >
+                    {t==="overview"?"📊 Overview":t==="metrics"?"🧠 17 Metrics":t==="platforms"?"📱 Platforms":"🏆 Recommendation"}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{padding:isMobile?"22px 14px":"32px 36px",maxWidth:1300,width:"100%",boxSizing:"border-box",margin:"0 auto"}}>
+                {compareTab==="overview"&&(
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:18}}>
+                    {[{label:labelA,r:results,side:"A"},{label:labelB,r:resultsB,side:"B"}].map(({label,r,side})=>{
+                      const isWinner=compareWinnerLabel()===label;
+                      return(
+                        <div key={side} style={{background:C.s1,border:`1px solid ${isWinner?C.gold+"77":C.border}`,borderRadius:16,padding:isMobile?20:26,boxShadow:isWinner?`0 0 34px ${C.gold}22`:`0 18px 46px ${C.shadow}`,position:"relative"}}>
+                          {isWinner&&<div style={{position:"absolute",top:-11,right:18,background:C.gold,color:C.ink,padding:"4px 11px",borderRadius:999,fontSize:10,fontWeight:900,letterSpacing:"0.12em",fontFamily:"'DM Mono',monospace"}}>🏆 WINNER</div>}
+                          <div style={{fontSize:11,color:C.dim,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginBottom:12}}>CREATIVE {side} — {label.toUpperCase()}</div>
+                          <div style={{fontSize:60,fontWeight:900,color:isWinner?C.gold:C.dim,lineHeight:1,marginBottom:10,fontFamily:"'DM Mono',monospace"}}>{r?.overall_grade||"—"}</div>
+                          <div style={{fontSize:13,color:C.dim,fontStyle:"italic",lineHeight:1.6,minHeight:42}}>{r?.headline_verdict||""}</div>
+                          <div style={{marginTop:18,display:"flex",gap:9,flexWrap:"wrap"}}>
+                            {[["Hook",r?.hook_strength],["Recall",r?.brand_recall],["Viral",r?.viral_potential]].map(([name,val])=>(
+                              <div key={name} style={{padding:"7px 11px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,fontSize:12}}>
+                                <span style={{color:C.dim}}>{name} </span>
+                                <span style={{fontWeight:900,color:typeof val==="number"?compareScoreColor(val):C.muted}}>{typeof val==="number"?val:"—"}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {compareTab==="metrics"&&(()=>{
+                  let aWins=0,bWins=0,ties=0;
+                  compareMetricList.forEach(([,key])=>{const a=cmpNum(results,key),b=cmpNum(resultsB,key);if(a>b)aWins++;else if(b>a)bWins++;else ties++;});
+                  return(
+                    <div style={{display:"grid",gap:12}}>
+                      {compareMetricList.map(([name,key])=>{
+                        const a=cmpNum(results,key),b=cmpNum(resultsB,key);
+                        const aWin=a>b,bWin=b>a;
+                        return(
+                          <div key={key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(160px,1fr) 170px minmax(160px,1fr)",gap:14,alignItems:"center",padding:16,borderRadius:14,background:C.s1,border:`1px solid ${C.border}`}}>
+                            <div style={{display:"grid",gap:7}}>
+                              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:aWin?C.gold:C.dim,fontWeight:900}}><span>{labelA}</span><span>{a}</span></div>
+                              <div style={{height:7,borderRadius:999,background:C.s3,overflow:"hidden",borderBottom:aWin?`2px solid ${C.gold}`:"none"}}><div style={{height:"100%",width:`${a}%`,background:aWin?C.gold:compareScoreColor(a),borderRadius:999}}/></div>
+                            </div>
+                            <div style={{fontSize:11,color:C.dim,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1,textAlign:"center"}}>{name}</div>
+                            <div style={{display:"grid",gap:7}}>
+                              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:bWin?C.gold:C.dim,fontWeight:900}}><span>{labelB}</span><span>{b}</span></div>
+                              <div style={{height:7,borderRadius:999,background:C.s3,overflow:"hidden",borderBottom:bWin?`2px solid ${C.gold}`:"none"}}><div style={{height:"100%",width:`${b}%`,background:bWin?C.gold:compareScoreColor(b),borderRadius:999}}/></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginTop:12}}>
+                        <span style={{padding:"8px 13px",borderRadius:999,background:`${C.gold}14`,border:`1px solid ${C.gold}44`,color:C.gold,fontWeight:900}}>A wins {aWins}</span>
+                        <span style={{padding:"8px 13px",borderRadius:999,background:C.s2,border:`1px solid ${C.border}`,color:C.dim,fontWeight:900}}>Tied {ties}</span>
+                        <span style={{padding:"8px 13px",borderRadius:999,background:`${C.cyan}14`,border:`1px solid ${C.cyan}44`,color:C.cyan,fontWeight:900}}>B wins {bWins}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {compareTab==="platforms"&&(
+                  <div style={{display:"grid",gap:10}}>
+                    {comparePlatforms.map(p=>(
+                      <div key={p.key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.2fr 80px 38px 80px 70px",gap:12,alignItems:"center",padding:"13px 16px",borderRadius:12,background:C.s1,border:`1px solid ${C.border}`}}>
+                        <div style={{display:"flex",alignItems:"center",minWidth:0}}><PlatformChip name={p.name}/><span style={{fontWeight:800,color:C.text,fontSize:13}}>{p.name}</span></div>
+                        <div style={{color:p.winner==="A"?C.gold:compareScoreColor(p.a),fontWeight:900,textAlign:isMobile?"left":"right"}}>{labelA}: {p.a}</div>
+                        <div style={{color:C.muted,textAlign:"center",fontFamily:"'DM Mono',monospace"}}>vs</div>
+                        <div style={{color:p.winner==="B"?C.gold:compareScoreColor(p.b),fontWeight:900}}>{labelB}: {p.b}</div>
+                        <div style={{justifySelf:isMobile?"start":"end",padding:"4px 10px",borderRadius:999,background:p.winner==="—"?C.s2:`${C.gold}14`,border:`1px solid ${p.winner==="—"?C.border:C.gold+"44"}`,color:p.winner==="—"?C.dim:C.gold,fontSize:11,fontWeight:900}}>Winner {p.winner}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {compareTab==="recommendation"&&(()=>{
+                  const overall=compareWinnerLabel();
+                  const recs=[
+                    ["DEPLOY FOR TV/CTV",domainWinner(["brand_recall","hold_rate"]),"Based on brand recall plus hold-rate strength for longer-viewing environments."],
+                    ["DEPLOY FOR SOCIAL",domainWinner(["hook_strength","viral_potential"]),"Based on opening hook and shareability pressure in fast-feed contexts."],
+                    ["EMOTIONAL IMPACT",domainWinner(["emotional_peak","share_intent"]),"Based on emotional peak and the likelihood of audience sharing."],
+                    ["OVERALL RECOMMENDATION",overall,overall==="Tied"?"Both cuts are close. Use platform-specific scores to decide media allocation.":`${overall} has the stronger overall grade and metric profile.`],
+                  ];
+                  return(
+                    <div style={{display:"grid",gap:18}}>
+                      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,minmax(0,1fr))",gap:18}}>
+                        {recs.map(([title,winner,reason])=>(
+                          <div key={title} style={{padding:22,borderRadius:16,background:C.s1,border:`1px solid ${C.gold}33`,boxShadow:`0 18px 44px ${C.shadow}`}}>
+                            <div style={{fontSize:11,color:C.gold,fontWeight:900,letterSpacing:1.4,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:12}}>{title}</div>
+                            <div style={{display:"inline-flex",padding:"6px 12px",borderRadius:999,background:`${C.gold}16`,border:`1px solid ${C.gold}44`,color:C.gold,fontSize:12,fontWeight:900,marginBottom:12}}>Winner: {winner}</div>
+                            <p style={{fontSize:14,color:C.dim,lineHeight:1.7,margin:0}}>{reason}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{padding:24,borderRadius:18,background:`linear-gradient(135deg,${C.gold}18,${C.s1})`,border:`1px solid ${C.gold}44`,color:C.text,fontSize:16,fontWeight:800,lineHeight:1.7}}>
+                        {overall==="Tied" ? "Run both creatives selectively. Use the Platforms tab to allocate each cut to the environments where it outperforms." : `Run ${overall} as the lead creative. Consider ${otherLabel} for any specific platform where it outperforms in the Platforms tab.`}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div style={{padding:"24px 36px 20px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginTop:"auto"}}>
+                ADVantage Insights™ · AdCritIQ™ · A/B Creative Comparison · {new Date().getFullYear()}
+              </div>
+            </>
+          ) : (
+            <>
 
           {/* Top header bar */}
           <div style={{background:"rgba(16,16,20,0.94)",borderBottom:`1px solid ${C.border}`,padding:isMobile?"16px 18px":"20px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
@@ -2053,6 +2385,8 @@ export default function App(){
           <div style={{padding:"24px 36px 20px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginTop:"auto"}}>
             ADVantage Insights™ · AdCritIQ™ · Neural Creative Intelligence · {new Date().getFullYear()}
           </div>
+            </>
+          )}
         </div>
       </div>
     );

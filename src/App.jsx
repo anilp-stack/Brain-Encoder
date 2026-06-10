@@ -290,15 +290,33 @@ function makeArea(arr,x1,x2,yT,yB){
 const FILE_LIMITS={
   image:10*1024*1024,
   video:100*1024*1024,
+  audio:50*1024*1024,
 };
+
+function getCreativeFormat(type,file){
+  if(type==="static_image"||type==="display")return "static_image";
+  if(type==="motion_static"||file?.type==="image/gif")return "motion_static";
+  if(type==="audio"||file?.type?.startsWith("audio/"))return "audio";
+  if(type==="text")return "text";
+  return "video";
+}
+
+function formatImpactLabel(format){
+  if(format==="static_image")return "attention / recall lift";
+  if(format==="audio")return "recall / response lift";
+  if(format==="text")return "clarity / conversion lift";
+  return "completion rate improvement";
+}
 
 function validateCreativeFile(file){
   if(!file)return null;
   const isImage=file.type.startsWith("image/");
   const isVideo=file.type.startsWith("video/");
-  if(!isImage&&!isVideo)return "Unsupported file type. Please upload JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM.";
+  const isAudio=file.type.startsWith("audio/");
+  if(!isImage&&!isVideo&&!isAudio)return "Unsupported file type. Please upload JPG, PNG, WEBP, GIF, MP4, MOV, WEBM, MP3, WAV, or M4A.";
   if(isImage&&file.size>FILE_LIMITS.image)return "Image creatives can be up to 10 MB. Please compress this image or export a smaller JPG/PNG/WEBP.";
   if(isVideo&&file.size>FILE_LIMITS.video)return "Video creatives can be up to 100 MB. Please upload MP4, MOV, or WEBM under 100 MB.";
+  if(isAudio&&file.size>FILE_LIMITS.audio)return "Audio creatives can be up to 50 MB. Please upload MP3, WAV, M4A, or AAC under 50 MB.";
   return null;
 }
 
@@ -386,7 +404,7 @@ function extractFrames(file){
 // ============================================================
 export default function App(){
   const [stage,setStage]=useState("landing");
-  const [form,setForm]=useState({brand:"",client:"",campaign:"",agency:"",type:"video",industry:"FMCG / CPG",audience:"",market:"India",country:"India",notes:""});
+  const [form,setForm]=useState({brand:"",client:"",campaign:"",agency:"",type:"video",industry:"FMCG / CPG",audience:"",market:"India",country:"India",notes:"",script:""});
   const [file,setFile]=useState(null);
   const [preview,setPreview]=useState(null);
   const [progress,setProgress]=useState(0);
@@ -414,7 +432,7 @@ export default function App(){
   const [labelB, setLabelB] = useState("Creative B");
   const [compareTab, setCompareTab] = useState("overview");
   const [compareType, setCompareType] = useState("versions");
-  const [formB, setFormB] = useState({brand:"",client:"",campaign:""});
+  const [formB, setFormB] = useState({brand:"",client:"",campaign:"",script:""});
   const fileRef=useRef(null);
 
   useEffect(()=>{
@@ -447,6 +465,8 @@ export default function App(){
       r.readAsDataURL(f);
     }else if(f.type.startsWith("video/")){
       setPreview(URL.createObjectURL(f));
+    }else if(f.type.startsWith("audio/")){
+      setPreview(f.name);
     }
   };
   const handleFileB=(e)=>{
@@ -461,6 +481,8 @@ export default function App(){
       r.readAsDataURL(f);
     }else if(f.type.startsWith("video/")){
       setPreviewB(URL.createObjectURL(f));
+    }else if(f.type.startsWith("audio/")){
+      setPreviewB(f.name);
     }else{
       setPreviewB(f.name);
     }
@@ -468,13 +490,17 @@ export default function App(){
   const u=(k,v)=>setForm(p=>({...p,[k]:v}));
 
   const handleAnalyze=useCallback(async()=>{
+    const creativeFormat=getCreativeFormat(form.type,file);
     const missingFields = [];
     if(!form.brand.trim()) missingFields.push("Brand Name");
     if(!form.country) missingFields.push("Country");
     if(!form.industry) missingFields.push("Industry Vertical");
     if(!form.type) missingFields.push("Creative Type");
-    if(!file) missingFields.push("Creative File");
-    if(compareMode && !fileB) missingFields.push("Creative B File");
+    if(creativeFormat!=="text"&&!file) missingFields.push("Creative File");
+    if(creativeFormat==="text"&&!form.script.trim()) missingFields.push("Text / Script");
+    if(creativeFormat==="audio"&&!form.script.trim()) missingFields.push("Audio Transcript / Script");
+    if(compareMode && creativeFormat!=="text" && creativeFormat!=="audio" && !fileB) missingFields.push("Creative B File");
+    if(compareMode && (creativeFormat==="text"||creativeFormat==="audio") && !formB.script.trim()) missingFields.push("Creative B Text / Transcript");
     if(missingFields.length > 0){
       setError(`Please fill in required fields: ${missingFields.join(", ")}`);
       return;
@@ -483,7 +509,7 @@ export default function App(){
       setError("Please enter Brand B name for comparison.");
       return;
     }
-    const fileError=validateCreativeFile(file);
+    const fileError=file?validateCreativeFile(file):null;
     if(fileError){setError(fileError);return;}
     if(compareMode&&fileB){
       const fileBError=validateCreativeFile(fileB);
@@ -523,12 +549,18 @@ export default function App(){
 
     try{
       setProgressMsg("Reading creative file...");setProgress(5);
-      const frameData=await extractFrames(file);
+      const frameData=creativeFormat==="text"||creativeFormat==="audio"
+        ? {frames:[],duration:0,duration_seconds:0,video_duration:0,width:0,height:0,isImage:false,original_size:file?.size||0}
+        : await extractFrames(file);
       // FIX 1: duration_seconds and video_duration are now in frameData
       const payload={
         frames:frameData.frames,
         metadata:{
           ...form,
+          creative_format:creativeFormat,
+          creative_subtype:form.type,
+          script:form.script,
+          isStatic:creativeFormat==="static_image",
           duration:frameData.duration,
           duration_seconds:frameData.duration_seconds,
           video_duration:frameData.video_duration,
@@ -607,6 +639,8 @@ export default function App(){
 
       const combined={
         ...fastData,
+        creative_format:creativeFormat,
+        creative_subtype:form.type,
         scenes: richData?.scenes||fastData?.scenes||[],
         strategic_insights: richData?.strategic_insights||fastData?.strategic_insights||[],
         cmo_actions: richData?.cmo_actions||fastData?.cmo_actions||[],
@@ -625,13 +659,16 @@ export default function App(){
           .then(d => { if (d.credits_remaining !== undefined) setCredits(d.credits_remaining); })
           .catch(() => {});
       }
-      if(compareMode && fileB){
+      if(compareMode && (fileB||creativeFormat==="text"||creativeFormat==="audio")){
         setProgress(10);
         setProgressMsg("Creative A complete. Analysing Creative B...");
         const B_TIMEOUT_MS=180000;
         await Promise.race([
           (async()=>{
-          const framesB=await extractFrames(fileB);
+          const formatB=getCreativeFormat(form.type,fileB);
+          const framesB=formatB==="text"||formatB==="audio"
+            ? {frames:[],duration:0,duration_seconds:0,video_duration:0,width:0,height:0,isImage:false,original_size:fileB?.size||0}
+            : await extractFrames(fileB);
           const payloadB={
             frames:framesB.frames,
             metadata:{
@@ -640,11 +677,15 @@ export default function App(){
               campaign:compareType==="brands"?formB.campaign:form.campaign,
               agency:form.agency,
               type:form.type||"video",
+              creative_format:formatB,
+              creative_subtype:form.type,
               industry:form.industry,
               country:form.country,
               market:form.market,
               audience:form.audience,
               notes:form.notes,
+              script:(formatB==="text"||formatB==="audio")?formB.script:form.script,
+              isStatic:formatB==="static_image",
               duration:framesB.duration,
               duration_seconds:framesB.duration_seconds||framesB.duration||30,
               video_duration:framesB.video_duration||framesB.duration||30,
@@ -670,6 +711,8 @@ export default function App(){
             const fastDataB=dataB.analysis||dataB.result||dataB;
             const combinedB={
               ...fastDataB,
+              creative_format:formatB,
+              creative_subtype:form.type,
               scenes:fastDataB?.scenes||[],
               strategic_insights:fastDataB?.strategic_insights||[],
               cmo_actions:fastDataB?.cmo_actions||[],
@@ -723,7 +766,7 @@ export default function App(){
           industry:form.industry,
           market:form.market,
           country:form.country,
-          creative_type:form.type,
+          creative_type:fullResult.creative_format||getCreativeFormat(form.type,file),
           overall_grade:fullResult.overall_grade,
           headline_verdict:fullResult.headline_verdict,
           viral_potential:fullResult.viral_potential,
@@ -1065,7 +1108,7 @@ export default function App(){
                     setLabelA("Creative A");
                     setLabelB("Creative B");
                     setCompareType("versions");
-                    setFormB({brand:"",client:"",campaign:""});
+                    setFormB({brand:"",client:"",campaign:"",script:""});
                   }else{
                     setCompareMode(true);
                   }
@@ -1145,12 +1188,26 @@ export default function App(){
               {sectionHead("02","Creative Format","Select the primary creative environment and add any strategic context.")}
               <div style={{marginBottom:20}}>
                 <label style={{...lbl,marginBottom:10}}>Creative Type</label>
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":isTablet?"repeat(3,1fr)":"repeat(6,1fr)",gap:10}}>
-                  {[["video","Video Ad"],["display","Display / Banner"],["social","Social Post"],["ctv","CTV / OTT"],["bumper","6s Bumper"],["preroll","Pre-Roll"]].map(([k,v])=>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":isTablet?"repeat(3,1fr)":"repeat(5,1fr)",gap:10}}>
+                  {[["video","Video / Film"],["static_image","Static Image"],["motion_static","Animated / GIF"],["audio","Audio + Script"],["text","Text / Script"]].map(([k,v])=>
                     <button key={k} onClick={()=>u("type",k)} style={{padding:"13px 12px",borderRadius:12,border:`1px solid ${form.type===k?C.gold:C.border}`,background:form.type===k?`linear-gradient(180deg,${C.gold}20,${C.gold}0d)`:C.s2,color:form.type===k?C.gold:C.dim,fontSize:13,fontWeight:800,cursor:"pointer",boxShadow:form.type===k?`0 12px 28px ${C.gold}12`:"none",transition:"all 0.18s ease"}}>{v}</button>
                   )}
                 </div>
               </div>
+              {(getCreativeFormat(form.type,file)==="text"||getCreativeFormat(form.type,file)==="audio")&&(
+                <div style={{...fieldWrap,marginBottom:18}}>
+                  <label style={lbl}>{getCreativeFormat(form.type,file)==="audio"?"Audio Transcript / Script *":"Text / Script *"}</label>
+                  <textarea
+                    placeholder={getCreativeFormat(form.type,file)==="audio"?"Paste the radio/podcast script, voiceover transcript, sonic mnemonic description, and CTA...":"Paste ad copy, headline/body copy, script, landing page section, email, or SMS text..."}
+                    style={{...inp,height:130,padding:"16px 18px",resize:"vertical",lineHeight:1.6}}
+                    value={form.script}
+                    onChange={e=>u("script",e.target.value)}
+                  />
+                  <div style={{fontSize:11,color:C.amber,lineHeight:1.5}}>
+                    {getCreativeFormat(form.type,file)==="audio"?"Audio is analysed from transcript/script context in this version; raw audio transcription is not performed.":"Text/script analysis does not require an uploaded file."}
+                  </div>
+                </div>
+              )}
               <div style={fieldWrap}>
                 <label style={lbl}>Additional Notes / Brief</label>
                 <textarea placeholder="Any context for the analysis: objectives, KPIs, competitive context, specific questions..." style={{...inp,height:110,padding:"16px 18px",resize:"vertical",lineHeight:1.6}} value={form.notes} onChange={e=>u("notes",e.target.value)}/>
@@ -1158,12 +1215,12 @@ export default function App(){
             </section>
 
             <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
-              {sectionHead("03","Upload Asset","Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
+              {sectionHead("03","Upload Asset",getCreativeFormat(form.type,file)==="text"?"No file is required for text/script analysis. Paste the copy in the Creative Format section above.":"Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
               <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10,marginBottom:18}}>
                 {[
                   ["Images","JPG, PNG, WEBP, GIF","Up to 10 MB · compressed before analysis",C.gold],
                   ["Videos","MP4, MOV, WEBM","Up to 100 MB · 1-2 frames sampled",C.cyan],
-                  ["Animated","GIF / motion assets","Static first frame unless video-readable",C.purple],
+                  ["Audio / Text","MP3, WAV, M4A, Script","Audio needs transcript · text needs no file",C.purple],
                 ].map(([title,types,limit,color])=>(
                   <div key={title} style={{padding:"12px 13px",borderRadius:12,background:`${color}0b`,border:`1px solid ${color}33`}}>
                     <div style={{fontSize:11,color:color,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1,marginBottom:5}}>{title}</div>
@@ -1184,12 +1241,20 @@ export default function App(){
                   </div>
                 </div>
               )}
-              {compareMode&&<label style={{...lbl,marginBottom:10}}>Creative A — Upload File *</label>}
+              {compareMode&&getCreativeFormat(form.type,file)!=="text"&&<label style={{...lbl,marginBottom:10}}>Creative A — Upload File {getCreativeFormat(form.type,file)==="audio"?"(optional)":"*"}</label>}
+              {getCreativeFormat(form.type,file)==="text"?(
+                <div style={{border:`1.5px dashed ${C.border2}`,borderRadius:18,padding:isMobile?26:38,textAlign:"center",background:`linear-gradient(180deg,rgba(216,180,90,0.035),rgba(255,255,255,0.015))`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
+                  <div style={{fontSize:isMobile?32:42,marginBottom:8,color:C.gold,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Text Mode</div>
+                  <div style={{fontSize:17,fontWeight:900,color:C.text}}>No upload required</div>
+                  <div style={{fontSize:13,color:C.dim,marginTop:8}}>Ad copy and scripts are analysed from the text box above.</div>
+                </div>
+              ):(
               <div onClick={()=>fileRef.current?.click()} style={{border:`1.5px dashed ${file?C.gold:C.border2}`,borderRadius:18,padding:file?20:isMobile?34:52,textAlign:"center",cursor:"pointer",background:file?`${C.gold}08`:`linear-gradient(180deg,rgba(216,180,90,0.055),rgba(255,255,255,0.015))`,transition:"all .2s",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
                 {file?(
                   <div style={{display:"flex",alignItems:"center",gap:16,justifyContent:isMobile?"flex-start":"center",flexDirection:isMobile?"column":"row"}}>
                     {preview&&file.type.startsWith("image/")&&<img src={preview} style={{width:160,height:92,objectFit:"cover",borderRadius:12,border:`1px solid ${C.border}`}} alt=""/>}
                     {preview&&file.type.startsWith("video/")&&<video src={preview} style={{width:160,height:92,objectFit:"cover",borderRadius:12,border:`1px solid ${C.border}`}}/>}
+                    {preview&&file.type.startsWith("audio/")&&<div style={{width:160,height:92,borderRadius:12,border:`1px solid ${C.border}`,background:C.s2,display:"grid",placeItems:"center",color:C.gold,fontWeight:900}}>AUDIO</div>}
                     <div style={{textAlign:isMobile?"center":"left"}}>
                       <div style={{fontSize:16,fontWeight:800,color:C.text}}>{file.name}</div>
                       <div style={{fontSize:13,color:C.dim,marginTop:4}}>{(file.size/1024/1024).toFixed(1)} MB · {file.type}</div>
@@ -1200,19 +1265,33 @@ export default function App(){
                   <>
                     <div style={{fontSize:isMobile?38:50,marginBottom:8,color:C.gold,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Upload</div>
                     <div style={{fontSize:18,fontWeight:900,color:C.text}}>Drop file here or click to browse</div>
-                    <div style={{fontSize:13,color:C.dim,marginTop:8}}>JPG, PNG, WEBP, GIF up to 10 MB · MP4, MOV, WEBM up to 100 MB</div>
+                    <div style={{fontSize:13,color:C.dim,marginTop:8}}>JPG, PNG, WEBP, GIF up to 10 MB · MP4, MOV, WEBM up to 100 MB · MP3, WAV, M4A up to 50 MB</div>
                   </>
                 )}
               </div>
-              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" onChange={handleFile} style={{display:"none"}}/>
+              )}
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/x-m4a" onChange={handleFile} style={{display:"none"}}/>
               {compareMode&&(
                 <div style={{marginTop:18}}>
-                  <label style={{...lbl,marginBottom:10}}>Creative B — Upload File *</label>
+                  {(getCreativeFormat(form.type,file)==="text"||getCreativeFormat(form.type,file)==="audio")&&(
+                    <div style={{...fieldWrap,marginBottom:16}}>
+                      <label style={lbl}>{getCreativeFormat(form.type,file)==="audio"?"Creative B — Audio Transcript / Script *":"Creative B — Text / Script *"}</label>
+                      <textarea
+                        placeholder={getCreativeFormat(form.type,file)==="audio"?"Paste Creative B radio/podcast script or voiceover transcript...":"Paste Creative B ad copy, headline/body copy, or script..."}
+                        style={{...inp,height:120,padding:"16px 18px",resize:"vertical",lineHeight:1.6}}
+                        value={formB.script}
+                        onChange={e=>setFormB(p=>({...p,script:e.target.value}))}
+                      />
+                    </div>
+                  )}
+                  {getCreativeFormat(form.type,file)!=="text"&&<label style={{...lbl,marginBottom:10}}>Creative B — Upload File {getCreativeFormat(form.type,file)==="audio"?"(optional)":"*"}</label>}
+                  {getCreativeFormat(form.type,file)!=="text"&&(
                   <div onClick={()=>document.getElementById("fileBInput")?.click()} style={{border:`1.5px dashed ${fileB?C.gold:C.border2}`,borderRadius:18,padding:fileB?20:isMobile?30:42,textAlign:"center",cursor:"pointer",background:fileB?`${C.gold}08`:`linear-gradient(180deg,rgba(45,212,191,0.045),rgba(255,255,255,0.015))`,transition:"all .2s",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
                     {fileB?(
                       <div style={{display:"flex",alignItems:"center",gap:16,justifyContent:isMobile?"flex-start":"center",flexDirection:isMobile?"column":"row"}}>
                         {previewB&&fileB.type.startsWith("image/")&&<img src={previewB} style={{width:160,height:92,objectFit:"cover",borderRadius:12,border:`1px solid ${C.border}`}} alt=""/>}
                         {previewB&&fileB.type.startsWith("video/")&&<video src={previewB} style={{width:160,height:92,objectFit:"cover",borderRadius:12,border:`1px solid ${C.border}`}}/>}
+                        {previewB&&fileB.type.startsWith("audio/")&&<div style={{width:160,height:92,borderRadius:12,border:`1px solid ${C.border}`,background:C.s2,display:"grid",placeItems:"center",color:C.cyan,fontWeight:900}}>AUDIO B</div>}
                         <div style={{textAlign:isMobile?"center":"left"}}>
                           <div style={{fontSize:16,fontWeight:800,color:C.text}}>{fileB.name}</div>
                           <div style={{fontSize:13,color:C.dim,marginTop:4}}>{(fileB.size/1024/1024).toFixed(1)} MB · {fileB.type}</div>
@@ -1223,11 +1302,12 @@ export default function App(){
                       <>
                         <div style={{fontSize:isMobile?34:44,marginBottom:8,color:C.cyan,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Creative B</div>
                         <div style={{fontSize:17,fontWeight:900,color:C.text}}>Click to upload second creative</div>
-                        <div style={{fontSize:13,color:C.dim,marginTop:8}}>JPG, PNG, WEBP, GIF up to 10 MB · MP4, MOV, WEBM up to 100 MB</div>
+                        <div style={{fontSize:13,color:C.dim,marginTop:8}}>JPG, PNG, WEBP, GIF up to 10 MB · MP4, MOV, WEBM up to 100 MB · MP3, WAV, M4A up to 50 MB</div>
                       </>
                     )}
                   </div>
-                  <input id="fileBInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" onChange={handleFileB} style={{display:"none"}}/>
+                  )}
+                  <input id="fileBInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/x-m4a" onChange={handleFileB} style={{display:"none"}}/>
                   {compareType==="brands"&&(
                     <div style={{marginTop:18,padding:18,background:C.s2,border:`1px solid ${C.border}`,borderRadius:14}}>
                       <div style={{fontSize:10,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginBottom:14,fontWeight:900,textTransform:"uppercase"}}>
@@ -1279,9 +1359,17 @@ export default function App(){
                 )}
               </div>
               {compareMode&&<div style={{fontSize:12,color:C.amber,marginTop:-8,marginBottom:16,fontWeight:800}}>⚡ Comparison mode uses 2 credits (one per creative)</div>}
-              <button onClick={handleAnalyze} disabled={!file||!form.brand||(compareMode&&!fileB)} onMouseDown={e=>{if(file&&form.brand&&(!compareMode||fileB))e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{width:"100%",padding:isMobile?17:20,borderRadius:14,border:"none",background:(!file||!form.brand||(compareMode&&!fileB))?C.s3:`linear-gradient(135deg,${C.goldL},${C.gold})`,color:(!file||!form.brand||(compareMode&&!fileB))?C.dim:C.ink,fontSize:isMobile?16:18,fontWeight:900,cursor:(!file||!form.brand||(compareMode&&!fileB))?"not-allowed":"pointer",boxShadow:(!file||!form.brand||(compareMode&&!fileB))?"none":`0 18px 46px ${C.gold}28`,transition:"transform 0.12s ease, box-shadow 0.18s ease"}}>
-                Run AdCritIQ Analysis
-              </button>
+              {(()=>{
+                const fmt=getCreativeFormat(form.type,file);
+                const needsFile=fmt!=="text"&&fmt!=="audio";
+                const needsScript=fmt==="text"||fmt==="audio";
+                const disabled=!form.brand||(needsFile&&!file)||(needsScript&&!form.script.trim())||(compareMode&&needsFile&&!fileB)||(compareMode&&needsScript&&!formB.script.trim());
+                return(
+                  <button onClick={handleAnalyze} disabled={disabled} onMouseDown={e=>{if(!disabled)e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{width:"100%",padding:isMobile?17:20,borderRadius:14,border:"none",background:disabled?C.s3:`linear-gradient(135deg,${C.goldL},${C.gold})`,color:disabled?C.dim:C.ink,fontSize:isMobile?16:18,fontWeight:900,cursor:disabled?"not-allowed":"pointer",boxShadow:disabled?"none":`0 18px 46px ${C.gold}28`,transition:"transform 0.12s ease, box-shadow 0.18s ease"}}>
+                    Run AdCritIQ Analysis
+                  </button>
+                );
+              })()}
             </section>
           </div>
         </main>
@@ -1353,6 +1441,8 @@ export default function App(){
     const circumference=2*Math.PI*34;
     const ringColor=ringScore>=75?C.green:ringScore>=60?C.gold:ringScore>=40?C.orange:C.red;
     const miniLeft=isMobile?0:isTablet?208:C.sideW;
+    const resultFormat=r.creative_format||getCreativeFormat(form.type,file);
+    const impactLabel=formatImpactLabel(resultFormat);
     const compareReady=compareMode&&resultsB;
     const compareLabelA=compareType==="brands"?(form.brand||labelA):labelA;
     const compareLabelB=compareType==="brands"?(formB.brand||labelB):labelB;
@@ -1447,7 +1537,7 @@ export default function App(){
           brand={form.brand}
           compareMode={compareMode}
           resultsB={resultsB}
-          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);setToken("");setCredits(null);setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setLabelA("Creative A");setLabelB("Creative B");setCompareTab("overview");setCompareType("versions");setFormB({brand:"",client:"",campaign:""});localStorage.removeItem("adcritiq_token");}}
+          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);setToken("");setCredits(null);setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setLabelA("Creative A");setLabelB("Creative B");setCompareTab("overview");setCompareType("versions");setFormB({brand:"",client:"",campaign:"",script:""});localStorage.removeItem("adcritiq_token");}}
           downloading={downloading}
           onDownload={async()=>{
             setDownloading(true);
@@ -1917,6 +2007,9 @@ export default function App(){
 
           {/* ===== SCENE INTELLIGENCE ===== */}
           {tab==="scenes"&&(<>
+            <div style={{fontSize:11,color:C.gold,fontWeight:900,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:14}}>
+              {resultFormat==="static_image"?"Creative Anatomy":resultFormat==="text"?"Copy Intelligence":resultFormat==="audio"?"Audio & Script Intelligence":resultFormat==="motion_static"?"Motion Loop Intelligence":"Scene Intelligence"}
+            </div>
             <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:18}}>
               {sc.map((s,i)=>
                 <Card C={C} key={i} delay={Math.min(i*70,500)} style={{position:"relative",overflow:"hidden"}}>
@@ -1934,7 +2027,7 @@ export default function App(){
                     {s.emotion!==undefined&&<span>Emotion: <b style={{color:hex(s.emotion)}}>{s.emotion}%</b></span>}
                     {s.system_mode&&<span>Mode: <b style={{color:C.purple}}>{s.system_mode}</b></span>}
                     {s.cognitive_load&&<span>Load: <b style={{color:s.cognitive_load==="overload"?C.red:s.cognitive_load==="high"?C.amber:C.green}}>{s.cognitive_load}</b></span>}
-                    {s.drop_second != null && (
+                    {(resultFormat==="video"||resultFormat==="motion_static")&&s.drop_second != null && (
                       <span style={{fontSize:12,color:C.red,fontWeight:700,marginLeft:8}}>
                         ⚠ Drop risk: {Math.floor(s.drop_second/60)}:{String(s.drop_second%60).padStart(2,"0")}
                       </span>
@@ -1943,7 +2036,7 @@ export default function App(){
                 </Card>
               )}
             </div>
-            <Takeaway C={C} icon="🎬" title="Scene Intelligence — How to Use This" color={C.teal} items={tw.scenes}/>
+            <Takeaway C={C} icon="🎬" title={`${resultFormat==="static_image"?"Creative Anatomy":resultFormat==="text"?"Copy Intelligence":resultFormat==="audio"?"Audio & Script Intelligence":resultFormat==="motion_static"?"Motion Loop Intelligence":"Scene Intelligence"} — How to Use This`} color={C.teal} items={tw.scenes}/>
           </>)}
 
           {/* ===== PLATFORM SCORES ===== */}
@@ -2130,7 +2223,7 @@ export default function App(){
                     <p style={{fontSize:14,color:C.dim,lineHeight:1.7}}>{a.body}</p>
                     {a.estimated_uplift_pct ? (
                       <div style={{marginTop:10,fontSize:12,color:C.green,fontWeight:700}}>
-                        📈 Est. +{a.estimated_uplift_pct}% completion rate improvement
+                        📈 Est. +{a.estimated_uplift_pct}% {impactLabel}
                       </div>
                     ) : a.impact && (
                       <div style={{marginTop:10,fontSize:12,color:C.green,fontWeight:600}}>📈 {a.impact}</div>

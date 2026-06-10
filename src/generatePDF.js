@@ -46,6 +46,14 @@ export async function generateBrainEncoderPDF(results, form) {
   const fill = (c) => doc.setFillColor(...c);
   const stroke = (c) => doc.setDrawColor(...c);
   const brand = safeStr(meta.brand, "Creative Analysis");
+  const creativeFormat = safeStr(r.creative_format || meta.creative_format || meta.type, "video");
+  const impactLabel = creativeFormat === "static_image"
+    ? "attention / recall lift"
+    : creativeFormat === "audio"
+      ? "recall / response lift"
+      : creativeFormat === "text"
+        ? "clarity / conversion lift"
+        : "completion rate";
   const fileDate = new Date().toISOString().slice(0, 10);
   const reportDate = new Date().toLocaleDateString("en-GB", {
     day: "numeric",
@@ -439,8 +447,8 @@ export async function generateBrainEncoderPDF(results, form) {
     doc.text(`${worst[0]} (${worst[1]})`, 117, y + 18);
   });
 
-  page("Scene Intelligence", 4, () => {
-    let y = drawSectionTitle("Scene-by-Scene Analysis", 24);
+  page(creativeFormat === "static_image" ? "Creative Anatomy" : creativeFormat === "text" ? "Copy Intelligence" : creativeFormat === "audio" ? "Audio & Script Intelligence" : "Scene Intelligence", 4, () => {
+    let y = drawSectionTitle(creativeFormat === "static_image" ? "Visual Zone Analysis" : creativeFormat === "text" ? "Copy Section Analysis" : creativeFormat === "audio" ? "Audio / Script Moment Analysis" : "Scene-by-Scene Analysis", 24);
     const scenes = safeArr(r.scenes).slice(0, 5);
     if (!scenes.length) {
       setFont(9, "normal");
@@ -583,7 +591,7 @@ export async function generateBrainEncoderPDF(results, form) {
       setFont(7, "normal");
       color(COLORS.dim);
       wrapText(action.body, 22, y + 23, 132, 4, 1);
-      const uplift = action.estimated_uplift_pct != null ? `Est. +${safeNum(action.estimated_uplift_pct)}% completion rate` : safeStr(action.impact, "");
+      const uplift = action.estimated_uplift_pct != null ? `Est. +${safeNum(action.estimated_uplift_pct)}% ${impactLabel}` : safeStr(action.impact, "");
       if (uplift) {
         setFont(6.8, "bold");
         color(COLORS.green);

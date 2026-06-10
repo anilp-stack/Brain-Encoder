@@ -458,6 +458,8 @@ export default function App(){
   const [compareTab, setCompareTab] = useState("overview");
   const [compareType, setCompareType] = useState("versions");
   const [formB, setFormB] = useState({brand:"",client:"",campaign:"",script:""});
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const fileRef=useRef(null);
 
   useEffect(()=>{
@@ -777,6 +779,7 @@ export default function App(){
 
   const saveCurrentAnalysis=async()=>{
     if(!results)return;
+    if(isDemoMode)return;
     const fullResult=cleanResultForSave(results);
     setResults(p=>({...p,__saveStatus:"saving",__saveError:""}));
     try{
@@ -819,6 +822,54 @@ export default function App(){
     }
   };
 
+  const handleLoadDemo=async()=>{
+    setDemoLoading(true);
+    setError(null);
+    try{
+      const resp=await fetch("/api/get-analyses?limit=1&order=created_at.desc");
+      const data=await resp.json();
+      if(!resp.ok||!data.success)throw new Error(data.error||"Could not load sample report.");
+      const saved=(data.analyses||[])[0];
+      if(!saved||!saved.full_result)throw new Error("No saved sample report is available yet.");
+      const fullResult=typeof saved.full_result==="string"?JSON.parse(saved.full_result):saved.full_result;
+      const cleanResult=cleanResultForSave(fullResult||{});
+      const creativeType=saved.creative_type||cleanResult.creative_subtype||cleanResult.creative_format||"video";
+      setForm(p=>({
+        ...p,
+        brand:saved.brand||p.brand||"Sample Brand",
+        client:saved.client||"",
+        campaign:saved.campaign||"",
+        agency:saved.agency||"",
+        industry:saved.industry||p.industry||"FMCG / CPG",
+        market:saved.market||p.market||"India",
+        country:saved.country||p.country||"India",
+        type:creativeType,
+        notes:p.notes||"",
+        script:p.script||"",
+      }));
+      setCompareMode(false);
+      setFile(null);
+      setPreview(null);
+      setFileB(null);
+      setPreviewB(null);
+      setResultsB(null);
+      setLabelA("Creative A");
+      setLabelB("Creative B");
+      setCompareTab("overview");
+      setCompareType("versions");
+      setFormB({brand:"",client:"",campaign:"",script:""});
+      setResults({...cleanResult,creative_format:cleanResult.creative_format||creativeType});
+      setIsDemoMode(true);
+      setStage("results");
+      setTab("summary");
+    }catch(e){
+      setError(e.message);
+      setStage("form");
+    }finally{
+      setDemoLoading(false);
+    }
+  };
+
   const loadRepository=async(filters={})=>{
     setRepoLoading(true);
     try{
@@ -851,6 +902,27 @@ export default function App(){
   const setDashboardTab=(next)=>{
     setTab(next);
     if(next==="repository")loadRepository();
+  };
+
+  const resetToForm=()=>{
+    setStage("form");
+    setResults(null);
+    setFile(null);
+    setPreview(null);
+    setToken("");
+    setCredits(null);
+    setCompareMode(false);
+    setFileB(null);
+    setPreviewB(null);
+    setResultsB(null);
+    setLabelA("Creative A");
+    setLabelB("Creative B");
+    setCompareTab("overview");
+    setCompareType("versions");
+    setFormB({brand:"",client:"",campaign:"",script:""});
+    setIsDemoMode(false);
+    setDemoLoading(false);
+    localStorage.removeItem("adcritiq_token");
   };
 
   const pricingModal = showPricing && (
@@ -1006,6 +1078,20 @@ export default function App(){
               >
                 ⚖️ Compare 2 Creatives
               </button>
+              <button
+                onClick={handleLoadDemo}
+                disabled={demoLoading}
+                onMouseDown={e=>{if(!demoLoading)e.currentTarget.style.transform="scale(0.98)";}}
+                onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}
+                onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor=C.gold+"55";e.currentTarget.style.color=C.gold;}}
+                onMouseEnter={e=>{if(!demoLoading){e.currentTarget.style.borderColor=C.gold+"aa";e.currentTarget.style.color=C.text;}}}
+                style={{background:`${C.gold}0f`,color:C.gold,border:`1px solid ${C.gold}55`,padding:"15px 24px",borderRadius:10,fontSize:15,fontWeight:900,cursor:demoLoading?"wait":"pointer",transition:"transform 0.12s ease,border-color 0.18s ease,color 0.18s ease",opacity:demoLoading?0.78:1}}
+              >
+                {demoLoading?"Loading Sample...":"See a Live Report"}
+              </button>
+            </div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.6,margin:"-18px 0 28px",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
+              Sample report opens instantly. No upload, token, or credit required.
             </div>
             <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:720}}>
               {["17 neural metrics","15 platform scores","scene intelligence","CMO playbook","NeurIQ chat","repository"].map(t=>(
@@ -1572,7 +1658,7 @@ export default function App(){
           brand={form.brand}
           compareMode={compareMode}
           resultsB={resultsB}
-          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);setToken("");setCredits(null);setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setLabelA("Creative A");setLabelB("Creative B");setCompareTab("overview");setCompareType("versions");setFormB({brand:"",client:"",campaign:"",script:""});localStorage.removeItem("adcritiq_token");}}
+          onNew={resetToForm}
           downloading={downloading}
           onDownload={async()=>{
             setDownloading(true);
@@ -1586,6 +1672,19 @@ export default function App(){
 
         {/* ── MAIN CONTENT ── */}
         <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflowY:"auto",width:"100%"}}>
+          {isDemoMode&&(
+            <div style={{margin:isMobile?"14px 14px 0":"18px 36px 0",padding:isMobile?"14px 16px":"16px 20px",borderRadius:14,border:`1px solid ${C.gold}55`,background:`linear-gradient(135deg,${C.gold}16,rgba(255,255,255,0.025))`,boxShadow:`0 18px 48px ${C.gold}10`,display:"flex",alignItems:isMobile?"stretch":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row"}}>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:11,color:C.gold,fontWeight:900,letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:5}}>Sample Report</div>
+                <div style={{fontSize:13,color:C.dim,lineHeight:1.6}}>
+                  You are viewing a saved AdCritIQ™ report. No upload, token, or credit was used.
+                </div>
+              </div>
+              <button onClick={resetToForm} style={{alignSelf:isMobile?"stretch":"center",padding:"10px 15px",borderRadius:10,border:`1px solid ${C.gold}66`,background:C.gold,color:C.ink,fontSize:12,fontWeight:900,cursor:"pointer",whiteSpace:"nowrap"}}>
+                Analyse Your Creative
+              </button>
+            </div>
+          )}
           {compareReady ? (
             <>
               <div style={{background:"rgba(16,16,20,0.94)",borderBottom:`1px solid ${C.border}`,padding:isMobile?"18px":"24px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
@@ -1818,9 +1917,9 @@ export default function App(){
                         </div>
                       </div>
 	                    )}
-	                    <button onClick={saveCurrentAnalysis} disabled={r.__saveStatus==="saving"} onMouseDown={e=>{if(r.__saveStatus!=="saving")e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-	                      style={{width:"100%",marginTop:10,padding:"9px 12px",borderRadius:10,border:`1px solid ${C.gold}44`,background:r.__saveStatus==="saved"?`${C.green}18`:r.__saveStatus==="error"?`${C.red}18`:`${C.gold}14`,color:r.__saveStatus==="saved"?C.green:r.__saveStatus==="error"?C.red:C.gold,fontSize:11,fontWeight:800,cursor:r.__saveStatus==="saving"?"wait":"pointer",fontFamily:"'DM Sans',sans-serif",transition:"transform 0.12s ease"}}>
-	                      {r.__saveStatus==="saving"?"Saving...":r.__saveStatus==="saved"?"Saved ✓":"Save to Repository"}
+	                    <button onClick={saveCurrentAnalysis} disabled={isDemoMode||r.__saveStatus==="saving"} onMouseDown={e=>{if(!isDemoMode&&r.__saveStatus!=="saving")e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+	                      style={{width:"100%",marginTop:10,padding:"9px 12px",borderRadius:10,border:`1px solid ${isDemoMode?C.border:C.gold+"44"}`,background:isDemoMode?C.s2:r.__saveStatus==="saved"?`${C.green}18`:r.__saveStatus==="error"?`${C.red}18`:`${C.gold}14`,color:isDemoMode?C.dim:r.__saveStatus==="saved"?C.green:r.__saveStatus==="error"?C.red:C.gold,fontSize:11,fontWeight:800,cursor:isDemoMode?"not-allowed":r.__saveStatus==="saving"?"wait":"pointer",fontFamily:"'DM Sans',sans-serif",transition:"transform 0.12s ease"}}>
+	                      {isDemoMode?"Already saved":r.__saveStatus==="saving"?"Saving...":r.__saveStatus==="saved"?"Saved ✓":"Save to Repository"}
 	                    </button>
 	                    {r.__saveError&&<div style={{fontSize:10,color:C.red,marginTop:6,maxWidth:140,lineHeight:1.4}}>{r.__saveError}</div>}
 	                  </div>

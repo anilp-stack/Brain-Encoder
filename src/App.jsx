@@ -368,6 +368,8 @@ export default function App(){
   const [labelA, setLabelA] = useState("Creative A");
   const [labelB, setLabelB] = useState("Creative B");
   const [compareTab, setCompareTab] = useState("overview");
+  const [compareType, setCompareType] = useState("versions");
+  const [formB, setFormB] = useState({brand:"",client:"",campaign:""});
   const fileRef=useRef(null);
 
   useEffect(()=>{
@@ -424,6 +426,10 @@ export default function App(){
     if(compareMode && !fileB) missingFields.push("Creative B File");
     if(missingFields.length > 0){
       setError(`Please fill in required fields: ${missingFields.join(", ")}`);
+      return;
+    }
+    if(compareMode && compareType==="brands" && !formB.brand.trim()){
+      setError("Please enter Brand B name for comparison.");
       return;
     }
     if (!token.trim()) {
@@ -545,18 +551,27 @@ export default function App(){
           .catch(() => {});
       }
       if(compareMode && fileB){
-        setProgressMsg("Analysing Creative B...");
-        try{
+        setProgress(10);
+        setProgressMsg("Creative A complete. Analysing Creative B...");
+        const B_TIMEOUT_MS=180000;
+        await Promise.race([
+          (async()=>{
           const framesB=await extractFrames(fileB);
           const payloadB={
             frames:framesB.frames,
             metadata:{
-              ...form,
+              brand:compareType==="brands"?(formB.brand||labelB):form.brand,
+              client:compareType==="brands"?formB.client:form.client,
+              campaign:compareType==="brands"?formB.campaign:form.campaign,
+              agency:form.agency,
               type:form.type||"video",
+              industry:form.industry,
+              country:form.country,
+              market:form.market,
+              audience:form.audience,
               duration_seconds:framesB.duration||30,
               video_duration:framesB.duration||30,
-              isImage:fileB.type.startsWith("image/"),
-              label:labelB
+              isImage:fileB.type.startsWith("image/")
             }
           };
           const respB=await fetch("/api/analyze-fast",{
@@ -585,14 +600,20 @@ export default function App(){
                 .catch(()=>{});
             }
           }
-        }catch(err){
-          console.error("Creative B analysis failed:",err);
-        }
+          })(),
+          new Promise((_,rej)=>setTimeout(()=>rej(new Error("B_TIMEOUT")),B_TIMEOUT_MS))
+        ]).catch(err=>{
+          if(err.message==="B_TIMEOUT"){
+            setProgressMsg("Creative B took too long. Showing Creative A results.");
+          }else{
+            console.error("Creative B error:",err.message);
+          }
+        });
       }
       setStage("results");setTab("summary");
 
     }catch(e){setError(e.message);setStage("form");}
-  },[file,fileB,form,token,compareMode,labelB]);
+  },[file,fileB,form,token,compareMode,compareType,formB,labelB]);
 
   const cleanResultForSave=(source)=>{
     const clean={};
@@ -938,13 +959,35 @@ export default function App(){
 
           <div style={{...panelStyle,padding:isMobile?18:30}}>
             {compareMode&&(
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12,marginBottom:16}}>
+                {[
+                  {type:"versions",icon:"📁",title:"Two Versions",sub:"Same brand — two cuts of the same creative"},
+                  {type:"brands",icon:"🆚",title:"Brand vs Brand",sub:"Different brands — competitive comparison"},
+                ].map(opt=>(
+                  <div
+                    key={opt.type}
+                    onClick={()=>setCompareType(opt.type)}
+                    style={{padding:"15px 16px",border:`1px solid ${compareType===opt.type?C.gold+"88":C.border}`,borderRadius:14,cursor:"pointer",background:compareType===opt.type?`${C.gold}0f`:C.s2,transition:"all 0.15s ease",boxShadow:compareType===opt.type?`0 14px 34px ${C.gold}12`:"none"}}
+                  >
+                    <div style={{fontSize:22,marginBottom:7}}>{opt.icon}</div>
+                    <div style={{fontWeight:900,color:compareType===opt.type?C.gold:C.text,fontSize:13,marginBottom:5}}>{opt.title}</div>
+                    <div style={{fontSize:12,color:C.dim,lineHeight:1.5}}>{opt.sub}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {compareMode&&(
               <div style={{background:`${C.gold}0f`,border:`1px solid ${C.gold}44`,borderRadius:14,padding:"14px 16px",marginBottom:24,display:"flex",alignItems:"center",gap:12,boxShadow:`0 16px 40px ${C.gold}0f`}}>
                 <span style={{fontSize:20,flexShrink:0}}>⚖️</span>
                 <div style={{minWidth:0}}>
                   <div style={{fontWeight:900,color:C.gold,fontSize:13,letterSpacing:1,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>A/B Comparison Mode</div>
-                  <div style={{fontSize:12,color:C.dim,marginTop:4,lineHeight:1.5}}>Upload two creatives. AdCritIQ™ will analyse both and declare a winner per metric, platform, and overall.</div>
+                  <div style={{fontSize:12,color:C.dim,marginTop:4,lineHeight:1.5}}>
+                    {compareType==="brands"
+                      ? `Competitive benchmarking: ${form.brand||labelA} vs ${formB.brand||labelB}`
+                      : "Upload two creatives. AdCritIQ™ will analyse both and declare a winner per metric, platform, and overall."}
+                  </div>
                 </div>
-                <button onClick={()=>{setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setCompareTab("overview");}} style={{marginLeft:"auto",background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:18,padding:"4px 8px",flexShrink:0}}>×</button>
+                <button onClick={()=>{setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setCompareTab("overview");setCompareType("versions");setFormB({brand:"",client:"",campaign:""});}} style={{marginLeft:"auto",background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:18,padding:"4px 8px",flexShrink:0}}>×</button>
               </div>
             )}
             <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
@@ -1051,6 +1094,27 @@ export default function App(){
                     )}
                   </div>
                   <input id="fileBInput" type="file" accept="video/*,image/*" onChange={handleFileB} style={{display:"none"}}/>
+                  {compareType==="brands"&&(
+                    <div style={{marginTop:18,padding:18,background:C.s2,border:`1px solid ${C.border}`,borderRadius:14}}>
+                      <div style={{fontSize:10,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginBottom:14,fontWeight:900,textTransform:"uppercase"}}>
+                        Creative B — Brand Details
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:formGrid3,gap:14}}>
+                        <div style={fieldWrap}>
+                          <label style={lbl}>Brand B *</label>
+                          <input style={{...inp,borderColor:!formB.brand.trim()?C.red+"66":C.border}} placeholder="e.g. Coca-Cola" value={formB.brand} onChange={e=>setFormB(p=>({...p,brand:e.target.value}))}/>
+                        </div>
+                        <div style={fieldWrap}>
+                          <label style={lbl}>Client B</label>
+                          <input style={inp} placeholder="e.g. TCCC India" value={formB.client} onChange={e=>setFormB(p=>({...p,client:e.target.value}))}/>
+                        </div>
+                        <div style={fieldWrap}>
+                          <label style={lbl}>Campaign B</label>
+                          <input style={inp} placeholder="e.g. Real Magic" value={formB.campaign} onChange={e=>setFormB(p=>({...p,campaign:e.target.value}))}/>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
@@ -1155,6 +1219,8 @@ export default function App(){
     const ringColor=ringScore>=75?C.green:ringScore>=60?C.gold:ringScore>=40?C.orange:C.red;
     const miniLeft=isMobile?0:isTablet?208:C.sideW;
     const compareReady=compareMode&&resultsB;
+    const compareLabelA=compareType==="brands"?(form.brand||labelA):labelA;
+    const compareLabelB=compareType==="brands"?(formB.brand||labelB):labelB;
     const cmpNum=(obj,key)=>typeof obj?.[key]==="number"?obj[key]:0;
     const compareMetricList=[
       ["Viral Potential","viral_potential"],
@@ -1175,12 +1241,12 @@ export default function App(){
     const compareWinnerLabel=()=>{
       const a=gradeRank(results?.overall_grade);
       const b=gradeRank(resultsB?.overall_grade);
-      if(a<b)return labelA;
-      if(b<a)return labelB;
+      if(a<b)return compareLabelA;
+      if(b<a)return compareLabelB;
       const avgA=compareMetricList.reduce((sum,[,key])=>sum+cmpNum(results,key),0)/compareMetricList.length;
       const avgB=compareMetricList.reduce((sum,[,key])=>sum+cmpNum(resultsB,key),0)/compareMetricList.length;
-      if(avgA>avgB)return labelA;
-      if(avgB>avgA)return labelB;
+      if(avgA>avgB)return compareLabelA;
+      if(avgB>avgA)return compareLabelB;
       return "Tied";
     };
     const compareScoreColor=(v)=>v>=75?C.green:v>=60?C.amber:v>=40?C.orange:C.red;
@@ -1208,9 +1274,9 @@ export default function App(){
     const domainWinner=(aKeys,bKeys=aKeys)=>{
       const a=aKeys.reduce((sum,key)=>sum+cmpNum(results,key),0)/aKeys.length;
       const b=bKeys.reduce((sum,key)=>sum+cmpNum(resultsB,key),0)/bKeys.length;
-      return a>b?labelA:b>a?labelB:"Tied";
+      return a>b?compareLabelA:b>a?compareLabelB:"Tied";
     };
-    const otherLabel=compareWinnerLabel()===labelA?labelB:labelA;
+    const otherLabel=compareWinnerLabel()===compareLabelA?compareLabelB:compareLabelA;
 
     // FIX 1: dynamic heatmap label spacing — max 12 labels regardless of duration
     const heatmapLabelCount = Math.min(attn.length, 12);
@@ -1246,7 +1312,7 @@ export default function App(){
           brand={form.brand}
           compareMode={compareMode}
           resultsB={resultsB}
-          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);setToken("");setCredits(null);setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setLabelA("Creative A");setLabelB("Creative B");setCompareTab("overview");localStorage.removeItem("adcritiq_token");}}
+          onNew={()=>{setStage("form");setResults(null);setFile(null);setPreview(null);setToken("");setCredits(null);setCompareMode(false);setFileB(null);setPreviewB(null);setResultsB(null);setLabelA("Creative A");setLabelB("Creative B");setCompareTab("overview");setCompareType("versions");setFormB({brand:"",client:"",campaign:""});localStorage.removeItem("adcritiq_token");}}
           downloading={downloading}
           onDownload={async()=>{
             setDownloading(true);
@@ -1267,7 +1333,9 @@ export default function App(){
                 <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:16,flexDirection:isMobile?"column":"row"}}>
                   <div>
                     <h1 style={{fontSize:isMobile?24:32,fontWeight:900,margin:0,fontFamily:"'Playfair Display',serif",letterSpacing:0}}>Which creative should you run?</h1>
-                    <p style={{fontSize:13,color:C.dim,lineHeight:1.6,margin:"8px 0 0"}}>{labelA} vs {labelB} · {form.industry||"Creative"} · {form.country||form.market||"India"}</p>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.6,margin:"8px 0 0"}}>
+                      {compareType==="brands" ? `Competitive benchmarking: ${compareLabelA} vs ${compareLabelB}` : `${compareLabelA} vs ${compareLabelB}`} · {form.industry||"Creative"} · {form.country||form.market||"India"}
+                    </p>
                   </div>
                   <div style={{padding:"10px 16px",borderRadius:12,background:`${C.gold}12`,border:`1px solid ${C.gold}44`,color:C.gold,fontSize:12,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1,textTransform:"uppercase"}}>
                     Winner: {compareWinnerLabel()}
@@ -1303,12 +1371,14 @@ export default function App(){
               <div style={{padding:isMobile?"22px 14px":"32px 36px",maxWidth:1300,width:"100%",boxSizing:"border-box",margin:"0 auto"}}>
                 {compareTab==="overview"&&(
                   <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:18}}>
-                    {[{label:labelA,r:results,side:"A"},{label:labelB,r:resultsB,side:"B"}].map(({label,r,side})=>{
+                    {[{label:compareLabelA,r:results,side:"A"},{label:compareLabelB,r:resultsB,side:"B"}].map(({label,r,side})=>{
                       const isWinner=compareWinnerLabel()===label;
                       return(
                         <div key={side} style={{background:C.s1,border:`1px solid ${isWinner?C.gold+"77":C.border}`,borderRadius:16,padding:isMobile?20:26,boxShadow:isWinner?`0 0 34px ${C.gold}22`:`0 18px 46px ${C.shadow}`,position:"relative"}}>
                           {isWinner&&<div style={{position:"absolute",top:-11,right:18,background:C.gold,color:C.ink,padding:"4px 11px",borderRadius:999,fontSize:10,fontWeight:900,letterSpacing:"0.12em",fontFamily:"'DM Mono',monospace"}}>🏆 WINNER</div>}
-                          <div style={{fontSize:11,color:C.dim,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginBottom:12}}>CREATIVE {side} — {label.toUpperCase()}</div>
+                          <div style={{fontSize:11,color:C.dim,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginBottom:12}}>
+                            {compareType==="brands"?`🆚 ${label}`:`CREATIVE ${side} — ${label.toUpperCase()}`}
+                          </div>
                           <div style={{fontSize:60,fontWeight:900,color:isWinner?C.gold:C.dim,lineHeight:1,marginBottom:10,fontFamily:"'DM Mono',monospace"}}>{r?.overall_grade||"—"}</div>
                           <div style={{fontSize:13,color:C.dim,fontStyle:"italic",lineHeight:1.6,minHeight:42}}>{r?.headline_verdict||""}</div>
                           <div style={{marginTop:18,display:"flex",gap:9,flexWrap:"wrap"}}>
@@ -1336,12 +1406,12 @@ export default function App(){
                         return(
                           <div key={key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(160px,1fr) 170px minmax(160px,1fr)",gap:14,alignItems:"center",padding:16,borderRadius:14,background:C.s1,border:`1px solid ${C.border}`}}>
                             <div style={{display:"grid",gap:7}}>
-                              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:aWin?C.gold:C.dim,fontWeight:900}}><span>{labelA}</span><span>{a}</span></div>
+                              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:aWin?C.gold:C.dim,fontWeight:900}}><span>{compareLabelA}</span><span>{a}</span></div>
                               <div style={{height:7,borderRadius:999,background:C.s3,overflow:"hidden",borderBottom:aWin?`2px solid ${C.gold}`:"none"}}><div style={{height:"100%",width:`${a}%`,background:aWin?C.gold:compareScoreColor(a),borderRadius:999}}/></div>
                             </div>
                             <div style={{fontSize:11,color:C.dim,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1,textAlign:"center"}}>{name}</div>
                             <div style={{display:"grid",gap:7}}>
-                              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:bWin?C.gold:C.dim,fontWeight:900}}><span>{labelB}</span><span>{b}</span></div>
+                              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:bWin?C.gold:C.dim,fontWeight:900}}><span>{compareLabelB}</span><span>{b}</span></div>
                               <div style={{height:7,borderRadius:999,background:C.s3,overflow:"hidden",borderBottom:bWin?`2px solid ${C.gold}`:"none"}}><div style={{height:"100%",width:`${b}%`,background:bWin?C.gold:compareScoreColor(b),borderRadius:999}}/></div>
                             </div>
                           </div>
@@ -1361,9 +1431,9 @@ export default function App(){
                     {comparePlatforms.map(p=>(
                       <div key={p.key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.2fr 80px 38px 80px 70px",gap:12,alignItems:"center",padding:"13px 16px",borderRadius:12,background:C.s1,border:`1px solid ${C.border}`}}>
                         <div style={{display:"flex",alignItems:"center",minWidth:0}}><PlatformChip name={p.name}/><span style={{fontWeight:800,color:C.text,fontSize:13}}>{p.name}</span></div>
-                        <div style={{color:p.winner==="A"?C.gold:compareScoreColor(p.a),fontWeight:900,textAlign:isMobile?"left":"right"}}>{labelA}: {p.a}</div>
+                        <div style={{color:p.winner==="A"?C.gold:compareScoreColor(p.a),fontWeight:900,textAlign:isMobile?"left":"right"}}>{compareLabelA}: {p.a}</div>
                         <div style={{color:C.muted,textAlign:"center",fontFamily:"'DM Mono',monospace"}}>vs</div>
-                        <div style={{color:p.winner==="B"?C.gold:compareScoreColor(p.b),fontWeight:900}}>{labelB}: {p.b}</div>
+                        <div style={{color:p.winner==="B"?C.gold:compareScoreColor(p.b),fontWeight:900}}>{compareLabelB}: {p.b}</div>
                         <div style={{justifySelf:isMobile?"start":"end",padding:"4px 10px",borderRadius:999,background:p.winner==="—"?C.s2:`${C.gold}14`,border:`1px solid ${p.winner==="—"?C.border:C.gold+"44"}`,color:p.winner==="—"?C.dim:C.gold,fontSize:11,fontWeight:900}}>Winner {p.winner}</div>
                       </div>
                     ))}

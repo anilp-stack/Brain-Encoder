@@ -1164,6 +1164,7 @@ export default function App(){
               </label>
               <div style={{display:"flex",gap:10,alignItems:"center",flexDirection:isMobile?"column":"row",marginTop:8,marginBottom:18}}>
                 <input
+                  type="password"
                   style={{...inp,flex:1,fontFamily:"monospace",letterSpacing:1,width:"100%"}}
                   placeholder="Paste your token here..."
                   value={token}

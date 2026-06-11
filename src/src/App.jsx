@@ -121,7 +121,7 @@ export default function App(){
     return(
       <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40,textAlign:"center"}}>
         <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"radial-gradient(ellipse at 50% 20%, rgba(0,200,255,0.06) 0%, transparent 60%)",pointerEvents:"none"}}/>
-        <div style={{fontSize:13,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:20,position:"relative"}}>ADVantage Insights</div>
+        <div style={{fontSize:13,fontWeight:700,letterSpacing:5,color:C.gold,textTransform:"uppercase",marginBottom:20,position:"relative"}}>AdCritIQ</div>
         <h1 style={{fontSize:56,fontWeight:200,lineHeight:1.1,maxWidth:750,marginBottom:16,position:"relative"}}>
           Brain <span style={{fontWeight:800,background:`linear-gradient(135deg,${C.cyan},${C.blue})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Encoder</span> Platform
         </h1>
@@ -153,7 +153,7 @@ export default function App(){
     return(
       <div style={{minHeight:"100vh",background:C.bg}}>
         <div style={{padding:"20px 40px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:12}}>
-          <span style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",cursor:"pointer"}} onClick={()=>setStage("landing")}>ADVantage Insights</span>
+          <span style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",cursor:"pointer"}} onClick={()=>setStage("landing")}>AdCritIQ</span>
           <span style={{fontSize:12,color:C.dim}}>·</span>
           <span style={{fontSize:12,color:C.cyan,fontWeight:600}}>Brain Encoder</span>
         </div>
@@ -241,7 +241,7 @@ export default function App(){
       <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40}}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}`}</style>
         <div style={{width:80,height:80,borderRadius:"50%",border:`3px solid ${C.s3}`,borderTopColor:C.cyan,animation:"spin 1s linear infinite",marginBottom:32}}/>
-        <div style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:12}}>ADVantage Insights</div>
+        <div style={{fontSize:12,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:12}}>AdCritIQ</div>
         <h2 style={{fontSize:28,fontWeight:200,marginBottom:28}}>Encoding <span style={{fontWeight:700,color:C.cyan}}>Brain Activity</span></h2>
         <div style={{width:440,maxWidth:"90%",height:8,borderRadius:4,background:C.s3,marginBottom:16,overflow:"hidden"}}>
           <div style={{height:"100%",borderRadius:4,background:`linear-gradient(90deg,${C.cyan},${C.blue})`,width:`${progress}%`,transition:"width 0.5s"}}/>
@@ -289,7 +289,7 @@ export default function App(){
         {/* HEADER */}
         <div style={{background:C.s1,padding:"32px 48px 24px",borderBottom:`1px solid ${C.border}`}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
-            <span style={{fontSize:11,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase"}}>ADVantage Insights</span>
+            <span style={{fontSize:11,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase"}}>AdCritIQ</span>
             <span style={{padding:"3px 12px",borderRadius:4,background:"rgba(0,200,255,0.1)",color:C.cyan,fontSize:11,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>BRAIN ENCODER</span>
             {r.overall_grade&&<span style={{marginLeft:8,padding:"4px 14px",borderRadius:6,background:hex(r.overall_grade==="A+"||r.overall_grade==="A"?90:r.overall_grade?.startsWith("B")?70:50),color:C.bg,fontSize:13,fontWeight:800,fontFamily:"'JetBrains Mono',monospace"}}>GRADE: {r.overall_grade}</span>}
           </div>
@@ -619,7 +619,7 @@ export default function App(){
 
         {/* FOOTER */}
         <div style={{padding:"24px 48px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:11,color:C.muted,fontFamily:"'JetBrains Mono',monospace",marginTop:32}}>
-          ADVantage Insights · Brain Encoder Platform · AI-Powered Creative Intelligence · {new Date().getFullYear()}
+          AdCritIQ · Neural Creative Intelligence · AI-Powered Creative Intelligence · {new Date().getFullYear()}
         </div>
       </div>
     );

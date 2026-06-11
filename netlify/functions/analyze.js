@@ -1,5 +1,5 @@
 // netlify/functions/analyze.js
-// ADVantage Insights Brain Encoder — Backend (timeout-optimised)
+// AdCritIQ — Backend (timeout-optimised)
 
 export async function handler(event) {
   const headers = {
@@ -34,7 +34,7 @@ export async function handler(event) {
       source: { type: "base64", media_type: "image/jpeg", data: f }
     }));
 
-    const systemPrompt = `You are ADVantage Insights Brain Encoder — advanced AI creative intelligence for advertising. Analyze frames from video/display/social ads.
+    const systemPrompt = `You are AdCritIQ — advanced AI creative intelligence for advertising. Analyze frames from video/display/social ads.
 
 CRITICAL: Return ONLY valid JSON. No markdown, no backticks, no preamble.
 

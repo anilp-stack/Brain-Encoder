@@ -50,23 +50,6 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
     >
       {/* Brand header */}
       <div style={{ padding: "26px 20px 22px", borderBottom: `1px solid ${C.border}` }}>
-        <img
-          src="/advantage-logo.png"
-          alt="ADVantage Insights"
-          onError={(e) => {
-            e.target.style.display = "none";
-          }}
-          style={{
-            height: 28,
-            maxWidth: "100%",
-            objectFit: "contain",
-            marginBottom: 14,
-            display: "block",
-          }}
-        />
-        <div style={{ fontSize: 10, fontWeight: 800, color: C.gold, textTransform: "uppercase", marginBottom: 8, fontFamily: "'DM Mono',monospace", letterSpacing: 1.8 }}>
-          ADVantage Insights<sup style={{ fontSize: 6, color: C.gold, verticalAlign: "super" }}>TM</sup>
-        </div>
         <div
           style={{
             fontSize: 22,

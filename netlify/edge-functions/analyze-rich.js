@@ -21,7 +21,7 @@ export default async function handler(request) {
   const usedFrames = frames.slice(0, 1);
   const imageContent = usedFrames.map(f => ({ type:"image", source:{ type:"base64", media_type:"image/jpeg", data:f } }));
 
-  const prompt = `You are ADVantage Insights Brain Encoder creative strategist.
+  const prompt = `You are AdCritIQ creative strategist.
 Brand: ${meta.brand||"Unknown"} | Industry: ${meta.industry||"FMCG"} | Market: ${meta.market||"India"}
 
 Return ONLY valid JSON. No markdown. Be concise — 2 sentences max per body field.

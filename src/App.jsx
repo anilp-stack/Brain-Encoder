@@ -1175,7 +1175,7 @@ export default function App(){
 
         <div style={{fontSize:10,color:C.muted,textAlign:"center",lineHeight:1.6}}>
           This link is permanent · No login required to view<br/>
-          Powered by AdCritIQ™ | ADVantage Insights™
+          Powered by AdCritIQ™
         </div>
       </div>
     </div>
@@ -1191,9 +1191,7 @@ export default function App(){
         <div aria-hidden="true" style={{position:"absolute",bottom:"-30%",left:"-10%",width:700,height:700,borderRadius:"50%",background:"radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 65%)",animation:"drift 18s ease-in-out infinite alternate-reverse",pointerEvents:"none"}}/>
         <header style={{position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:isMobile?"18px 20px":"22px 48px",borderBottom:`1px solid ${C.border}`,background:"rgba(5,5,7,0.9)",backdropFilter:"blur(16px)"}}>
           <div style={{display:"flex",alignItems:"center",gap:14,minWidth:0}}>
-            <img src="/advantage-logo.png" alt="ADVantage Insights" onError={e=>{e.target.style.display="none";}} style={{height:isMobile?26:32,maxWidth:isMobile?140:190,objectFit:"contain",display:"block"}}/>
             <div style={{display:"grid",gap:2}}>
-              <span style={{fontSize:10,fontWeight:900,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1.4}}>ADVantage Insights<sup style={{fontSize:6}}>TM</sup></span>
               <span style={{fontSize:12,color:C.dim,fontWeight:700}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
             </div>
           </div>
@@ -1286,7 +1284,7 @@ export default function App(){
         </main>
 
         <footer style={{padding:isMobile?"20px":"24px 48px",borderTop:`1px solid ${C.border}`,color:C.dim,fontSize:12,display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase",position:"relative",zIndex:1}}>
-          <span>ADVantage Insights<sup>TM</sup></span>
+          <span>AdCritIQ<sup>TM</sup></span>
           <span>Predictive, not biometric</span>
           <span>Built for creative decisions</span>
         </footer>
@@ -1323,9 +1321,7 @@ export default function App(){
 
         <div style={{padding:isMobile?"16px 18px":"18px 42px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,position:"sticky",top:0,zIndex:20,background:"rgba(5,5,7,0.82)",backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
           <div onClick={()=>setStage("landing")} style={{display:"flex",alignItems:"center",gap:14,cursor:"pointer",minWidth:0}}>
-            <img src="/advantage-logo.png" alt="ADVantage Insights" onError={e=>{e.target.style.display="none";}} style={{height:28,width:"auto",display:"block"}}/>
             <div style={{display:"grid",gap:2}}>
-              <span style={{fontSize:10,fontWeight:900,letterSpacing:2,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>ADVantage Insights<sup style={{fontSize:6}}>TM</sup></span>
               <span style={{fontSize:12,color:C.text,fontWeight:800}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
             </div>
           </div>
@@ -1654,7 +1650,7 @@ export default function App(){
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}`}</style>
         <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:18,padding:isMobile?26:38,width:"100%",maxWidth:520,textAlign:"center",boxShadow:`0 28px 90px ${C.shadow}`}}>
           <div style={{width:78,height:78,borderRadius:"50%",border:`3px solid ${C.s3}`,borderTopColor:C.gold,animation:"spin 1s linear infinite",margin:"0 auto 30px"}}/>
-          <div style={{fontSize:12,fontWeight:900,letterSpacing:2,color:C.gold,textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace"}}>ADVantage Insights</div>
+          <div style={{fontSize:12,fontWeight:900,letterSpacing:2,color:C.gold,textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace"}}>AdCritIQ</div>
           <h2 style={{fontSize:isMobile?25:31,fontWeight:800,margin:"0 0 26px",fontFamily:"'Playfair Display',serif",letterSpacing:0}}>Encoding Creative Signals</h2>
           <div style={{width:"100%",height:8,borderRadius:999,background:C.s3,marginBottom:16,overflow:"hidden"}}>
             <div style={{height:"100%",borderRadius:999,background:C.gold,width:`${progress}%`,transition:"width 0.5s"}}/>
@@ -1847,7 +1843,7 @@ export default function App(){
                 <span style={{fontSize:17,flexShrink:0}}>🔗</span>
                 <div style={{minWidth:0}}>
                   <div style={{fontSize:10,fontFamily:"'DM Mono',monospace",fontWeight:900,color:"#10B981",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:4}}>Shared Report</div>
-                  <div style={{fontSize:12,color:C.dim,lineHeight:1.5}}>Neural creative intelligence report by AdCritIQ™ · ADVantage Insights™</div>
+                  <div style={{fontSize:12,color:C.dim,lineHeight:1.5}}>Neural creative intelligence report by AdCritIQ™</div>
                 </div>
               </div>
               <button
@@ -2009,7 +2005,7 @@ export default function App(){
               </div>
 
               <div style={{padding:"24px 36px 20px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginTop:"auto"}}>
-                ADVantage Insights™ · AdCritIQ™ · A/B Creative Comparison · {new Date().getFullYear()}
+                AdCritIQ™ · A/B Creative Comparison · {new Date().getFullYear()}
               </div>
             </>
           ) : (
@@ -3032,7 +3028,7 @@ export default function App(){
 
           {/* FOOTER */}
           <div style={{padding:"24px 36px 20px",borderTop:`1px solid ${C.border}`,textAlign:"center",fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginTop:"auto"}}>
-            ADVantage Insights™ · AdCritIQ™ · Neural Creative Intelligence · {new Date().getFullYear()}
+            AdCritIQ™ · Neural Creative Intelligence · {new Date().getFullYear()}
           </div>
             </>
           )}

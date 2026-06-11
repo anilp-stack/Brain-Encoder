@@ -1,7 +1,7 @@
 {
-  "name": "advantage-insights-adcritiq",
+  "name": "adcritiq",
   "version": "1.0.0",
-  "description": "AdCritIQ™ by ADVantage Insights™ — AI-Powered Creative Intelligence",
+  "description": "AdCritIQ™ — AI-Powered Creative Intelligence",
   "private": true,
   "type": "module",
   "scripts": {

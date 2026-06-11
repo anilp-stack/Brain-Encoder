@@ -20,7 +20,7 @@ export default async function handler(request) {
   const usedFrames = (meta.isImage ? frames.slice(0,1) : frames.slice(0,2));
   const imageContent = usedFrames.map(f => ({ type:"image", source:{ type:"base64", media_type:"image/jpeg", data:f } }));
 
-  const prompt = `You are ADVantage Insights Brain Encoder. Analyze these ad frames.
+  const prompt = `You are AdCritIQ. Analyze these ad frames.
 Brand: ${meta.brand||"Unknown"} | Industry: ${meta.industry||"FMCG"} | Market: ${meta.market||"India"} | Type: ${meta.type||"video"} | Campaign: ${meta.campaign||""}
 
 CRITICAL: Return ONLY this exact JSON with integer scores 0-100. No text outside JSON.

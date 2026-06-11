@@ -80,7 +80,7 @@ In competitive_context, set benchmark_source to "AdCritIQ database (${realBenchm
             ? `"format_metrics":{"headline_strength":INT,"proposition_clarity":INT,"persuasion":INT,"memorability":INT,"cta_strength":INT,"readability":INT,"claim_risk":INT}`
             : `"format_metrics":{"scene_pacing":INT,"dropoff_risk":INT,"completion_likelihood":INT}`;
 
-    const prompt = `You are ADVantage Insights AdCritIQ. Analyze this advertising creative in a format-aware way.
+    const prompt = `You are AdCritIQ. Analyze this advertising creative in a format-aware way.
 Brand: ${meta.brand || "Unknown"} | Industry: ${meta.industry || "FMCG"} | Market: ${meta.market || "India"} | Country: ${meta.country || "India"} | Type: ${meta.type || "video"} | Format: ${creativeFormat} | Campaign: ${meta.campaign || ""}
 ${formatInstructions}
 ${scriptText ? `\nSCRIPT / TRANSCRIPT / COPY CONTEXT:\n${scriptText.substring(0, 5000)}\n` : ""}

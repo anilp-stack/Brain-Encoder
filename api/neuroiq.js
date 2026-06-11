@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     const { message, history = [], analysisContext = "" } = req.body;
     if (!message) return res.status(400).json({ error: "No message" });
 
-    const systemPrompt = `You are NeurIQ™, the AI intelligence layer of AdCritIQ™ by ADVantage Insights.
+    const systemPrompt = `You are NeurIQ™, the AI intelligence layer of AdCritIQ™.
 You have full access to the neural analysis for this ad creative.
 Answer the user's questions about this analysis with precision, business insight, and authority.
 Always reference specific scores and metric names in your answers.

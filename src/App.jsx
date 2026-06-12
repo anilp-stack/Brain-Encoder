@@ -1549,10 +1549,10 @@ export default function App(){
           </div>
         </header>
 
-        <main style={{flex:1,display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"minmax(0,1fr) minmax(360px,0.92fr)":"minmax(300px,0.86fr) minmax(420px,1.05fr) minmax(300px,0.86fr)",gap:isMobile?28:isTablet?34:34,alignItems:"center",padding:isMobile?"42px 20px 30px":isTablet?"58px 38px 40px":"64px 48px 46px",maxWidth:1480,width:"100%",margin:"0 auto",boxSizing:"border-box",position:"relative",zIndex:1}}>
-          <section style={{minWidth:0}}>
+        <main style={{flex:1,padding:isMobile?"42px 20px 30px":isTablet?"54px 38px 40px":"54px 48px 46px",maxWidth:1480,width:"100%",margin:"0 auto",boxSizing:"border-box",position:"relative",zIndex:1}}>
+          <section style={{maxWidth:1180,margin:isMobile?"0 0 28px":"0 auto 34px",textAlign:isMobile?"left":"center"}}>
             <div style={{fontSize:11,fontWeight:900,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:18}}>Creative-to-Media Outcome Intelligence</div>
-            <h1 style={{fontSize:isMobile?34:isTablet?50:64,fontWeight:800,color:C.text,lineHeight:1.08,letterSpacing:0,margin:"0 0 24px",fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif"}}>
+            <h1 style={{fontSize:isMobile?38:isTablet?58:78,fontWeight:850,color:C.text,lineHeight:1.02,letterSpacing:-0.5,margin:"0 0 20px",fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif"}}>
               Forecast creative impact<br/>
               <span style={{color:C.gold,position:"relative",display:"inline-block"}}>
                 before media spend.
@@ -1562,10 +1562,14 @@ export default function App(){
             <p style={{fontSize:isMobile?13:15,color:C.gold,fontWeight:500,fontStyle:"italic",marginBottom:20,marginTop:-8,letterSpacing:"0.02em"}}>
               Just the signal before the spend.
             </p>
-            <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.75,maxWidth:620,margin:"0 0 32px"}}>
+            <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.72,maxWidth:850,margin:isMobile?"0":"0 auto"}}>
               AdCritIQ™ predicts whether your creative will turn media exposure into memory, consideration, action, or waste — using neural diagnostics, platform-fit scoring, and outcome forecasting across concept, storyboard, rough cut, and final assets. Built for CMOs, brand teams, and agencies who need to separate creative risk from media-plan risk before budgets go live.
             </p>
-            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:26}}>
+          </section>
+
+          <section style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"minmax(0,1fr) minmax(360px,0.95fr)":"minmax(300px,0.86fr) minmax(460px,1.08fr) minmax(320px,0.9fr)",gap:isMobile?24:isTablet?28:30,alignItems:"center"}}>
+            <div style={{minWidth:0}}>
+              <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:18}}>
               <button onClick={()=>setStage("form")} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:isDarkMode?`0 16px 40px ${C.gold}24`:elevationShadow,transition:"transform 0.12s ease"}}>
                 Start Outcome Forecast
               </button>
@@ -1593,108 +1597,108 @@ export default function App(){
               >
                 {demoLoading?"Loading Sample...":"See Sample Forecast"}
               </button>
-            </div>
-            <div style={{fontSize:12,color:C.muted,lineHeight:1.6,margin:"-18px 0 28px",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
-              Sample report opens instantly. No upload, token, or credit required.
-            </div>
-            <div style={{marginTop:8,marginBottom:16,width:"100%",maxWidth:isMobile?"100%":600}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-                <div style={{height:1,flex:1,background:`linear-gradient(90deg,transparent,${C.border2})`}}/>
-                <span style={{fontSize:10,color:C.muted,fontFamily:"monospace",letterSpacing:"0.15em"}}>TEST AT EVERY PRODUCTION STAGE</span>
-                <div style={{height:1,flex:1,background:`linear-gradient(90deg,${C.border2},transparent)`}}/>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:8}}>
+              <div style={{fontSize:12,color:C.muted,lineHeight:1.6,margin:"0 0 18px",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
+                Sample report opens instantly. No upload, token, or credit required.
+              </div>
+              <div style={{padding:16,borderRadius:16,background:C.s1,border:`1px solid ${C.border}`,boxShadow:isDarkMode?"none":elevationShadow}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                  <div style={{height:1,flex:1,background:`linear-gradient(90deg,transparent,${C.border2})`}}/>
+                  <span style={{fontSize:10,color:C.muted,fontFamily:"monospace",letterSpacing:"0.15em",whiteSpace:"nowrap"}}>TEST AT EVERY STAGE</span>
+                  <div style={{height:1,flex:1,background:`linear-gradient(90deg,${C.border2},transparent)`}}/>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {[
+                    {icon:"💡",stage:"Concept",note:"Before production starts"},
+                    {icon:"🎞️",stage:"Storyboard",note:"Before the shoot"},
+                    {icon:"🎬",stage:"Rough Cut",note:"Before finishing"},
+                    {icon:"✅",stage:"Final Film",note:"Before going live",highlight:true},
+                  ].map((s,i)=>(
+                    <div key={i} style={{padding:"10px 10px",background:s.highlight?"rgba(245,158,11,0.06)":C.s2,border:`1px solid ${s.highlight?C.gold+"44":C.border}`,borderRadius:10,textAlign:"center"}}>
+                      <div style={{fontSize:18,marginBottom:4}}>{s.icon}</div>
+                      <div style={{fontSize:11,fontWeight:800,color:s.highlight?C.gold:C.text,marginBottom:2}}>{s.stage}</div>
+                      <div style={{fontSize:9,color:C.muted,fontFamily:"monospace",letterSpacing:"0.05em",lineHeight:1.25}}>{s.note}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{marginTop:12,padding:"9px 12px",background:"rgba(245,158,11,0.04)",border:`1px solid ${C.gold}22`,borderRadius:10,textAlign:"center",fontSize:11,color:C.dim,fontStyle:"italic"}}>
+                  Fix it at storyboard for <span style={{color:C.gold,fontWeight:800}}>₹299</span> — not at reshoot for <span style={{color:C.red,fontWeight:800}}>₹80 lakh.</span>
+                </div>
+              </div>
+            </div>
+
+            <section style={{minWidth:0}}>
+              <div style={{fontSize:10,color:C.gold,fontWeight:900,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",margin:"0 0 10px",textAlign:"center"}}>
+                Predictive Cortical Response Model
+              </div>
+              <NeuralSignalBrainPanel isDarkMode={isDarkMode}/>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginTop:-12}}>
+                {["Memory","Attention","Platform Fit","Outcome Risk"].map((t,i)=>(
+                  <div key={t} style={{padding:"8px 7px",borderRadius:10,background:C.s1,border:`1px solid ${C.border}`,fontSize:9,color:[C.cyan,C.green,C.gold,C.red][i],fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.05em",textAlign:"center",textTransform:"uppercase"}}>{t}</div>
+                ))}
+              </div>
+            </section>
+
+            <section style={{display:"grid",gap:12,minWidth:0}}>
+              <div style={{padding:"14px 16px",background:`${C.gold}0d`,border:`1px solid ${C.gold}30`,borderRadius:14,color:C.dim,fontSize:13,lineHeight:1.65,fontStyle:"italic"}}>
+                <span style={{color:C.gold,fontWeight:900,fontStyle:"normal"}}>Why this matters: </span>
+                Media buys exposure. Creative decides whether exposure becomes memory, preference, action, or waste.
+              </div>
+              <section style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:isMobile?20:22,boxShadow:isDarkMode?`0 24px 80px ${C.shadow}`:elevationShadow}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,borderBottom:`1px solid ${C.border}`,paddingBottom:16,marginBottom:18}}>
+                  <div>
+                    <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1.4,textTransform:"uppercase"}}>Live Output</div>
+                    <div style={{fontSize:8,fontFamily:"monospace",color:C.gold,letterSpacing:"0.15em",marginTop:6,marginBottom:4,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                      <span style={{background:"rgba(245,158,11,0.12)",border:`1px solid ${C.gold}44`,padding:"2px 6px",borderRadius:4}}>FINAL FILM</span>
+                      <span style={{color:C.muted}}>→ CONCEPT · STORYBOARD · ROUGH CUT</span>
+                    </div>
+                    <div style={{fontSize:22,fontWeight:900,color:C.text,marginTop:6}}>Outcome Forecast</div>
+                  </div>
+                  <div style={{width:54,height:54,borderRadius:14,background:`${C.gold}14`,border:`1px solid ${C.gold}44`,display:"grid",placeItems:"center",fontSize:23,fontWeight:900,color:C.gold,fontFamily:"'DM Mono',monospace"}}>A</div>
+                </div>
                 {[
-                  {icon:"💡",stage:"Concept",note:"Before production starts"},
-                  {icon:"🎞️",stage:"Storyboard",note:"Before the shoot"},
-                  {icon:"🎬",stage:"Rough Cut",note:"Before finishing"},
-                  {icon:"✅",stage:"Final Film",note:"Before going live",highlight:true},
-                ].map((s,i)=>(
-                  <div key={i} style={{padding:"10px 12px",background:s.highlight?"rgba(245,158,11,0.06)":C.s1,border:`1px solid ${s.highlight?C.gold+"44":C.border}`,borderRadius:8,textAlign:"center"}}>
-                    <div style={{fontSize:isMobile?18:20,marginBottom:4}}>{s.icon}</div>
-                    <div style={{fontSize:11,fontWeight:700,color:s.highlight?C.gold:C.text,marginBottom:2}}>{s.stage}</div>
-                    <div style={{fontSize:9,color:C.muted,fontFamily:"monospace",letterSpacing:"0.06em"}}>{s.note}</div>
+                  ["SPONTANEOUS AWARENESS",78,C.green],
+                  ["AIDED AWARENESS",84,C.green],
+                  ["PURCHASE INTENT",58,C.amber],
+                  ["MEDIA WASTAGE RISK",32,C.green],
+                  ["CREATIVE ACCOUNTABILITY",78,C.cyan],
+                ].map(([label,value,color])=>(
+                  <div key={label} style={{marginBottom:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.dim,fontWeight:800,marginBottom:7,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>
+                      <span>{label}</span><span style={{color}}>{value}</span>
+                    </div>
+                    <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${value}%`,background:color,borderRadius:999}}/>
+                    </div>
+                  </div>
+                ))}
+                <div style={{marginTop:4,padding:"11px 13px",borderRadius:10,background:`${C.gold}0d`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.55}}>
+                  <span style={{color:C.gold,fontWeight:900}}>Likely creative-led opportunity:</span> strong memory, weaker conversion readiness.
+                </div>
+              </section>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr",gap:8}}>
+                {[
+                  ["Before Production","Test concept, storyboard, rough cut, or final film before costly rework.",C.gold],
+                  ["Before Media Spend","Forecast whether exposure is likely to create memory, action, or waste.",C.cyan],
+                  ["Before The Blame Game","Separate creative-led risk from media-dependent risk.",C.purple],
+                ].map(([title,body,color])=>(
+                  <div key={title} style={{padding:13,borderRadius:12,background:`linear-gradient(135deg,${color}12,${C.s1})`,border:`1px solid ${color}33`,boxShadow:isDarkMode?"none":elevationShadow}}>
+                    <div style={{fontSize:9,color:color,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:6}}>{title}</div>
+                    <div style={{fontSize:11,color:C.dim,lineHeight:1.45}}>{body}</div>
                   </div>
                 ))}
               </div>
-              <div style={{marginTop:12,padding:"8px 14px",background:"rgba(245,158,11,0.04)",border:`1px solid ${C.gold}22`,borderRadius:8,textAlign:"center",fontSize:11,color:C.dim,fontStyle:"italic"}}>
-                Fix it at storyboard for <span style={{color:C.gold,fontWeight:700}}>₹299</span> — not at reshoot for <span style={{color:C.red,fontWeight:700}}>₹80 lakh.</span>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:620}}>
-              {["OUTCOME FORECASTING","MEDIA WASTAGE RISK","CREATIVE ACCOUNTABILITY","PLATFORM OUTCOME MATRIX"].map(t=>(
-                <span key={t} style={{padding:"8px 12px",background:C.s1,borderRadius:8,border:`1px solid ${C.border}`,fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>{t}</span>
-              ))}
-            </div>
-          </section>
-
-          <section style={{minWidth:0,alignSelf:isMobile?"auto":"center",transform:isMobile?"none":isTablet?"translateY(10px)":"translateY(18px)"}}>
-            <NeuralSignalBrainPanel isDarkMode={isDarkMode}/>
-          </section>
-
-          <section style={{display:"grid",gap:14,minWidth:0}}>
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr",gap:10}}>
-              {[
-                ["Before Production","Test concept, storyboard, rough cut, or final film before costly rework.",C.gold],
-                ["Before Media Spend","Forecast whether exposure is likely to create memory, action, or waste.",C.cyan],
-                ["Before The Blame Game","Separate creative-led risk from media-dependent risk.",C.purple],
-              ].map(([title,body,color])=>(
-                <div key={title} style={{padding:15,borderRadius:14,background:`linear-gradient(135deg,${color}12,${C.s1})`,border:`1px solid ${color}33`,boxShadow:isDarkMode?"none":elevationShadow}}>
-                  <div style={{fontSize:10,color:color,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:7}}>{title}</div>
-                  <div style={{fontSize:12,color:C.dim,lineHeight:1.55}}>{body}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{padding:"14px 16px",background:`${C.gold}0d`,border:`1px solid ${C.gold}30`,borderRadius:14,color:C.dim,fontSize:13,lineHeight:1.65,fontStyle:"italic"}}>
-              <span style={{color:C.gold,fontWeight:900,fontStyle:"normal"}}>Why this matters: </span>
-              Media buys exposure. Creative decides whether exposure becomes memory, preference, action, or waste.
-            </div>
-            <section style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:isMobile?20:22,boxShadow:isDarkMode?`0 24px 80px ${C.shadow}`:elevationShadow}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,borderBottom:`1px solid ${C.border}`,paddingBottom:18,marginBottom:20}}>
-              <div>
-                <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1.4,textTransform:"uppercase"}}>Live Output</div>
-                <div style={{fontSize:8,fontFamily:"monospace",color:C.gold,letterSpacing:"0.15em",marginTop:6,marginBottom:4,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                  <span style={{background:"rgba(245,158,11,0.12)",border:`1px solid ${C.gold}44`,padding:"2px 6px",borderRadius:4}}>FINAL FILM</span>
-                  <span style={{color:C.muted}}>→ ALSO: CONCEPT · STORYBOARD · ROUGH CUT</span>
-                </div>
-                <div style={{fontSize:22,fontWeight:900,color:C.text,marginTop:6}}>Outcome Forecast</div>
-              </div>
-              <div style={{width:58,height:58,borderRadius:14,background:`${C.gold}14`,border:`1px solid ${C.gold}44`,display:"grid",placeItems:"center",fontSize:24,fontWeight:900,color:C.gold,fontFamily:"'DM Mono',monospace"}}>A</div>
-            </div>
-            {[
-              ["SPONTANEOUS AWARENESS",78,C.green],
-              ["AIDED AWARENESS",84,C.green],
-              ["PURCHASE INTENT",58,C.amber],
-              ["MEDIA WASTAGE RISK",32,C.green],
-              ["CREATIVE ACCOUNTABILITY",78,C.cyan],
-            ].map(([label,value,color])=>(
-              <div key={label} style={{marginBottom:16}}>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.dim,fontWeight:800,marginBottom:8,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>
-                  <span>{label}</span><span style={{color}}>{value}</span>
-                </div>
-                <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:`${value}%`,background:color,borderRadius:999}}/>
-                </div>
-              </div>
-            ))}
-            <div style={{marginTop:6,padding:"12px 14px",borderRadius:10,background:`${C.gold}0d`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.6}}>
-              <span style={{color:C.gold,fontWeight:900}}>Likely creative-led opportunity:</span> strong memory, weaker conversion readiness.
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:24}}>
-              {["Outcome drivers","Risk flags","Platform matrix","PDF report"].map(item=>(
-                <div key={item} style={{padding:14,borderRadius:10,background:C.s2,border:`1px solid ${C.border}`,fontSize:13,color:C.text,fontWeight:700}}>{item}</div>
-              ))}
-            </div>
             </section>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {["TRIBE v2-informed","LAMBDA memorability","Predictive, not biometric","17 neural metrics","15 platform scores"].map(t=>(
-                <span key={t} style={{padding:"7px 10px",background:"transparent",borderRadius:8,border:`1px solid ${C.border2}`,fontSize:10,fontWeight:800,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:0.7,textTransform:"uppercase"}}>{t}</span>
-              ))}
-            </div>
-            <div style={{fontSize:10,color:C.muted,lineHeight:1.65}}>
-              AdCritIQ™ forecasts creative-response probability. It does not guarantee sales lift, replace media measurement, or claim live biometric testing.
-            </div>
           </section>
+
+          <section style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:isMobile?"flex-start":"center",marginTop:isMobile?22:24}}>
+            {["OUTCOME FORECASTING","MEDIA WASTAGE RISK","CREATIVE ACCOUNTABILITY","PLATFORM OUTCOME MATRIX","TRIBE V2-INFORMED","LAMBDA MEMORABILITY","PREDICTIVE, NOT BIOMETRIC"].map(t=>(
+              <span key={t} style={{padding:"8px 11px",background:t.includes("OUTCOME")||t.includes("MEDIA")||t.includes("CREATIVE")||t.includes("PLATFORM")?C.s1:"transparent",borderRadius:8,border:`1px solid ${t.includes("TRIBE")||t.includes("LAMBDA")||t.includes("PREDICTIVE")?C.border2:C.border}`,fontSize:10,fontWeight:800,color:t.includes("OUTCOME")||t.includes("MEDIA")||t.includes("CREATIVE")||t.includes("PLATFORM")?C.dim:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:0.7,textTransform:"uppercase"}}>{t}</span>
+            ))}
+          </section>
+          <div style={{fontSize:10,color:C.muted,lineHeight:1.65,textAlign:isMobile?"left":"center",marginTop:12}}>
+            AdCritIQ™ forecasts creative-response probability. It does not guarantee sales lift, replace media measurement, or claim live biometric testing.
+          </div>
         </main>
 
         <footer style={{padding:isMobile?"20px":"24px 48px",borderTop:`1px solid ${C.border}`,color:C.dim,fontSize:12,display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase",position:"relative",zIndex:1}}>

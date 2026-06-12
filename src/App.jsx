@@ -72,6 +72,51 @@ const COMPETITIVE_METRICS = [
   ["Creative Efficiency", "creative_efficiency"],
 ];
 
+const DNA_METRICS = [
+  ["Viral Potential", "viral_potential"],
+  ["Hook Strength", "hook_strength"],
+  ["Hold Rate", "hold_rate"],
+  ["Emotional Peak", "emotional_peak"],
+  ["Brand Recall", "brand_recall"],
+  ["Memory Encoding", "memory_encoding"],
+  ["Sound-Off Survival", "sound_off_survival"],
+  ["Share Intent", "share_intent"],
+  ["Creative Efficiency", "creative_efficiency"],
+  ["Cultural Resonance", "cultural_resonance"],
+];
+
+const computeDnaMatch = (currentResult, dnaData) => {
+  if (!currentResult || !dnaData?.ready || !dnaData.metric_means) return null;
+  const weighted = DNA_METRICS.map(([label, key]) => {
+    const current = currentResult[key];
+    const mean = dnaData.metric_means[key];
+    if (typeof current !== "number" || typeof mean !== "number") return null;
+    const deviation = Math.abs(current - mean);
+    const weight = key === "brand_recall" || key === "memory_encoding" ? 1.5 : 1;
+    return {
+      label,
+      key,
+      current,
+      mean,
+      deviation,
+      weightedDeviation: deviation * weight,
+      direction: current >= mean ? "above" : "below",
+    };
+  }).filter(Boolean);
+  if (!weighted.length) return null;
+  const rawScore = weighted.reduce((sum, item) => sum + item.weightedDeviation, 0) / 11;
+  const score = Math.max(0, Math.min(100, Math.round(100 - rawScore)));
+  const topDeviations = [...weighted]
+    .sort((a, b) => b.deviation - a.deviation)
+    .slice(0, 2)
+    .map(item => ({
+      label: item.label,
+      deviation: Math.round(item.deviation),
+      direction: item.direction,
+    }));
+  return { score, topDeviations };
+};
+
 // ============================================================
 // SHARED COMPONENTS — Premium Edition
 // ============================================================
@@ -657,6 +702,10 @@ export default function App(){
   const [competitiveBrand, setCompetitiveBrand] = useState("");
   const [competitiveIntel, setCompetitiveIntel] = useState(null);
   const [competitiveIntelLoading, setCompetitiveIntelLoading] = useState(false);
+  const [repoDnaData, setRepoDnaData] = useState(null);
+  const [repoDnaLoading, setRepoDnaLoading] = useState(false);
+  const [repoDnaBrand, setRepoDnaBrand] = useState("");
+  const [dnaMatchData, setDnaMatchData] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
       return localStorage.getItem("adcritiq_theme") !== "light";
@@ -843,6 +892,25 @@ export default function App(){
   };
   const u=(k,v)=>setForm(p=>({...p,[k]:v}));
 
+  const loadDnaMatchForResult=useCallback(async(currentResult,brand,isCompetitor)=>{
+    if(!brand?.trim()||isCompetitor){
+      setDnaMatchData(null);
+      return;
+    }
+    try{
+      const resp=await fetch(`/api/get-brand-dna?brand=${encodeURIComponent(brand.trim())}`);
+      const data=await resp.json();
+      if(!resp.ok||data.success===false||!data.ready){
+        setDnaMatchData(null);
+        return;
+      }
+      const match=computeDnaMatch(currentResult,data);
+      setDnaMatchData(match);
+    }catch{
+      setDnaMatchData(null);
+    }
+  },[]);
+
   const handleAnalyze=useCallback(async()=>{
     const creativeFormat=productionStage==="concept"?"text":getCreativeFormat(form.type,file);
     const missingFields = [];
@@ -1020,6 +1088,7 @@ export default function App(){
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));
       setResults(combined);
+      loadDnaMatchForResult(combined,form.brand,isCompetitorAnalysis);
       if (token.trim()) {
         fetch("/api/deduct-credit", {
           method: "POST",
@@ -1116,7 +1185,7 @@ export default function App(){
       setStage("results");setTab("summary");
 
     }catch(e){setError(e.message);setStage("form");}
-  },[file,fileB,form,token,compareMode,compareType,formB,labelB,productionStage,storyboardFiles,isCompetitorAnalysis,competitorOf]);
+  },[file,fileB,form,token,compareMode,compareType,formB,labelB,productionStage,storyboardFiles,isCompetitorAnalysis,competitorOf,loadDnaMatchForResult]);
 
   const cleanResultForSave=(source)=>{
     const clean={};
@@ -1208,6 +1277,7 @@ export default function App(){
       setCompareType("versions");
       setFormB({brand:"",client:"",campaign:"",script:""});
       setResults({...cleanResult,creative_format:cleanResult.creative_format||creativeType});
+      setDnaMatchData(null);
       setProductionStage(cleanResult.production_stage||"final");
       setStoryboardFiles([]);
       setIsDemoMode(true);
@@ -1299,6 +1369,26 @@ export default function App(){
     }
   };
 
+  const loadBrandDna=async(brandOverride)=>{
+    const brand=(brandOverride||repoDnaBrand||form.brand||"").trim();
+    if(!brand){
+      alert("Enter your brand name to load Brand DNA.");
+      return;
+    }
+    setRepoDnaBrand(brand);
+    setRepoDnaLoading(true);
+    try{
+      const resp=await fetch(`/api/get-brand-dna?brand=${encodeURIComponent(brand)}`);
+      const data=await resp.json();
+      if(!resp.ok||data.success===false)throw new Error(data.error||"Failed to load Brand DNA");
+      setRepoDnaData(data);
+    }catch(e){
+      alert("Brand DNA load failed: "+e.message);
+    }finally{
+      setRepoDnaLoading(false);
+    }
+  };
+
   const deleteSavedAnalysis=async(id)=>{
     if(!confirm("Delete this analysis? This cannot be undone."))return;
     try{
@@ -1318,6 +1408,9 @@ export default function App(){
       if(!competitiveBrand){
         setCompetitiveBrand(competitorOf||form.brand||"");
       }
+      if(!repoDnaBrand){
+        setRepoDnaBrand(form.brand||"");
+      }
     }
   };
 
@@ -1331,6 +1424,7 @@ export default function App(){
   const resetToForm=()=>{
     setStage("form");
     setResults(null);
+    setDnaMatchData(null);
     setFile(null);
     setPreview(null);
     setToken("");
@@ -1362,6 +1456,9 @@ export default function App(){
     setCompetitiveBrand("");
     setCompetitiveIntel(null);
     setCompetitiveIntelLoading(false);
+    setRepoDnaData(null);
+    setRepoDnaLoading(false);
+    setRepoDnaBrand("");
     localStorage.removeItem("adcritiq_token");
   };
 
@@ -2608,6 +2705,14 @@ export default function App(){
       .sort((a,b)=>a.gap-b.gap)
       .slice(0,3)
       .map(row=>`Trailing ${row.best.brand} on ${row.label} by ${Math.abs(row.gap)} points — prioritize this gap in the next creative iteration.`);
+    const dnaTraitCards=[
+      ["🎭 Emotional Signature","emotional_signature"],
+      ["🧠 Memory Architecture","memory_architecture"],
+      ["👁 Attention Pattern","attention_pattern"],
+      ["🌏 Cultural Rooting","cultural_rooting"],
+    ];
+    const dnaMetricColors=[C.gold,C.cyan,C.green,C.pink,C.orange,C.blue,C.purple,C.teal,C.amber,C.lime];
+    const dnaConsistencyColor=(v)=>v>=80?C.green:v>=60?C.amber:C.red;
     const repoInputStyle={background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif",outline:"none",boxSizing:"border-box"};
     const repoSelectStyle={...repoInputStyle,appearance:"auto",WebkitAppearance:"auto",MozAppearance:"auto"};
     const repoMiniButton={background:"transparent",border:`1px solid ${C.border2}`,borderRadius:5,padding:"4px 10px",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",cursor:"pointer",letterSpacing:"0.06em"};
@@ -2650,6 +2755,7 @@ export default function App(){
     const repoLoadAnalysis=(a)=>{
       const isComp=isCompetitorEntry(a);
       setResults({...a.full_result,is_competitor:isComp,competitor_of:a.competitor_of||a.full_result?.competitor_of});
+      setDnaMatchData(null);
       setTab("summary");
     };
     const renderAnalysisRows=(items,brand,options={})=>(
@@ -3117,6 +3223,37 @@ export default function App(){
 
           {/* ===== EXECUTIVE SUMMARY ===== */}
           {tab==="summary"&&(<>
+            {dnaMatchData&&(
+              <Card C={C} style={{marginBottom:isMobile?18:24,padding:isMobile?16:18,background:"rgba(245,166,35,0.04)",border:"1px solid rgba(245,166,35,0.2)",borderLeft:`3px solid ${C.gold}`,borderRadius:8}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:14,marginBottom:10}}>
+                  <div style={{fontSize:10,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.14em",textTransform:"uppercase"}}>🧬 Brand DNA Match</div>
+                  <div style={{fontSize:24,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{dnaMatchData.score}%</div>
+                </div>
+                <div style={{fontSize:13,color:C.dim,lineHeight:1.65,marginBottom:dnaMatchData.topDeviations?.length?12:0}}>
+                  {dnaMatchData.score>=80
+                    ? `On-brand. Reinforces the ${form.brand||r.brand||"brand"} signature.`
+                    : dnaMatchData.score>=60
+                    ? "Acceptable drift. Review the flagged dimensions."
+                    : "DNA divergence. This creative may work as advertising but risks eroding brand consistency."}
+                </div>
+                {dnaMatchData.topDeviations?.length>0&&(
+                  <div style={{display:"grid",gap:7}}>
+                    {dnaMatchData.topDeviations.map(item=>(
+                      <div key={item.label} style={{fontSize:12,color:C.dim,lineHeight:1.5}}>
+                        <span style={{color:item.direction==="above"?C.green:C.red,fontWeight:900,marginRight:7}}>
+                          {item.direction==="above"?"↑":"↓"}
+                        </span>
+                        <span style={{color:C.text,fontWeight:800}}>{item.label}:</span>{" "}
+                        <span style={{color:item.direction==="above"?C.green:C.red,fontWeight:800}}>
+                          {item.direction==="above"?"+":"-"}{item.deviation}
+                        </span>{" "}
+                        {item.direction==="above"?"far more than brand norm":"far less than brand norm"}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            )}
             <div style={{display:"grid",gridTemplateColumns:scoreGrid,gap:isMobile?12:16,marginBottom:isMobile?24:36,animation:"fadeUp 0.4s ease 0.1s both"}}>
               {[
                 ["Viral Potential",r.viral_potential,70],["Hook Strength",r.hook_strength,75],["Hold Rate",r.hold_rate,65],
@@ -3963,11 +4100,12 @@ export default function App(){
           {tab==="repository"&&(<>
             <Card C={C} style={{marginBottom:20}}>
               <div style={{display:"flex",alignItems:isMobile?"stretch":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row",marginBottom:18}}>
-                <CardTitle C={C} label={C.gold}>{repoMode==="competitive"?"Competitive Creative Intelligence":"Saved Analysis Repository"}</CardTitle>
+                <CardTitle C={C} label={C.gold}>{repoMode==="competitive"?"Competitive Creative Intelligence":repoMode==="dna"?"Brand Creative DNA":"Saved Analysis Repository"}</CardTitle>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                   {[
                     ["saved","Saved Reports"],
                     ["competitive","🔍 Competitive Intel"],
+                    ["dna","🧬 Brand DNA"],
                   ].map(([id,label])=>(
                     <button key={id} onClick={()=>{
                       setRepoMode(id);
@@ -3975,6 +4113,9 @@ export default function App(){
                       if(id==="competitive"){
                         loadRepository();
                         loadCompetitiveIntel(competitiveBrand||competitorOf||form.brand);
+                      }
+                      if(id==="dna"){
+                        setRepoDnaBrand(repoDnaBrand||form.brand||"");
                       }
                     }} style={{padding:"9px 12px",borderRadius:10,border:`1px solid ${repoMode===id?C.gold+"66":C.border}`,background:repoMode===id?`${C.gold}16`:C.s2,color:repoMode===id?C.gold:C.dim,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
                       {label}
@@ -4015,7 +4156,7 @@ export default function App(){
                     </button>
                   )}
                 </div>
-              ):(
+              ):repoMode==="competitive"?(
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(240px,0.45fr) auto",gap:12,alignItems:"end"}}>
                   <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
                     Your Brand
@@ -4028,9 +4169,104 @@ export default function App(){
                     Load Competitive Dashboard
                   </button>
                 </div>
+              ):(
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(240px,0.45fr) auto",gap:12,alignItems:"end"}}>
+                  <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
+                    Your Brand
+                    <input value={repoDnaBrand} onChange={e=>setRepoDnaBrand(e.target.value)}
+                      placeholder="e.g. Philips"
+                      style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                  </label>
+                  <button onClick={()=>loadBrandDna(repoDnaBrand)}
+                    style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:`${C.gold}16`,color:C.gold,fontWeight:900,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                    Load Brand DNA
+                  </button>
+                </div>
               )}
             </Card>
-            {repoMode==="competitive"?(
+            {repoMode==="dna"?(
+              repoDnaLoading?(
+                <Card C={C} style={{textAlign:"center"}}>
+                  <div style={{fontSize:15,color:C.gold,fontWeight:800}}>Loading Brand DNA...</div>
+                </Card>
+              ):!repoDnaData?(
+                <Card C={C} style={{padding:24}}>
+                  <div style={{fontSize:18,color:C.text,fontWeight:900,marginBottom:8}}>Load a brand fingerprint</div>
+                  <div style={{fontSize:14,color:C.dim,lineHeight:1.7}}>Enter your brand name to profile its creative DNA from saved analyses. A fingerprint unlocks after 5 non-competitor analyses.</div>
+                </Card>
+              ):repoDnaData.ready===false?(
+                <Card C={C} style={{padding:24,borderColor:C.gold+"44"}}>
+                  <div style={{fontSize:18,color:C.text,fontWeight:900,marginBottom:8}}>Brand DNA — {repoDnaBrand}</div>
+                  <div style={{fontSize:14,color:C.dim,lineHeight:1.7,marginBottom:16}}>
+                    Brand DNA unlocks at 5 analyses — <span style={{color:C.gold,fontWeight:900}}>{repoDnaData.count}/5 complete.</span> Analyse {repoDnaData.needed} more {repoDnaBrand} creative{repoDnaData.needed===1?"":"s"} to generate the fingerprint.
+                  </div>
+                  <div style={{height:6,borderRadius:3,background:C.border,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${Math.min(100,(repoDnaData.count||0)/5*100)}%`,background:C.gold,borderRadius:3}}/>
+                  </div>
+                </Card>
+              ):(
+                <div style={{display:"grid",gap:18}}>
+                  <Card C={C} style={{padding:24,borderColor:C.gold+"44",background:`linear-gradient(135deg,${C.gold}0d,${C.s1})`}}>
+                    <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row"}}>
+                      <div>
+                        <div style={{fontSize:28,color:C.text,fontWeight:900,lineHeight:1.1,marginBottom:8}}>{repoDnaBrand}</div>
+                        <div style={{fontSize:13,color:C.dim,marginBottom:10}}>{repoDnaData.count} creatives profiled</div>
+                        <div style={{fontSize:12,color:C.dim,fontStyle:"italic",lineHeight:1.65}}>This is the {repoDnaBrand} creative fingerprint — the neural signature that defines the brand's advertising identity.</div>
+                      </div>
+                      <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:C.cyan,background:`${C.cyan}12`,border:`1px solid ${C.cyan}33`,padding:"5px 9px",borderRadius:6,textTransform:"uppercase",letterSpacing:"0.08em",whiteSpace:"nowrap"}}>
+                        {String(repoDnaData.dominant_format||"Unknown").replace(/_/g," ")}
+                      </span>
+                    </div>
+                  </Card>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:14}}>
+                    {dnaTraitCards.map(([label,key])=>{
+                      const score=repoDnaData.traits?.[key]??0;
+                      const consistency=repoDnaData.traits?.trait_consistency?.[key]??0;
+                      const color=dnaConsistencyColor(consistency);
+                      return(
+                        <Card C={C} key={key} style={{padding:22}}>
+                          <div style={{fontSize:10,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:14}}>{label}</div>
+                          <div style={{fontSize:44,color:C.text,fontWeight:900,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{score}</div>
+                          <div style={{fontSize:10,color:C.dim,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",margin:"9px 0 12px"}}>Signature Strength</div>
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            <div style={{height:6,flex:1,borderRadius:3,background:C.s3,overflow:"hidden"}}>
+                              <div style={{height:"100%",width:`${consistency}%`,background:color,borderRadius:3}}/>
+                            </div>
+                            <span style={{fontSize:10,color:color,fontWeight:900,fontFamily:"'DM Mono',monospace",minWidth:38,textAlign:"right"}}>{consistency}%</span>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                  <Card C={C} style={{padding:24}}>
+                    <CardTitle C={C} label={C.gold}>Metric-Level Fingerprint</CardTitle>
+                    <div style={{display:"grid",gap:16}}>
+                      {DNA_METRICS.map(([label,key],idx)=>{
+                        const mean=repoDnaData.metric_means?.[key]??0;
+                        const std=repoDnaData.metric_stddev?.[key]??0;
+                        const color=dnaMetricColors[idx%dnaMetricColors.length];
+                        const bandLeft=Math.max(0,mean-std);
+                        const bandRight=Math.min(100,mean+std);
+                        return(
+                          <div key={key}>
+                            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:12,marginBottom:6}}>
+                              <span style={{fontSize:12,color:C.text,fontWeight:800}}>{label}</span>
+                              <span style={{fontSize:13,color:color,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>
+                                {mean}<span style={{fontSize:8,color:C.muted,marginLeft:7}}>±{std}σ</span>
+                              </span>
+                            </div>
+                            <div style={{height:9,borderRadius:999,background:C.s3,position:"relative",overflow:"hidden"}}>
+                              <div style={{position:"absolute",left:`${bandLeft}%`,width:`${Math.max(0,bandRight-bandLeft)}%`,top:0,bottom:0,background:color,opacity:0.2,borderRadius:999}}/>
+                              <div style={{position:"relative",height:"100%",width:`${mean}%`,background:color,borderRadius:999}}/>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                </div>
+              )
+            ):repoMode==="competitive"?(
               competitiveIntelLoading?(
                 <Card C={C} style={{textAlign:"center"}}>
                   <div style={{fontSize:15,color:C.purple,fontWeight:800}}>Loading competitive intelligence...</div>

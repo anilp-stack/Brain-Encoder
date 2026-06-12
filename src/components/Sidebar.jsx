@@ -16,7 +16,7 @@ const SidebarIcon = {
   ),
 };
 
-export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDownload, downloading, NAV_TABS, isMobile, isTablet, compareMode, resultsB }) {
+export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDownload, downloading, NAV_TABS, isMobile, isTablet, isDarkMode, compareMode, resultsB }) {
   const [hoveredTab, setHoveredTab] = useState(null);
 
   if (isMobile) return null;
@@ -75,18 +75,18 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
     >
       {/* Brand header */}
       <div style={{ padding: "26px 20px 22px", borderBottom: `1px solid ${C.border}` }}>
-        <div
+        <img
+          src={isDarkMode ? "/adcritiq-logo-dark.png" : "/adcritiq-logo-light.png"}
+          alt="AdCritIQ™"
           style={{
-            fontSize: 22,
-            fontWeight: 800,
-            color: C.text,
-            letterSpacing: 0,
-            lineHeight: 1.2,
-            fontFamily: "'Playfair Display',serif",
+            display: "block",
+            width: "100%",
+            maxWidth: 205,
+            height: "auto",
+            objectFit: "contain",
+            borderRadius: 8,
           }}
-        >
-          AdCritIQ<sup style={{ fontSize: 8, color: C.gold, verticalAlign: "super" }}>TM</sup>
-        </div>
+        />
         {gr && (
           <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>
             <div

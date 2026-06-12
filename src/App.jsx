@@ -1896,9 +1896,18 @@ Verify at: ${certificateUrl(certData.cert_id)}
         <div aria-hidden="true" style={{position:"absolute",bottom:"-30%",left:"-10%",width:700,height:700,borderRadius:"50%",background:"radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 65%)",animation:"drift 18s ease-in-out infinite alternate-reverse",pointerEvents:"none"}}/>
         <header style={{position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:isMobile?"18px 20px":"22px 48px",borderBottom:`1px solid ${C.border}`,background:headerBg,backdropFilter:"blur(16px)"}}>
           <div style={{display:"flex",alignItems:"center",gap:14,minWidth:0}}>
-            <div style={{display:"grid",gap:2}}>
-              <span style={{fontSize:12,color:C.dim,fontWeight:700}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
-            </div>
+            <img
+              src={isDarkMode?"/adcritiq-logo-dark.png":"/adcritiq-logo-light.png"}
+              alt="AdCritIQ™"
+              style={{
+                display:"block",
+                width:isMobile?148:188,
+                height:"auto",
+                maxHeight:isMobile?46:58,
+                objectFit:"contain",
+                borderRadius:6,
+              }}
+            />
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             {ThemeToggle}
@@ -2117,9 +2126,18 @@ Verify at: ${certificateUrl(certData.cert_id)}
 
         <div style={{padding:isMobile?"16px 18px":"18px 42px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,position:"sticky",top:0,zIndex:20,background:formHeaderBg,backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
           <div onClick={()=>setStage("landing")} style={{display:"flex",alignItems:"center",gap:14,cursor:"pointer",minWidth:0}}>
-            <div style={{display:"grid",gap:2}}>
-              <span style={{fontSize:12,color:C.text,fontWeight:800}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
-            </div>
+            <img
+              src={isDarkMode?"/adcritiq-logo-dark.png":"/adcritiq-logo-light.png"}
+              alt="AdCritIQ™"
+              style={{
+                display:"block",
+                width:isMobile?142:176,
+                height:"auto",
+                maxHeight:isMobile?44:54,
+                objectFit:"contain",
+                borderRadius:6,
+              }}
+            />
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             {ThemeToggle}
@@ -3167,6 +3185,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
           setTab={setDashboardTab}
           grade={r.overall_grade}
           brand={form.brand}
+          isDarkMode={isDarkMode}
           compareMode={compareMode}
           resultsB={resultsB}
           onNew={resetToForm}

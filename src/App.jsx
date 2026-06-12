@@ -1378,6 +1378,9 @@ export default function App(){
                 <span aria-hidden="true" style={{position:"absolute",left:0,right:0,bottom:-6,height:2,borderRadius:999,background:`linear-gradient(90deg,transparent,${C.goldL},${C.gold},transparent)`,backgroundSize:"200% 100%",animation:"shimmer 1.5s ease 0.6s both"}}/>
               </span>
             </h1>
+            <p style={{fontSize:isMobile?13:15,color:C.gold,fontWeight:500,fontStyle:"italic",marginBottom:20,marginTop:-8,letterSpacing:"0.02em"}}>
+              Just the signal before the spend.
+            </p>
             <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.75,maxWidth:620,margin:"0 0 32px"}}>
               AdCritIQ™ analyses advertising creatives using multimodal AI trained on neuroscience research — delivering 17 neural metrics, 15 platform scores, and CMO-level strategic recommendations in under 2 minutes. Test at any production stage: concept, storyboard, rough cut, or final film. Built for brand teams and agencies worldwide.
             </p>
@@ -1481,8 +1484,8 @@ export default function App(){
 
         <footer style={{padding:isMobile?"20px":"24px 48px",borderTop:`1px solid ${C.border}`,color:C.dim,fontSize:12,display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase",position:"relative",zIndex:1}}>
           <span>AdCritIQ<sup>TM</sup></span>
+          <span>JUST THE SIGNAL BEFORE THE SPEND.</span>
           <span>Predictive, not biometric</span>
-          <span>Built for creative decisions</span>
         </footer>
         {pricingModal}
         {shareModal}
@@ -2101,9 +2104,12 @@ export default function App(){
         {scrolled&&(
           <div style={{position:"fixed",top:0,left:miniLeft,right:0,zIndex:80,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,padding:isMobile?"10px 16px":"10px 28px",background:miniHeaderBg,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:`1px solid ${C.border}`,animation:"fadeIn 0.2s ease both"}}>
             <span style={{fontWeight:700,color:C.text,fontSize:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {form.brand||"AdCritIQ"}
+              <span>{form.brand||"AdCritIQ"}</span>
               <span style={{color:C.dim,fontWeight:400,fontSize:11,marginLeft:10,fontFamily:"monospace"}}>
                 {form.industry||"Creative"} · {form.country||form.market||"India"}
+              </span>
+              <span style={{display:isMobile?"none":"block",fontSize:9,color:C.muted,fontStyle:"italic",letterSpacing:"0.04em",marginTop:1}}>
+                Just the signal before the spend.
               </span>
             </span>
             <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>

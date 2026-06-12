@@ -146,7 +146,7 @@ export async function generateBrainEncoderPDF(results, form) {
 
     setFont(7, "normal");
     color(COLORS.muted);
-    doc.text("Neural Creative Intelligence  |  Confidential", 15, 293);
+    doc.text("AdCritIQ™ — Just the signal before the spend. Confidential", 15, 293);
     doc.text(`${pageNum} / ${TOTAL_PAGES}`, 195, 293, { align: "right" });
   }
 
@@ -324,12 +324,15 @@ export async function generateBrainEncoderPDF(results, form) {
     setFont(36, "bold");
     color(COLORS.text);
     doc.text("AdCritIQ™", 18, 51);
+    setFont(9, "italic");
+    color(COLORS.goldSoft);
+    doc.text("Just the signal before the spend.", 18, 58);
     setFont(14, "normal");
     color(COLORS.dim);
-    doc.text("Creative Intelligence Report", 18, 61);
+    doc.text("Creative Intelligence Report", 18, 65);
     stroke(COLORS.gold);
     doc.setLineWidth(0.6);
-    doc.line(18, 70, 112, 70);
+    doc.line(18, 74, 112, 74);
 
     drawGradeBadge(r.overall_grade, 168, 52, 18);
 

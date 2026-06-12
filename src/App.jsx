@@ -1872,6 +1872,7 @@ export default function App(){
     const scoreGrid=isMobile?"repeat(2,minmax(0,1fr))":"repeat(auto-fit,minmax(180px,1fr))";
     const platformGrid=isMobile?"repeat(2,minmax(0,1fr))":"repeat(auto-fit,minmax(160px,1fr))";
     const repoFilterGrid=isMobile?"1fr":isTablet?"1fr 140px":"1fr 160px auto";
+    const barMetricContrastC={...C,muted:C.text};
     const metricScoreValues=[
       r.viral_potential,r.hook_strength,r.hold_rate,r.emotional_peak,
       r.brand_recall,r.memory_encoding,r.sound_off_survival,r.share_intent,
@@ -2406,11 +2407,11 @@ export default function App(){
             <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20,marginBottom:24}}>
               <Card C={C}>
                 <CardTitle C={C} label={C.purple}>Brain Region Activation</CardTitle>
-                {Object.entries(br).map(([k,v])=><BarMetric C={C} hex={hex} key={k} label={k.replace(/_/g," ")} value={v}/>)}
+                {Object.entries(br).map(([k,v])=><BarMetric C={barMetricContrastC} hex={hex} key={k} label={k.replace(/_/g," ")} value={v}/>)}
               </Card>
               <Card C={C}>
                 <CardTitle C={C} label={C.teal}>Cognitive Channel Load</CardTitle>
-                {Object.entries(cl).map(([k,v])=><BarMetric C={C} hex={hex} key={k} label={k.replace(/_/g," ")} value={v} color={C.purple}/>)}
+                {Object.entries(cl).map(([k,v])=><BarMetric C={barMetricContrastC} hex={hex} key={k} label={k.replace(/_/g," ")} value={v} color={C.purple}/>)}
               </Card>
             </div>
             <Card C={C}>
@@ -2435,7 +2436,7 @@ export default function App(){
                     <div style={{padding:"2px 8px",background:"rgba(245,158,11,0.08)",border:`1px solid ${C.gold}44`,borderRadius:4,fontSize:9,color:C.gold,fontFamily:"monospace"}}>
                       META AI RESEARCH 2026
                     </div>
-                    <div style={{fontSize:9,color:C.muted,fontStyle:"italic"}}>
+                    <div style={{fontSize:9,color:C.dim,fontStyle:"italic"}}>
                       720 subjects · 1,000+ hours fMRI
                     </div>
                   </div>
@@ -2450,7 +2451,7 @@ export default function App(){
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12,marginBottom:4}}>
                           <div>
                             <span style={{fontSize:12,color:C.text,fontWeight:600}}>{metric.label}</span>
-                            <span style={{fontSize:9,color:C.muted,fontFamily:"monospace",marginLeft:8,letterSpacing:"0.06em"}}>{metric.sub}</span>
+                            <span style={{fontSize:9,color:C.dim,fontFamily:"monospace",marginLeft:8,letterSpacing:"0.06em"}}>{metric.sub}</span>
                           </div>
                           <div style={{fontSize:14,fontWeight:800,color:barColor,minWidth:32,textAlign:"right"}}>
                             {displayVal}
@@ -2473,7 +2474,7 @@ export default function App(){
                     </div>
                   )}
 
-                  <div style={{marginTop:12,fontSize:9,color:C.muted,lineHeight:1.5}}>
+                  <div style={{marginTop:12,fontSize:9,color:C.dim,lineHeight:1.5}}>
                     Scores calibrated against validated brain activation patterns from TRIBE v2 (d'Ascoli et al., Meta AI Research, 2026) — a foundation model trained on 1,000+ hours of fMRI data across 720 subjects. AdCritIQ™ applies these published neural correlates as a calibration framework — not a live TRIBE v2 model inference.
                   </div>
                 </div>
@@ -2556,7 +2557,7 @@ export default function App(){
                   <Card C={C}>
                     <CardTitle C={C} label={C.green}>{resultFormat==="static_image"?"Static Attention Metrics":"Attention Metrics"}</CardTitle>
                     {staticAttentionMetrics.map(([label,value,color])=>(
-                      <BarMetric C={C} hex={hex} key={label} label={label} value={value} color={color}/>
+                      <BarMetric C={barMetricContrastC} hex={hex} key={label} label={label} value={value} color={color}/>
                     ))}
                   </Card>
                   <Card C={C}>
@@ -2603,7 +2604,7 @@ export default function App(){
                 {Object.entries(emotTypes).map(([k,arr])=>{
                   if(!arr)return null;
                   const avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
-                  return <BarMetric C={C} hex={hex} key={k} label={k} value={avg} color={C.pink}/>;
+                  return <BarMetric C={barMetricContrastC} hex={hex} key={k} label={k} value={avg} color={C.pink}/>;
                 })}
               </Card>
               <Card C={C}>
@@ -2675,7 +2676,7 @@ export default function App(){
               <Card C={C}>
                 <CardTitle C={C} label={C.purple}>Sound Analysis Metrics</CardTitle>
                 {[["Sound Dependency",snd.sound_dependency],["Music Effectiveness",snd.music_effectiveness],["Voiceover Clarity",snd.voiceover_clarity],["Sound-Off Text Quality",snd.sound_off_text_quality],["ASMR Trigger",snd.asmr_trigger],["Sonic Branding",snd.sonic_branding]].filter(([,v])=>v!==undefined).map(([l,v])=>
-                  <BarMetric C={C} hex={hex} key={l} label={l} value={v} maxW={180}/>
+                  <BarMetric C={barMetricContrastC} hex={hex} key={l} label={l} value={v} maxW={180}/>
                 )}
               </Card>
               <Card C={C}>

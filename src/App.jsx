@@ -174,6 +174,121 @@ function PlatformChip({ name, C = DARK_THEME }) {
   );
 }
 
+function NeuralSignalBrainPanel({ isDarkMode }) {
+  const regions = [
+    ["01", "Prefrontal Cortex", "Decision · brand trust", "#F5A623", 506],
+    ["02", "Amygdala", "Emotion · desire · risk", "#FF6B9D", 544],
+    ["03", "Hippocampus", "Memory encoding", "#22D3EE", 582],
+    ["04", "Visual Cortex", "Attention · salience", "#10B981", 620],
+    ["05", "Auditory Cortex", "Sonic brand binding", "#A78BFA", 658],
+    ["06", "Anterior Cingulate", "Attention control", "#FFD580", 696],
+    ["07", "Mirror Neurons", "Empathy simulation", "#FB923C", 734],
+    ["08", "Nucleus Accumbens", "Reward · brand love", "#EC4899", 772],
+  ];
+  return (
+    <div style={{
+      marginBottom:28,
+      borderRadius:18,
+      overflow:"hidden",
+      boxShadow:isDarkMode
+        ?"0 0 44px rgba(245,166,35,0.10)"
+        :"0 12px 36px rgba(0,0,0,0.22)",
+    }}>
+      <svg width="100%" viewBox="0 0 680 500" role="img" aria-label="AdCritIQ neural signal map showing eight advertising-relevant brain regions" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>{`
+            @keyframes brainPulse{0%,100%{opacity:.72;r:11}50%{opacity:1;r:14}}
+            @keyframes haloPulse{0%,100%{opacity:.10}50%{opacity:.28}}
+            @keyframes pathFlow{0%{stroke-dashoffset:220}100%{stroke-dashoffset:0}}
+            .bn1{animation:brainPulse 2.2s ease-in-out infinite}
+            .bn2{animation:brainPulse 2.6s ease-in-out .3s infinite}
+            .bn3{animation:brainPulse 2.1s ease-in-out .6s infinite}
+            .bn4{animation:brainPulse 2.8s ease-in-out .9s infinite}
+            .bn5{animation:brainPulse 2.4s ease-in-out 1.2s infinite}
+            .bn6{animation:brainPulse 2.5s ease-in-out .4s infinite}
+            .bn7{animation:brainPulse 2.3s ease-in-out .8s infinite}
+            .bn8{animation:brainPulse 2.7s ease-in-out 1.1s infinite}
+            .bh{animation:haloPulse 2.8s ease-in-out infinite}
+            .bf{animation:pathFlow 3.4s linear infinite;stroke-dasharray:10 7}
+          `}</style>
+          <pattern id="brainPanelGrid" width="34" height="34" patternUnits="userSpaceOnUse">
+            <path d="M 34 0 L 0 0 0 34" fill="none" stroke="#C8860A" strokeWidth="0.35" opacity="0.16"/>
+          </pattern>
+          <linearGradient id="brainPanelWash" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#10101E"/>
+            <stop offset="100%" stopColor="#06060D"/>
+          </linearGradient>
+        </defs>
+        <rect width="680" height="500" rx="18" fill="url(#brainPanelWash)"/>
+        <rect width="680" height="500" rx="18" fill="url(#brainPanelGrid)"/>
+        <rect x="1" y="1" width="678" height="498" rx="17" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.28"/>
+        <rect x="0" y="0" width="680" height="42" fill="#0D0D19"/>
+        <line x1="0" y1="42" x2="680" y2="42" stroke="#F5A623" strokeWidth="1" opacity="0.22"/>
+        <text x="24" y="27" fontFamily="monospace" fontSize="11" fill="#F5A623" opacity=".74" letterSpacing="3">ADCRITIQ™</text>
+        <text x="340" y="27" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity=".6" letterSpacing="2.4">NEURAL SIGNAL MAP</text>
+        <text x="654" y="27" textAnchor="end" fontFamily="monospace" fontSize="10" fill="#4ADE80" opacity=".8" letterSpacing="1">● LIVE</text>
+
+        <g transform="translate(22 54)">
+          <path d="M 178 62 C 122 48,70 72,52 125 C 31 186,45 241,72 286 C 98 330,140 350,178 333 C 209 319,214 282,220 252 C 226 220,251 200,250 168 C 249 139,237 114,250 88 C 226 62,200 68,178 62 Z" fill="#F5A623" fillOpacity=".035" stroke="#D69B2D" strokeWidth="2.5" opacity=".86"/>
+          <path d="M 314 62 C 370 48,422 72,440 125 C 461 186,447 241,420 286 C 394 330,352 350,314 333 C 283 319,278 282,272 252 C 266 220,241 200,242 168 C 243 139,255 114,242 88 C 266 62,292 68,314 62 Z" fill="#F5A623" fillOpacity=".035" stroke="#D69B2D" strokeWidth="2.5" opacity=".86"/>
+          <path d="M 244 164 C 250 151,263 145,270 145 C 277 145,290 151,296 164" fill="none" stroke="#D69B2D" strokeWidth="3" opacity=".58"/>
+          {[
+            "M 80 145 C 106 128,139 131,156 153",
+            "M 70 215 C 103 197,141 204,165 230",
+            "M 113 294 C 142 274,179 279,199 304",
+            "M 379 145 C 353 128,320 131,303 153",
+            "M 388 215 C 355 197,317 204,293 230",
+            "M 345 294 C 316 274,279 279,259 304",
+          ].map((d,i)=><path key={i} d={d} fill="none" stroke="#D69B2D" strokeWidth="1.2" opacity=".28"/>)}
+          {[
+            ["M 130 130 C 168 123,209 126,248 145", "#F5A623"],
+            ["M 248 145 C 287 126,328 123,366 130", "#FFD580"],
+            ["M 128 130 C 130 169,130 196,128 226", "#FF6B9D"],
+            ["M 128 226 C 168 238,205 246,231 264", "#22D3EE"],
+            ["M 238 281 C 246 317,247 349,247 374", "#10B981"],
+            ["M 370 226 C 334 245,303 255,279 272", "#EC4899"],
+          ].map(([d,c],i)=><path key={i} d={d} fill="none" stroke={c} strokeWidth="2" opacity=".72" className="bf"/>)}
+          {[
+            [128,130,"01","#F5A623","bn1"],
+            [128,226,"02","#FF6B9D","bn2"],
+            [231,264,"03","#22D3EE","bn3"],
+            [247,374,"04","#10B981","bn4"],
+            [74,220,"05","#A78BFA","bn5"],
+            [248,145,"06","#FFD580","bn6"],
+            [382,226,"07","#FB923C","bn7"],
+            [302,272,"08","#EC4899","bn8"],
+          ].map(([cx,cy,num,color,cls])=>(
+            <g key={num}>
+              <circle cx={cx} cy={cy} r="28" fill={color} className="bh"/>
+              <circle cx={cx} cy={cy} r="11" fill={color} className={cls}/>
+              <circle cx={cx} cy={cy} r="18" fill="none" stroke={color} strokeWidth="1.3" opacity=".55"/>
+              <text x={cx} y={cy+4} textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#05050A" fontWeight="900">{num}</text>
+            </g>
+          ))}
+          <text x="246" y="418" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity=".5" letterSpacing="2">PREDICTIVE CORTICAL RESPONSE MODEL</text>
+        </g>
+
+        <g transform="translate(462 68)">
+          <rect x="0" y="0" width="190" height="382" rx="14" fill="#0E0E19" stroke="#F5A623" strokeWidth="1" opacity=".96"/>
+          <text x="16" y="24" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity=".8" letterSpacing="1.8">SIGNAL READOUT</text>
+          <text x="16" y="42" fontFamily="monospace" fontSize="8" fill="#9B8FB8" opacity=".9" letterSpacing=".9">8 REGIONS · ADVERTISING RESPONSE</text>
+          {regions.map(([num,name,sub,color,y])=>(
+            <g key={num} transform={`translate(0 ${y-454})`}>
+              <rect x="12" y="0" width="166" height="34" rx="8" fill={color} fillOpacity=".08" stroke={color} strokeWidth=".8" opacity=".92"/>
+              <circle cx="28" cy="17" r="8" fill={color}/>
+              <text x="28" y="20.5" textAnchor="middle" fontFamily="monospace" fontSize="7" fill="#05050A" fontWeight="900">{num}</text>
+              <text x="44" y="14" fontFamily="monospace" fontSize="9.5" fill={color} fontWeight="800">{name}</text>
+              <text x="44" y="26" fontFamily="monospace" fontSize="8" fill="#D8D1E8" opacity=".72">{sub}</text>
+            </g>
+          ))}
+          <rect x="12" y="348" width="166" height="20" rx="6" fill="#F5A623" fillOpacity=".08" stroke="#F5A623" strokeWidth=".8" opacity=".9"/>
+          <text x="95" y="362" textAnchor="middle" fontFamily="monospace" fontSize="8" fill="#F5A623" opacity=".85" letterSpacing="1.4">NOT BIOMETRIC · AI PREDICTED</text>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 function gradeToVisualScore(g) {
   if (g === "A+") return 95;
   if (g === "A") return 88;
@@ -1512,7 +1627,8 @@ export default function App(){
           </section>
 
           {/* Neural Signal Brain — desktop only */}
-          {!isMobile&&(
+          {!isMobile&&<NeuralSignalBrainPanel isDarkMode={isDarkMode}/>}
+          {false&&(
             <div style={{
               marginBottom:28,
               borderRadius:16,

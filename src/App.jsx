@@ -1880,16 +1880,31 @@ export default function App(){
           <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,0.85fr) minmax(320px,0.55fr)",gap:isMobile?24:42,alignItems:"end",marginBottom:30}}>
             <div>
               <div style={{display:"inline-flex",alignItems:"center",gap:9,padding:"6px 11px",borderRadius:999,background:`${C.gold}10`,border:`1px solid ${C.gold}33`,color:C.gold,fontSize:10,fontWeight:900,letterSpacing:1.6,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:18}}>
-                Creative Intelligence Intake
+                Outcome Forecast Intake
               </div>
-              <h2 style={{fontSize:isMobile?42:isTablet?58:72,fontWeight:800,margin:"0 0 14px",fontFamily:"'Playfair Display',serif",letterSpacing:0,lineHeight:0.96}}>Upload Creative</h2>
-              <p style={{color:C.dim,fontSize:isMobile?15:17,margin:0,lineHeight:1.75,maxWidth:660}}>Prepare the campaign context, creative file, and analysis token for an AdCritIQ neural creative readout.</p>
+              <h2 style={{fontSize:isMobile?38:isTablet?54:68,fontWeight:800,margin:"0 0 14px",fontFamily:"'Playfair Display',serif",letterSpacing:0,lineHeight:0.98}}>Creative Intake for Outcome Forecasting</h2>
+              <p style={{color:C.dim,fontSize:isMobile?15:17,margin:0,lineHeight:1.75,maxWidth:690}}>Prepare the campaign context, creative asset, and access token so AdCritIQ™ can forecast memory, consideration, action, and media-waste risk before spend.</p>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               {["17 neural metrics","15 platform scores","CMO playbook","PDF ready"].map(t=>(
                 <div key={t} style={{padding:"11px 12px",borderRadius:12,background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,color:C.dim,fontSize:11,fontWeight:800,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:1,textAlign:"center"}}>{t}</div>
               ))}
             </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"1fr 1fr":"repeat(4,1fr)",gap:10,marginBottom:16}}>
+            {[
+              ["Creative Response Probability",C.gold],
+              ["Platform Outcome Matrix",C.cyan],
+              ["Media Wastage Risk",C.red],
+              ["CMO Decision Lens",C.green],
+            ].map(([label,color])=>(
+              <div key={label} style={{padding:"12px 13px",borderRadius:14,background:`linear-gradient(135deg,${color}10,${C.s1})`,border:`1px solid ${color}33`,boxShadow:`0 18px 44px ${C.shadow}`}}>
+                <div style={{fontSize:10,color:color,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",fontWeight:900,textTransform:"uppercase",lineHeight:1.45}}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{padding:isMobile?"11px 13px":"12px 18px",borderRadius:14,background:`linear-gradient(90deg,${C.gold}12,${C.cyan}08,transparent)`,border:`1px solid ${C.border}`,color:C.dim,fontSize:isMobile?12:13,lineHeight:1.55,fontStyle:"italic",marginBottom:30}}>
+            <span style={{color:C.gold,fontWeight:900,fontStyle:"normal"}}>Founder lens:</span> Media buys exposure. Creative decides whether exposure becomes memory, action, or waste.
           </div>
 
           {error&&<div style={{padding:"15px 18px",borderRadius:14,background:"rgba(251,113,133,0.12)",color:C.red,fontSize:14,marginBottom:20,border:`1px solid ${C.red}55`,boxShadow:`0 18px 40px ${C.shadow}`}}>{error}</div>}
@@ -2121,7 +2136,7 @@ export default function App(){
             </section>
 
             <section style={sectionSurface(C.purple)}>
-              {sectionHead("03","Upload Asset",productionStage==="concept"?"No file is required for concept testing. Paste the concept or script in the Creative Format section above.":productionStage==="storyboard"?"Upload 2-12 storyboard frames in intended sequence. AdCritIQ will read them as a narrative board.":getCreativeFormat(form.type,file)==="text"?"No file is required for text/script analysis. Paste the copy in the Creative Format section above.":"Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
+              {sectionHead("03","Upload Creative",productionStage==="concept"?"No file is required for concept testing. Paste the concept or script in the Creative Format section above.":productionStage==="storyboard"?"Upload 2-12 storyboard frames in intended sequence. AdCritIQ will read them as a narrative board.":getCreativeFormat(form.type,file)==="text"?"No file is required for text/script analysis. Paste the copy in the Creative Format section above.":"Upload the creative file that AdCritIQ will decode into neural, platform, and outcome signals.")}
               <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10,marginBottom:18}}>
                 {[
                   ["Images","JPG, PNG, WEBP, GIF","Up to 10 MB · compressed before analysis",C.gold],
@@ -2381,18 +2396,123 @@ export default function App(){
   // ANALYZING SCREEN
   // ============================================================
   if(stage==="analyzing"){
+    const signalStages=[
+      ["Ingest",5],
+      ["Frame / Script Decode",18],
+      ["Neural Metrics",36],
+      ["Platform Fit",56],
+      ["Outcome Forecast",76],
+      ["CMO Playbook",92],
+      ["Report Ready",100],
+    ];
+    const activeSignalStage=signalStages.reduce((last,stage)=>progress>=stage[1]?stage:last,signalStages[0]);
+    const computationLabels=[
+      "Estimating memory encoding probability",
+      "Checking brand linkage during peak attention",
+      "Comparing platform-fit signals",
+      "Separating creative-led risk from media-dependent risk",
+      "Building CMO decision lens",
+    ];
+    const liveComputation=computationLabels[Math.min(computationLabels.length-1,Math.floor(Math.max(progress,0)/22))];
+    const formatContext=productionStage==="concept"
+      ?"Projecting concept strength before production spend."
+      :productionStage==="storyboard"
+        ?"Reading storyboard flow, frame sequence, brand role and narrative clarity."
+        :creativeFormat==="static_image"
+          ?"Reading visual hierarchy, stopping power, message clarity and recall cues."
+          :creativeFormat==="motion_static"
+            ?"Reading first-frame strength, motion salience, loop clarity and fatigue risk."
+            :creativeFormat==="audio"
+              ?"Reading transcript, sonic cues, voice clarity and response potential."
+              :creativeFormat==="text"
+                ?"Reading proposition clarity, persuasion, memorability and CTA strength."
+                :"Reading motion, pacing, hook, hold and completion signals.";
     return(
-      <div style={{minHeight:"100vh",background:`linear-gradient(180deg,${C.bg},${C.ink})`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:isMobile?24:40,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif"}}>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}`}</style>
-        <div style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:18,padding:isMobile?26:38,width:"100%",maxWidth:520,textAlign:"center",boxShadow:`0 28px 90px ${C.shadow}`}}>
-          <div style={{width:78,height:78,borderRadius:"50%",border:`3px solid ${C.s3}`,borderTopColor:C.gold,animation:"spin 1s linear infinite",margin:"0 auto 30px"}}/>
-          <div style={{fontSize:12,fontWeight:900,letterSpacing:2,color:C.gold,textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace"}}>AdCritIQ</div>
-          <h2 style={{fontSize:isMobile?25:31,fontWeight:800,margin:"0 0 26px",fontFamily:"'Playfair Display',serif",letterSpacing:0}}>Encoding Creative Signals</h2>
-          <div style={{width:"100%",height:8,borderRadius:999,background:C.s3,marginBottom:16,overflow:"hidden"}}>
-            <div style={{height:"100%",borderRadius:999,background:C.gold,width:`${progress}%`,transition:"width 0.5s"}}/>
+      <div style={{minHeight:"100vh",background:`radial-gradient(circle at 20% 15%,${C.gold}14 0%,transparent 28%),radial-gradient(circle at 85% 18%,${C.cyan}10 0%,transparent 26%),linear-gradient(180deg,${C.bg},${C.ink})`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:isMobile?20:40,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",overflow:"hidden",position:"relative"}}>
+        <style>{`@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}@keyframes signalDrift{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes ringFlow{to{stroke-dashoffset:-120}}@keyframes coreGlow{0%,100%{filter:drop-shadow(0 0 10px rgba(216,180,90,.28))}50%{filter:drop-shadow(0 0 26px rgba(45,212,191,.34))}}`}</style>
+        <div aria-hidden="true" style={{position:"absolute",inset:"auto auto -180px -160px",width:420,height:420,borderRadius:"50%",background:`radial-gradient(circle,${C.cyan}10,transparent 66%)`,animation:"signalDrift 7s ease-in-out infinite"}}/>
+        <div aria-hidden="true" style={{position:"absolute",top:-220,right:-170,width:480,height:480,borderRadius:"50%",background:`radial-gradient(circle,${C.gold}12,transparent 65%)`,animation:"signalDrift 8s ease-in-out 1s infinite"}}/>
+        <div style={{width:"100%",maxWidth:1040,position:"relative",zIndex:1}}>
+          <div style={{background:`linear-gradient(145deg,${C.s1},${C.s2})`,border:`1px solid ${C.border}`,borderTop:`1px solid ${isDarkMode?"rgba(255,255,255,0.11)":"rgba(255,255,255,0.9)"}`,borderRadius:isMobile?22:28,padding:isMobile?22:34,boxShadow:isDarkMode?`0 34px 110px ${C.shadow}, 0 0 80px ${C.gold}12`:"0 28px 90px rgba(0,0,0,0.12), 0 10px 28px rgba(0,0,0,0.08)",overflow:"hidden"}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,0.9fr) minmax(280px,0.7fr)",gap:isMobile?24:34,alignItems:"center"}}>
+              <div style={{textAlign:isMobile?"center":"left"}}>
+                <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:999,background:`${C.gold}12`,border:`1px solid ${C.gold}33`,color:C.gold,fontSize:10,fontWeight:900,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:16}}>
+                  <span style={{width:7,height:7,borderRadius:"50%",background:C.green,boxShadow:`0 0 14px ${C.green}`,animation:"pulse 1.4s ease-in-out infinite"}}/>
+                  AdCritIQ™ Signal Engine
+                </div>
+                <h2 style={{fontSize:isMobile?34:50,fontWeight:850,margin:"0 0 12px",fontFamily:"'Playfair Display',serif",letterSpacing:0,lineHeight:0.96}}>Forecasting Creative Outcomes</h2>
+                <p style={{margin:"0 0 18px",color:C.dim,fontSize:isMobile?14:16,lineHeight:1.7,maxWidth:560}}>Mapping attention, memory, platform fit, and media-waste risk before spend.</p>
+                <div style={{padding:"14px 16px",borderRadius:16,background:`linear-gradient(135deg,${C.gold}0f,${C.cyan}09)`,border:`1px solid ${C.border}`,marginBottom:18}}>
+                  <div style={{fontSize:10,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.14em",fontWeight:900,textTransform:"uppercase",marginBottom:6}}>Active Readout</div>
+                  <div style={{fontSize:15,color:C.text,fontWeight:850,marginBottom:4}}>{progressMsg||activeSignalStage[0]}</div>
+                  <div style={{fontSize:12,color:C.dim,lineHeight:1.5}}>{formatContext}</div>
+                </div>
+                <div style={{width:"100%",height:9,borderRadius:999,background:C.s3,overflow:"hidden",boxShadow:"inset 0 1px 3px rgba(0,0,0,0.16)",marginBottom:12}}>
+                  <div style={{height:"100%",borderRadius:999,background:`linear-gradient(90deg,${C.gold},${C.cyan})`,width:`${progress}%`,transition:"width 0.5s ease",boxShadow:`0 0 18px ${C.gold}55`}}/>
+                </div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:18}}>
+                  <div style={{fontSize:12,color:C.dim,fontFamily:"'DM Mono',monospace"}}>{progress}% complete</div>
+                  <div style={{fontSize:11,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.08em",fontWeight:900,textTransform:"uppercase"}}>{activeSignalStage[0]}</div>
+                </div>
+              </div>
+
+              <div style={{position:"relative",minHeight:isMobile?280:360,display:"grid",placeItems:"center"}}>
+                <svg width="100%" viewBox="0 0 420 360" role="img" aria-label="Neural signal processing visualization" style={{maxWidth:420,overflow:"visible"}}>
+                  <defs>
+                    <radialGradient id="signalCore" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor={C.gold}/>
+                      <stop offset="58%" stopColor={C.cyan}/>
+                      <stop offset="100%" stopColor={C.s2}/>
+                    </radialGradient>
+                  </defs>
+                  <circle cx="210" cy="180" r="118" fill="none" stroke={C.border2} strokeWidth="1"/>
+                  <circle cx="210" cy="180" r="86" fill="none" stroke={C.gold} strokeWidth="1.4" opacity="0.26" strokeDasharray="7 10" style={{animation:"ringFlow 6s linear infinite"}}/>
+                  <circle cx="210" cy="180" r="48" fill="url(#signalCore)" opacity="0.18"/>
+                  <circle cx="210" cy="180" r="30" fill={C.gold} opacity="0.9" style={{animation:"coreGlow 2.4s ease-in-out infinite"}}/>
+                  <text x="210" y="176" textAnchor="middle" fontFamily="'DM Mono',monospace" fontSize="9" fill={isDarkMode?C.ink:C.bg} fontWeight="900">CREATIVE</text>
+                  <text x="210" y="190" textAnchor="middle" fontFamily="'DM Mono',monospace" fontSize="8" fill={isDarkMode?C.ink:C.bg} fontWeight="900">SIGNAL</text>
+                  {[
+                    ["Attention",210,48,C.green],
+                    ["Memory",318,116,C.cyan],
+                    ["Emotion",318,244,C.pink],
+                    ["Platform Fit",210,312,C.blue],
+                    ["Outcome",102,244,C.gold],
+                    ["Risk",102,116,C.red],
+                  ].map(([label,x,y,color],i)=>(
+                    <g key={label}>
+                      <line x1="210" y1="180" x2={x} y2={y} stroke={color} strokeWidth="1.2" opacity="0.28" strokeDasharray="6 7" style={{animation:`ringFlow ${3+i*.35}s linear infinite`}}/>
+                      <circle cx={x} cy={y} r="22" fill={color} opacity="0.14"/>
+                      <circle cx={x} cy={y} r="10" fill={color} opacity="0.88" style={{animation:`pulse ${1.8+i*.18}s ease-in-out infinite`}}/>
+                      <text x={x} y={y+(y<180?-28:38)} textAnchor="middle" fontFamily="'DM Mono',monospace" fontSize="10" fill={color} fontWeight="900" letterSpacing="1">{label.toString().toUpperCase()}</text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(7,1fr)",gap:8,marginTop:4}}>
+              {signalStages.map(([label,threshold],idx)=>{
+                const done=progress>=threshold;
+                const current=activeSignalStage[0]===label;
+                return(
+                  <div key={label} style={{padding:"10px 9px",borderRadius:12,background:done?`${C.gold}12`:current?`${C.cyan}12`:C.s2,border:`1px solid ${done?C.gold+"44":current?C.cyan+"44":C.border}`,minHeight:54}}>
+                    <div style={{fontSize:9,color:done?C.gold:current?C.cyan:C.dim,fontFamily:"'DM Mono',monospace",fontWeight:900,letterSpacing:"0.08em",marginBottom:5}}>0{idx+1}</div>
+                    <div style={{fontSize:10,color:done||current?C.text:C.dim,fontWeight:850,lineHeight:1.25}}>{label}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr auto",gap:14,alignItems:"center",marginTop:18,padding:"14px 16px",borderRadius:16,background:C.s2,border:`1px solid ${C.border}`}}>
+              <div>
+                <div style={{fontSize:10,color:C.cyan,fontFamily:"'DM Mono',monospace",letterSpacing:"0.14em",fontWeight:900,textTransform:"uppercase",marginBottom:5}}>Live Computation</div>
+                <div style={{fontSize:14,color:C.text,fontWeight:800,animation:"pulse 2.1s ease-in-out infinite"}}>{liveComputation}</div>
+              </div>
+              <div style={{fontSize:11,color:C.dim,lineHeight:1.5,maxWidth:isMobile?"100%":300,textAlign:isMobile?"left":"right"}}>
+                This forecast is predictive, not biometric. No media-plan data is required.
+              </div>
+            </div>
           </div>
-          <div style={{fontSize:14,color:C.dim,animation:"pulse 2s infinite",minHeight:22}}>{progressMsg}</div>
-          <div style={{fontSize:12,color:C.muted,marginTop:8,fontFamily:"'DM Mono',monospace"}}>{progress}%</div>
         </div>
       </div>
     );

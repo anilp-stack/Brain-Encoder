@@ -47,6 +47,13 @@ export async function generateBrainEncoderPDF(results, form) {
   const stroke = (c) => doc.setDrawColor(...c);
   const brand = safeStr(meta.brand, "Creative Analysis");
   const creativeFormat = safeStr(r.creative_format || meta.creative_format || meta.type, "video");
+  const productionStage = safeStr(r.production_stage || meta.production_stage, "final");
+  const stageLabel = {
+    concept: "CONCEPT",
+    storyboard: "STORYBOARD",
+    roughcut: "ROUGH CUT",
+    final: "FINAL",
+  }[productionStage] || productionStage.toUpperCase();
   const impactLabel = creativeFormat === "static_image"
     ? "attention / recall lift"
     : creativeFormat === "audio"
@@ -139,7 +146,7 @@ export async function generateBrainEncoderPDF(results, form) {
 
     setFont(7, "normal");
     color(COLORS.muted);
-    doc.text("AdCritIQ™  |  Neural Creative Intelligence  |  Confidential", 15, 293);
+    doc.text("Neural Creative Intelligence  |  Confidential", 15, 293);
     doc.text(`${pageNum} / ${TOTAL_PAGES}`, 195, 293, { align: "right" });
   }
 
@@ -333,6 +340,7 @@ export async function generateBrainEncoderPDF(results, form) {
       ["Industry", meta.industry],
       ["Country", meta.country || meta.market],
       ["Creative Type", meta.type],
+      ...(productionStage !== "final" ? [["Stage", `${stageLabel} (PROJECTED)`]] : []),
       ["Report Date", reportDate],
     ];
     drawCard(18, 86, 174, 54, COLORS.s1, COLORS.border);
@@ -648,7 +656,7 @@ export async function generateBrainEncoderPDF(results, form) {
     setFont(7.5, "normal");
     color(COLORS.dim);
     wrapText(
-      "All scores are AI predictions based on visual frame analysis. They represent the most probable cognitive response based on established advertising science patterns, not measured neural activity from EEG, fMRI, or biometric devices. Cultural Resonance scores are calibrated for the selected market context and should be recalibrated for other markets.",
+      `All scores are AI predictions based on visual frame analysis. They represent the most probable cognitive response based on established advertising science patterns, not measured neural activity from EEG, fMRI, or biometric devices. Cultural Resonance scores are calibrated for the selected market context and should be recalibrated for other markets.${productionStage !== "final" ? " Pre-production scores are projections of the finished creative if executed to standard." : ""}`,
       24,
       y + 22,
       162,

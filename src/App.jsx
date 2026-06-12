@@ -379,6 +379,21 @@ function compressImageFrame(file){
   });
 }
 
+async function compressStoryboardFrames(files){
+  const items=await Promise.all(files.map(file=>compressImageFrame(file)));
+  const first=items[0]||{};
+  return {
+    frames:items.flatMap(item=>item.frames||[]),
+    duration:0,
+    duration_seconds:0,
+    video_duration:0,
+    width:first.width||0,
+    height:first.height||0,
+    isImage:true,
+    original_size:files.reduce((sum,file)=>sum+file.size,0),
+  };
+}
+
 function extractFrames(file){
   if(file.type.startsWith("image/")){
     return compressImageFrame(file);
@@ -466,7 +481,10 @@ export default function App(){
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [productionStage, setProductionStage] = useState("final");
+  const [storyboardFiles, setStoryboardFiles] = useState([]);
   const fileRef=useRef(null);
+  const storyboardRef=useRef(null);
 
   useEffect(()=>{
     const syncViewport=()=>{
@@ -514,6 +532,8 @@ export default function App(){
           type:data.metadata?.type||combined.creative_format||"video",
         }));
         setResults(combined);
+        setProductionStage(combined.production_stage||"final");
+        setStoryboardFiles([]);
         setShareToken(shareParam);
         setIsSharedMode(true);
         setIsDemoMode(false);
@@ -561,18 +581,44 @@ export default function App(){
       setPreviewB(f.name);
     }
   };
+  const handleStoryboardFiles=(e)=>{
+    const selected=Array.from(e.target.files||[]);
+    if(!selected.length)return;
+    const imageFiles=selected.filter(f=>f.type.startsWith("image/"));
+    if(imageFiles.length!==selected.length){
+      setError("Storyboard frames must be image files.");
+      e.target.value="";
+      return;
+    }
+    const fileError=imageFiles.map(validateCreativeFile).find(Boolean);
+    if(fileError){
+      setError(fileError);
+      e.target.value="";
+      return;
+    }
+    setError(null);
+    setStoryboardFiles(prev=>[...prev,...imageFiles].slice(0,12));
+    e.target.value="";
+  };
+  const removeStoryboardFile=(idx)=>{
+    setStoryboardFiles(prev=>prev.filter((_,i)=>i!==idx));
+  };
   const u=(k,v)=>setForm(p=>({...p,[k]:v}));
 
   const handleAnalyze=useCallback(async()=>{
-    const creativeFormat=getCreativeFormat(form.type,file);
+    const creativeFormat=productionStage==="concept"?"text":getCreativeFormat(form.type,file);
     const missingFields = [];
     if(!form.brand.trim()) missingFields.push("Brand Name");
     if(!form.country) missingFields.push("Country");
     if(!form.industry) missingFields.push("Industry Vertical");
     if(!form.type) missingFields.push("Creative Type");
-    if(creativeFormat!=="text"&&!file) missingFields.push("Creative File");
-    if(creativeFormat==="text"&&!form.script.trim()) missingFields.push("Text / Script");
+    if(productionStage==="concept"&&form.script.trim().length<100) missingFields.push("Concept / Script (minimum 100 characters)");
+    if(productionStage==="storyboard"&&storyboardFiles.length<2) missingFields.push("Storyboard Frames (minimum 2)");
+    if(productionStage==="roughcut"&&(!file||!file.type.startsWith("video/"))) missingFields.push("Rough Cut Video File");
+    if(productionStage==="final"&&creativeFormat!=="text"&&!file) missingFields.push("Creative File");
+    if(productionStage==="final"&&creativeFormat==="text"&&!form.script.trim()) missingFields.push("Text / Script");
     if(creativeFormat==="audio"&&!form.script.trim()) missingFields.push("Audio Transcript / Script");
+    if((productionStage==="concept"||productionStage==="storyboard")&&compareMode) missingFields.push("Turn off comparison for concept/storyboard analysis");
     if(compareMode && creativeFormat!=="text" && creativeFormat!=="audio" && !fileB) missingFields.push("Creative B File");
     if(compareMode && (creativeFormat==="text"||creativeFormat==="audio") && !formB.script.trim()) missingFields.push("Creative B Text / Transcript");
     if(missingFields.length > 0){
@@ -585,6 +631,8 @@ export default function App(){
     }
     const fileError=file?validateCreativeFile(file):null;
     if(fileError){setError(fileError);return;}
+    const storyboardError=storyboardFiles.map(validateCreativeFile).find(Boolean);
+    if(storyboardError){setError(storyboardError);return;}
     if(compareMode&&fileB){
       const fileBError=validateCreativeFile(fileB);
       if(fileBError){setError(`Creative B: ${fileBError}`);return;}
@@ -623,7 +671,9 @@ export default function App(){
 
     try{
       setProgressMsg("Reading creative file...");setProgress(5);
-      const frameData=creativeFormat==="text"||creativeFormat==="audio"
+      const frameData=productionStage==="storyboard"
+        ? await compressStoryboardFrames(storyboardFiles)
+        : creativeFormat==="text"||creativeFormat==="audio"||productionStage==="concept"
         ? {frames:[],duration:0,duration_seconds:0,video_duration:0,width:0,height:0,isImage:false,original_size:file?.size||0}
         : await extractFrames(file);
       // FIX 1: duration_seconds and video_duration are now in frameData
@@ -631,17 +681,20 @@ export default function App(){
         frames:frameData.frames,
         metadata:{
           ...form,
+          production_stage:productionStage,
+          frame_count:productionStage==="storyboard"?storyboardFiles.length:undefined,
+          script_text:(form.script||"").slice(0,8000),
           creative_format:creativeFormat,
           creative_subtype:form.type,
           script:form.script,
-          isStatic:creativeFormat==="static_image",
+          isStatic:creativeFormat==="static_image"||productionStage==="storyboard",
           duration:frameData.duration,
           duration_seconds:frameData.duration_seconds,
           video_duration:frameData.video_duration,
           width:frameData.width,
           height:frameData.height,
           isImage:frameData.isImage,
-          original_size:frameData.original_size||file.size,
+          original_size:frameData.original_size||file?.size||0,
         }
       };
 
@@ -715,6 +768,7 @@ export default function App(){
         ...fastData,
         creative_format:creativeFormat,
         creative_subtype:form.type,
+        production_stage:productionStage,
         scenes: richData?.scenes||fastData?.scenes||[],
         strategic_insights: richData?.strategic_insights||fastData?.strategic_insights||[],
         cmo_actions: richData?.cmo_actions||fastData?.cmo_actions||[],
@@ -759,6 +813,8 @@ export default function App(){
               audience:form.audience,
               notes:form.notes,
               script:(formatB==="text"||formatB==="audio")?formB.script:form.script,
+              script_text:((formatB==="text"||formatB==="audio")?formB.script:form.script||"").slice(0,8000),
+              production_stage:productionStage,
               isStatic:formatB==="static_image",
               duration:framesB.duration,
               duration_seconds:framesB.duration_seconds||framesB.duration||30,
@@ -766,7 +822,7 @@ export default function App(){
               width:framesB.width,
               height:framesB.height,
               isImage:framesB.isImage,
-              original_size:framesB.original_size||fileB.size
+              original_size:framesB.original_size||fileB?.size||0
             }
           };
           const respB=await fetch("/api/analyze-fast",{
@@ -787,6 +843,7 @@ export default function App(){
               ...fastDataB,
               creative_format:formatB,
               creative_subtype:form.type,
+              production_stage:productionStage,
               scenes:fastDataB?.scenes||[],
               strategic_insights:fastDataB?.strategic_insights||[],
               cmo_actions:fastDataB?.cmo_actions||[],
@@ -816,7 +873,7 @@ export default function App(){
       setStage("results");setTab("summary");
 
     }catch(e){setError(e.message);setStage("form");}
-  },[file,fileB,form,token,compareMode,compareType,formB,labelB]);
+  },[file,fileB,form,token,compareMode,compareType,formB,labelB,productionStage,storyboardFiles]);
 
   const cleanResultForSave=(source)=>{
     const clean={};
@@ -906,6 +963,8 @@ export default function App(){
       setCompareType("versions");
       setFormB({brand:"",client:"",campaign:"",script:""});
       setResults({...cleanResult,creative_format:cleanResult.creative_format||creativeType});
+      setProductionStage(cleanResult.production_stage||"final");
+      setStoryboardFiles([]);
       setIsDemoMode(true);
       setIsSharedMode(false);
       setShareToken(null);
@@ -1008,6 +1067,8 @@ export default function App(){
     setCompareTab("overview");
     setCompareType("versions");
     setFormB({brand:"",client:"",campaign:"",script:""});
+    setProductionStage("final");
+    setStoryboardFiles([]);
     setIsDemoMode(false);
     setDemoLoading(false);
     setIsSharedMode(false);
@@ -1449,6 +1510,35 @@ export default function App(){
             <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
               {sectionHead("02","Creative Format","Select the primary creative environment and add any strategic context.")}
               <div style={{marginBottom:20}}>
+                <label style={{...lbl,marginBottom:10}}>Production Stage</label>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"repeat(2,1fr)":"repeat(4,1fr)",gap:12}}>
+                  {[
+                    ["concept","💡","Concept / Script","Test the idea before anything is made"],
+                    ["storyboard","🎞️","Storyboard","Test frames before the shoot"],
+                    ["roughcut","🎬","Rough Cut","Test the edit before finishing"],
+                    ["final","✅","Final Creative","Pre-flight check before launch"],
+                  ].map(([id,icon,title,sub])=>(
+                    <button
+                      key={id}
+                      onClick={()=>{
+                        setProductionStage(id);
+                        if(id==="concept"||id==="storyboard"){
+                          setCompareMode(false);
+                          setFileB(null);
+                          setPreviewB(null);
+                          setResultsB(null);
+                        }
+                      }}
+                      style={{textAlign:"left",padding:"15px 16px",border:`1px solid ${productionStage===id?C.gold+"88":C.border}`,borderRadius:14,cursor:"pointer",background:productionStage===id?`${C.gold}0f`:C.s2,transition:"all 0.15s ease",boxShadow:productionStage===id?`0 14px 34px ${C.gold}12`:"none",color:C.text}}
+                    >
+                      <div style={{fontSize:22,marginBottom:7}}>{icon}</div>
+                      <div style={{fontWeight:900,color:productionStage===id?C.gold:C.text,fontSize:13,marginBottom:5}}>{title}</div>
+                      <div style={{fontSize:11,color:C.dim,lineHeight:1.45}}>{sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{marginBottom:20}}>
                 <label style={{...lbl,marginBottom:10}}>Creative Type</label>
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":isTablet?"repeat(3,1fr)":"repeat(5,1fr)",gap:10}}>
                   {[["video","Video / Film"],["static_image","Static Image"],["motion_static","Animated / GIF"],["audio","Audio + Script"],["text","Text / Script"]].map(([k,v])=>
@@ -1456,17 +1546,37 @@ export default function App(){
                   )}
                 </div>
               </div>
-              {(getCreativeFormat(form.type,file)==="text"||getCreativeFormat(form.type,file)==="audio")&&(
+              {(productionStage==="concept"||productionStage==="storyboard"||getCreativeFormat(form.type,file)==="text"||getCreativeFormat(form.type,file)==="audio")&&(
                 <div style={{...fieldWrap,marginBottom:18}}>
-                  <label style={lbl}>{getCreativeFormat(form.type,file)==="audio"?"Audio Transcript / Script *":"Text / Script *"}</label>
+                  <label style={lbl}>
+                    {productionStage==="concept"
+                      ?"Concept / Script *"
+                      :productionStage==="storyboard"
+                        ?"Script / VO (optional)"
+                        :getCreativeFormat(form.type,file)==="audio"
+                          ?"Audio Transcript / Script *"
+                          :"Text / Script *"}
+                  </label>
                   <textarea
-                    placeholder={getCreativeFormat(form.type,file)==="audio"?"Paste the radio/podcast script, voiceover transcript, sonic mnemonic description, and CTA...":"Paste ad copy, headline/body copy, script, landing page section, email, or SMS text..."}
+                    placeholder={productionStage==="concept"
+                      ?"Paste the concept, script, story outline, campaign idea, intended scenes, brand role, and CTA. Minimum 100 characters..."
+                      :productionStage==="storyboard"
+                        ?"Optional: paste script, voiceover, supers, scene notes, or intended audio cues for the storyboard..."
+                        :getCreativeFormat(form.type,file)==="audio"
+                          ?"Paste the radio/podcast script, voiceover transcript, sonic mnemonic description, and CTA..."
+                          :"Paste ad copy, headline/body copy, script, landing page section, email, or SMS text..."}
                     style={{...inp,height:130,padding:"16px 18px",resize:"vertical",lineHeight:1.6}}
                     value={form.script}
                     onChange={e=>u("script",e.target.value)}
                   />
                   <div style={{fontSize:11,color:C.amber,lineHeight:1.5}}>
-                    {getCreativeFormat(form.type,file)==="audio"?"Audio is analysed from transcript/script context in this version; raw audio transcription is not performed.":"Text/script analysis does not require an uploaded file."}
+                    {productionStage==="concept"
+                      ?"Concept analysis is projected before production. Scores assume competent execution."
+                      :productionStage==="storyboard"
+                        ?"Storyboard analysis uses the uploaded frame order as the intended narrative sequence."
+                        :getCreativeFormat(form.type,file)==="audio"
+                          ?"Audio is analysed from transcript/script context in this version; raw audio transcription is not performed."
+                          :"Text/script analysis does not require an uploaded file."}
                   </div>
                 </div>
               )}
@@ -1477,7 +1587,7 @@ export default function App(){
             </section>
 
             <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
-              {sectionHead("03","Upload Asset",getCreativeFormat(form.type,file)==="text"?"No file is required for text/script analysis. Paste the copy in the Creative Format section above.":"Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
+              {sectionHead("03","Upload Asset",productionStage==="concept"?"No file is required for concept testing. Paste the concept or script in the Creative Format section above.":productionStage==="storyboard"?"Upload 2-12 storyboard frames in intended sequence. AdCritIQ will read them as a narrative board.":getCreativeFormat(form.type,file)==="text"?"No file is required for text/script analysis. Paste the copy in the Creative Format section above.":"Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
               <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10,marginBottom:18}}>
                 {[
                   ["Images","JPG, PNG, WEBP, GIF","Up to 10 MB · compressed before analysis",C.gold],
@@ -1504,7 +1614,35 @@ export default function App(){
                 </div>
               )}
               {compareMode&&getCreativeFormat(form.type,file)!=="text"&&<label style={{...lbl,marginBottom:10}}>Creative A — Upload File {getCreativeFormat(form.type,file)==="audio"?"(optional)":"*"}</label>}
-              {getCreativeFormat(form.type,file)==="text"?(
+              {productionStage==="concept"?(
+                <div style={{border:`1.5px dashed ${C.border2}`,borderRadius:18,padding:isMobile?26:38,textAlign:"center",background:`linear-gradient(180deg,rgba(216,180,90,0.035),rgba(255,255,255,0.015))`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
+                  <div style={{fontSize:isMobile?32:42,marginBottom:8,color:C.gold,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Concept Mode</div>
+                  <div style={{fontSize:17,fontWeight:900,color:C.text}}>No upload required</div>
+                  <div style={{fontSize:13,color:C.dim,marginTop:8}}>AdCritIQ will score the idea as projected if executed well.</div>
+                </div>
+              ):productionStage==="storyboard"?(
+                <div>
+                  <div onClick={()=>storyboardRef.current?.click()} style={{border:`1.5px dashed ${storyboardFiles.length?C.gold:C.border2}`,borderRadius:18,padding:isMobile?28:40,textAlign:"center",cursor:"pointer",background:storyboardFiles.length?`${C.gold}08`:`linear-gradient(180deg,rgba(216,180,90,0.055),rgba(255,255,255,0.015))`,transition:"all .2s",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
+                    <div style={{fontSize:isMobile?34:46,marginBottom:8,color:C.gold,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Storyboard</div>
+                    <div style={{fontSize:18,fontWeight:900,color:C.text}}>Upload frames in sequence</div>
+                    <div style={{fontSize:13,color:C.dim,marginTop:8}}>2-12 images · JPG, PNG, WEBP · compressed before analysis</div>
+                    <div style={{fontSize:12,color:storyboardFiles.length>=2?C.green:C.amber,marginTop:10,fontWeight:900}}>{storyboardFiles.length}/12 frames selected</div>
+                  </div>
+                  <input ref={storyboardRef} type="file" accept="image/*" multiple onChange={handleStoryboardFiles} style={{display:"none"}}/>
+                  {storyboardFiles.length>0&&(
+                    <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,minmax(0,1fr))":isTablet?"repeat(3,minmax(0,1fr))":"repeat(4,minmax(0,1fr))",gap:12,marginTop:16}}>
+                      {storyboardFiles.map((sf,i)=>(
+                        <div key={`${sf.name}-${sf.lastModified}-${i}`} style={{position:"relative",background:C.s2,border:`1px solid ${C.border}`,borderRadius:12,padding:10}}>
+                          <button onClick={()=>removeStoryboardFile(i)} style={{position:"absolute",top:6,right:6,width:24,height:24,borderRadius:"50%",border:`1px solid ${C.border}`,background:"rgba(0,0,0,0.72)",color:C.text,cursor:"pointer",fontWeight:900,zIndex:1}}>×</button>
+                          <img src={URL.createObjectURL(sf)} alt={`Frame ${i+1}`} style={{width:"100%",aspectRatio:"16/9",objectFit:"cover",borderRadius:8,display:"block",marginBottom:8}}/>
+                          <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1}}>FRAME {i+1}</div>
+                          <div style={{fontSize:11,color:C.dim,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:3}}>{sf.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ):getCreativeFormat(form.type,file)==="text"?(
                 <div style={{border:`1.5px dashed ${C.border2}`,borderRadius:18,padding:isMobile?26:38,textAlign:"center",background:`linear-gradient(180deg,rgba(216,180,90,0.035),rgba(255,255,255,0.015))`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px ${C.shadow}`}}>
                   <div style={{fontSize:isMobile?32:42,marginBottom:8,color:C.gold,fontFamily:"'Playfair Display',serif",lineHeight:1}}>Text Mode</div>
                   <div style={{fontSize:17,fontWeight:900,color:C.text}}>No upload required</div>
@@ -1623,9 +1761,16 @@ export default function App(){
               {compareMode&&<div style={{fontSize:12,color:C.amber,marginTop:-8,marginBottom:16,fontWeight:800}}>⚡ Comparison mode uses 2 credits (one per creative)</div>}
               {(()=>{
                 const fmt=getCreativeFormat(form.type,file);
-                const needsFile=fmt!=="text"&&fmt!=="audio";
-                const needsScript=fmt==="text"||fmt==="audio";
-                const disabled=!form.brand||(needsFile&&!file)||(needsScript&&!form.script.trim())||(compareMode&&needsFile&&!fileB)||(compareMode&&needsScript&&!formB.script.trim());
+                const needsFile=productionStage==="final"&&fmt!=="text"&&fmt!=="audio";
+                const needsScript=productionStage==="concept"||fmt==="text"||fmt==="audio";
+                const disabled=!form.brand
+                  ||(productionStage==="concept"&&form.script.trim().length<100)
+                  ||(productionStage==="storyboard"&&storyboardFiles.length<2)
+                  ||(productionStage==="roughcut"&&(!file||!file.type.startsWith("video/")))
+                  ||(needsFile&&!file)
+                  ||(needsScript&&!form.script.trim())
+                  ||(compareMode&&productionStage==="final"&&needsFile&&!fileB)
+                  ||(compareMode&&productionStage==="final"&&needsScript&&!formB.script.trim());
                 return(
                   <button onClick={handleAnalyze} disabled={disabled} onMouseDown={e=>{if(!disabled)e.currentTarget.style.transform="scale(0.98)";}} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{width:"100%",padding:isMobile?17:20,borderRadius:14,border:"none",background:disabled?C.s3:`linear-gradient(135deg,${C.goldL},${C.gold})`,color:disabled?C.dim:C.ink,fontSize:isMobile?16:18,fontWeight:900,cursor:disabled?"not-allowed":"pointer",boxShadow:disabled?"none":`0 18px 46px ${C.gold}28`,transition:"transform 0.12s ease, box-shadow 0.18s ease"}}>
                     Run AdCritIQ Analysis
@@ -1705,6 +1850,8 @@ export default function App(){
     const ringColor=ringScore>=75?C.green:ringScore>=60?C.gold:ringScore>=40?C.orange:C.red;
     const miniLeft=isMobile?0:isTablet?208:C.sideW;
     const resultFormat=r.creative_format||getCreativeFormat(form.type,file);
+    const resultStage=r.production_stage||productionStage||"final";
+    const stageLabel={concept:"CONCEPT",storyboard:"STORYBOARD",roughcut:"ROUGH CUT",final:"FINAL"}[resultStage]||String(resultStage).toUpperCase();
     const impactLabel=formatImpactLabel(resultFormat);
     const formatMetrics=r.format_metrics||{};
     const staticAttentionMetrics=[
@@ -2021,6 +2168,11 @@ export default function App(){
                 <h1 style={{fontSize:isMobile?20:22,fontWeight:800,color:C.text,margin:0,letterSpacing:0,fontFamily:"'Playfair Display',serif",lineHeight:1.2}}>
                   {form.brand}{form.campaign?<span style={{fontWeight:400,color:C.dim}}> — {form.campaign}</span>:""}
                 </h1>
+                {resultStage!=="final"&&(
+                  <div style={{display:"inline-flex",alignItems:"center",gap:8,marginTop:8,padding:"5px 10px",borderRadius:999,border:`1px solid ${C.gold}55`,background:`${C.gold}12`,color:C.gold,fontSize:10,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>
+                    {stageLabel} · projected scores
+                  </div>
+                )}
                 {r.headline_verdict&&<div style={{fontSize:13,color:"rgba(242,242,255,0.80)",marginTop:6,fontStyle:"italic",opacity:1}}>"{r.headline_verdict}"</div>}
               </div>
 
@@ -2141,6 +2293,21 @@ export default function App(){
                 ["Sound-Off Survival",r.sound_off_survival,null],["Share Intent",r.share_intent,null],["Creative Efficiency",r.creative_efficiency,null]
               ].map(([l,v,b])=>v!==undefined&&<ScoreCard C={C} hex={hex} key={l} label={l} value={v} note={r.score_notes?.[l.toLowerCase().replace(/ /g,"_")]||""} pct={v} benchmark={b}/>)}
             </div>
+
+            {(resultStage==="concept"||resultStage==="storyboard")&&(
+              <Card C={C} style={{marginBottom:isMobile?24:34,borderColor:`${C.gold}55`,background:`linear-gradient(135deg,${C.gold}12,rgba(255,255,255,0.025))`}}>
+                <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:16,flexDirection:isMobile?"column":"row"}}>
+                  <div>
+                    <div style={{fontSize:11,color:C.gold,fontWeight:900,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:8}}>💰 Production Risk Intelligence</div>
+                    <div style={{fontSize:17,color:C.text,fontWeight:900,lineHeight:1.4,marginBottom:7}}>Issues caught at this stage cost ~Rs 0 to fix.</div>
+                    <div style={{fontSize:14,color:C.dim,lineHeight:1.65}}>The same issues found after production typically cost Rs 40L-1.2Cr in reshoots and re-edits.</div>
+                  </div>
+                  <div style={{padding:"8px 13px",borderRadius:999,border:`1px solid ${C.gold}66`,background:`${C.gold}16`,color:C.gold,fontSize:11,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",whiteSpace:"nowrap"}}>
+                    Stage: {stageLabel} — projected scores
+                  </div>
+                </div>
+              </Card>
+            )}
 
             <Card C={C} style={{marginBottom:24}}>
               <CardTitle C={C} label={C.cyan}>Predicted Attention & Emotion Curves</CardTitle>

@@ -97,6 +97,7 @@ const Icon = {
   privacy: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
   strategy:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
   cmo:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  outcomes:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/><path d="M4 21h16"/></svg>,
   neuriq:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>,
   glossary:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
   new:     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
@@ -116,6 +117,7 @@ const NAV_TABS = [
   {id:"privacy",  label:"Privacy & Compliance",icon:Icon.privacy},
   {id:"strategy", label:"Strategic Insights", icon:Icon.strategy},
   {id:"cmo",      label:"CMO Playbook",       icon:Icon.cmo},
+  {id:"outcomes", label:"Outcome Forecast",    icon:Icon.outcomes},
   {id:"neuriq",   label:"NeurIQ™",            icon:Icon.neuriq},
   {id:"repository", label:"Repository",        icon:"🗄️"},
   {id:"methodology",label:"Methodology",      icon:Icon.glossary},
@@ -2447,6 +2449,75 @@ export default function App(){
       ["Real-World Audibility","Message clarity at ambient volume",r?.deep_neuro?.sound_deep?.real_world_audibility],
     ].filter(([, ,value])=>typeof value==="number");
     const showDeepSound=resultFormat!=="static_image"&&resultFormat!=="text"&&soundDeepRows.length>0;
+    const outcomeForecast=r.outcome_forecast||null;
+    const platformOutcomeForecast=r.platform_outcome_forecast||{};
+    const outcomeScoreColor=(v,invert=false)=>{
+      if(typeof v!=="number")return C.dim;
+      if(invert)return v<=35?C.green:v<=60?C.amber:C.red;
+      return v>=75?C.green:v>=60?C.gold:v>=45?C.amber:C.red;
+    };
+    const outcomeBandLabel=(v,invert=false)=>{
+      if(typeof v!=="number")return "Not available";
+      if(invert)return v<=35?"Low risk":v<=60?"Moderate risk":"Likely media waste";
+      return v>=75?"High probability":v>=60?"Moderate probability":v>=45?"At risk":"Creative-led risk";
+    };
+    const readableOutcomeKey=(key)=>({
+      memory:"Memory Encoding",
+      attention:"Attention Capture",
+      emotion:"Emotional Peak",
+      clarity:"Message Clarity",
+      platform_fit:"Platform Fit",
+      cta:"CTA Strength",
+      brand_linkage:"Brand Linkage",
+      low_memory:"Low Memory Encoding",
+      weak_branding:"Weak Brand Linkage",
+      poor_hook:"Weak Opening Hook",
+      low_clarity:"Low Message Clarity",
+      platform_mismatch:"Platform Mismatch",
+      high_fatigue:"High Fatigue Risk",
+      weak_cta:"Weak CTA",
+    }[key]||String(key||"Not available").replace(/_/g," "));
+    const platformOutcomeRows=[
+      ["YouTube","youtube"],
+      ["Meta","meta"],
+      ["Instagram","instagram"],
+      ["TikTok","tiktok"],
+      ["TV","tv"],
+      ["CTV / OTT","ctv_ott"],
+      ["DOOH","dooh"],
+      ["Programmatic Display","programmatic_display"],
+      ["LinkedIn","linkedin"],
+    ].map(([label,key])=>({label,key,data:platformOutcomeForecast?.[key]})).filter(row=>row.data);
+    const bestOutcomePlatform=platformOutcomeRows.reduce((best,row)=>{
+      const score=((row.data.brand_lift||0)+(row.data.performance_lift||0))/2;
+      if(!best||score>best.score)return {...row,score};
+      return best;
+    },null);
+    const lowestBrandKpi=[
+      ["Spontaneous Awareness",outcomeForecast?.spontaneous_awareness_lift],
+      ["Aided Awareness",outcomeForecast?.aided_awareness_lift],
+      ["Consideration",outcomeForecast?.consideration_lift],
+      ["Purchase Intent",outcomeForecast?.purchase_intent_lift],
+      ["Brand Memory",outcomeForecast?.brand_memory_efficiency],
+    ].filter(([,v])=>typeof v==="number").sort((a,b)=>a[1]-b[1])[0];
+    const highestBrandKpi=[
+      ["Spontaneous Awareness",outcomeForecast?.spontaneous_awareness_lift],
+      ["Aided Awareness",outcomeForecast?.aided_awareness_lift],
+      ["Consideration",outcomeForecast?.consideration_lift],
+      ["Purchase Intent",outcomeForecast?.purchase_intent_lift],
+      ["Brand Memory",outcomeForecast?.brand_memory_efficiency],
+    ].filter(([,v])=>typeof v==="number").sort((a,b)=>b[1]-a[1])[0];
+    const isCompletionOutcomeRelevant=resultFormat==="video"||resultFormat==="motion_static";
+    const completionOutcomeLabel=isCompletionOutcomeRelevant?"VTR / Completion Potential":"View-Through Attention Fit";
+    const accountabilityDecision=outcomeForecast
+      ? outcomeForecast.media_wastage_risk>=65
+        ? "Protect media spend. Fix creative response before scaling budget."
+        : outcomeForecast.creative_accountability>=65
+          ? "Creative is the main lever. Improve the identified creative gap before blaming targeting."
+          : outcomeForecast.media_dependency>=65
+            ? "Creative is viable. Optimize platform mix, targeting, sequencing, and frequency."
+            : "Proceed with controlled testing and monitor brand lift plus platform response together."
+      : "";
     const diagnosticCard=(label,text,color=C.gold)=>(
       <div style={{marginTop:16,padding:"12px 14px",background:`${color}0d`,borderLeft:`3px solid ${color}`,borderRadius:8,fontSize:12,color:C.dim,lineHeight:1.65,fontStyle:"italic"}}>
         <span style={{color,fontStyle:"normal",fontWeight:900,marginRight:8,fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:"0.1em",textTransform:"uppercase"}}>{label}</span>
@@ -3570,6 +3641,34 @@ export default function App(){
                   })}
                 </div>
               </Card>
+              <Card C={C} style={{marginBottom:24}}>
+                <CardTitle C={C} label={C.cyan}>Outcome Implication</CardTitle>
+                {outcomeForecast?(
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,minmax(0,1fr))",gap:12}}>
+                    {[
+                      ["Most likely helped",highestBrandKpi?.[0]||"Brand Memory",highestBrandKpi?.[1],C.green,false],
+                      ["KPI most at risk",lowestBrandKpi?.[0]||"Awareness",lowestBrandKpi?.[1],C.red,false],
+                      ["Best platform probability",bestOutcomePlatform?.label||"Platform fit pending",bestOutcomePlatform?.score?Math.round(bestOutcomePlatform.score):null,C.cyan,false],
+                      ["Accountability signal",outcomeForecast.creative_accountability>=outcomeForecast.media_dependency?"Creative-led":"Media-dependent",Math.max(outcomeForecast.creative_accountability||0,outcomeForecast.media_dependency||0),C.gold,false],
+                    ].map(([label,value,score,color,invert])=>(
+                      <div key={label} style={{padding:16,borderRadius:12,background:C.s2,border:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:8}}>{label}</div>
+                        <div style={{fontSize:15,color:C.text,fontWeight:900,lineHeight:1.35,minHeight:38}}>{value}</div>
+                        {typeof score==="number"&&(
+                          <div style={{marginTop:10,display:"flex",alignItems:"center",gap:8}}>
+                            <div style={{flex:1,height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}>
+                              <div style={{height:"100%",width:`${Math.min(100,Math.max(0,score))}%`,background:outcomeScoreColor(score,invert),borderRadius:999}}/>
+                            </div>
+                            <div style={{fontSize:13,color:outcomeScoreColor(score,invert),fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{score}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ):(
+                  <div style={{fontSize:13,color:C.dim,lineHeight:1.7}}>Outcome Forecast will appear on fresh analyses generated with the latest model.</div>
+                )}
+              </Card>
               <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
                 {ins.map((n,i)=>{
                   const vc=n.vtype==="risk"?{bg:"rgba(231,76,60,0.1)",bd:C.red,c:"#ff7b7b"}:n.vtype==="win"?{bg:"rgba(46,204,113,0.1)",bd:C.green,c:"#6dffaa"}:n.vtype==="tip"?{bg:"rgba(0,200,255,0.1)",bd:C.cyan,c:C.cyan}:{bg:"rgba(241,196,0,0.1)",bd:C.amber,c:C.amber};
@@ -3592,6 +3691,32 @@ export default function App(){
               <div style={{fontSize:11,fontWeight:700,letterSpacing:4,color:C.gold,textTransform:"uppercase",marginBottom:8}}>For the Marketing Head</div>
               <h2 style={{fontSize:32,fontWeight:200,marginBottom:8}}>The <span style={{fontWeight:700,color:C.gold}}>CMO Playbook</span></h2>
               <p style={{fontSize:14,color:C.dim,marginBottom:32}}>Prioritized actions mapped to metric gaps. Sorted by impact-to-effort ratio.</p>
+              <div style={{marginBottom:30,padding:isMobile?16:22,borderRadius:14,border:`1px solid ${C.cyan}30`,background:`linear-gradient(180deg,${C.cyan}0d,rgba(255,255,255,0.02))`}}>
+                <div style={{fontSize:10,color:C.cyan,fontWeight:900,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:14}}>Business Impact Lens</div>
+                {outcomeForecast?(
+                  <>
+                    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,minmax(0,1fr))",gap:12,marginBottom:16}}>
+                      {[
+                        ["Primary KPI to protect",lowestBrandKpi?.[0]||"Brand memory",lowestBrandKpi?.[1],C.red],
+                        ["Highest upside KPI",highestBrandKpi?.[0]||"Awareness",highestBrandKpi?.[1],C.green],
+                        ["Media wastage risk","Likely media waste",outcomeForecast.media_wastage_risk,C.red],
+                        ["Recommended CMO decision",outcomeForecast.business_impact_band==="high"?"Scale with platform discipline":outcomeForecast.business_impact_band==="risk"?"Fix before scaling":"Test, optimize, then scale",null,C.gold],
+                      ].map(([label,value,score,color])=>(
+                        <div key={label} style={{padding:14,borderRadius:12,background:C.s2,border:`1px solid ${C.border}`}}>
+                          <div style={{fontSize:9,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:7}}>{label}</div>
+                          <div style={{fontSize:14,color:C.text,fontWeight:900,lineHeight:1.35}}>{value}</div>
+                          {typeof score==="number"&&<div style={{marginTop:7,fontSize:16,color:outcomeScoreColor(score,label==="Media wastage risk"),fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{score}</div>}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{fontSize:13,color:C.dim,lineHeight:1.7,borderLeft:`3px solid ${C.gold}`,paddingLeft:12}}>
+                      {accountabilityDecision}
+                    </div>
+                  </>
+                ):(
+                  <div style={{fontSize:13,color:C.dim,lineHeight:1.7}}>Business impact forecasting will appear on fresh analyses generated with the latest model.</div>
+                )}
+              </div>
               <div style={{marginBottom:30,padding:isMobile?16:22,borderRadius:14,border:`1px solid ${C.gold}30`,background:`linear-gradient(180deg,${C.gold}0d,rgba(255,255,255,0.02))`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:isMobile?"flex-start":"center",gap:14,flexDirection:isMobile?"column":"row",marginBottom:18}}>
                   <div>
@@ -3652,6 +3777,141 @@ export default function App(){
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ===== OUTCOME FORECAST ===== */}
+          {tab==="outcomes"&&(
+            <div style={{display:"grid",gap:20}}>
+              <Card C={C} style={{padding:isMobile?22:30}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:isMobile?"flex-start":"center",gap:18,flexDirection:isMobile?"column":"row",marginBottom:22}}>
+                  <div>
+                    <div style={{fontSize:10,color:C.gold,fontWeight:900,letterSpacing:"0.18em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:8}}>Creative-to-Media Outcome Forecast</div>
+                    <h2 style={{fontSize:isMobile?26:34,fontWeight:800,margin:"0 0 8px",fontFamily:"'Playfair Display',serif",letterSpacing:0}}>Will exposure become memory, preference, action, or waste?</h2>
+                    <p style={{fontSize:14,color:C.dim,lineHeight:1.7,margin:0,maxWidth:760}}>Directional brand and performance probabilities if media delivery is adequate. This model is format-aware and platform-aware; it does not claim guaranteed lift.</p>
+                  </div>
+                  {outcomeForecast&&(
+                    <div style={{padding:"12px 16px",borderRadius:14,background:`${outcomeForecast.business_impact_band==="high"?C.green:outcomeForecast.business_impact_band==="risk"?C.red:C.gold}12`,border:`1px solid ${outcomeForecast.business_impact_band==="high"?C.green:outcomeForecast.business_impact_band==="risk"?C.red:C.gold}55`,minWidth:150,textAlign:"center"}}>
+                      <div style={{fontSize:9,color:C.muted,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:4}}>Impact band</div>
+                      <div style={{fontSize:18,color:outcomeForecast.business_impact_band==="high"?C.green:outcomeForecast.business_impact_band==="risk"?C.red:C.gold,fontWeight:900,textTransform:"uppercase"}}>{outcomeForecast.business_impact_band||"Pending"}</div>
+                    </div>
+                  )}
+                </div>
+                {outcomeForecast?(
+                  <div style={{padding:16,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`,fontSize:14,color:C.dim,lineHeight:1.75}}>
+                    <span style={{color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",marginRight:8}}>Forecast note</span>
+                    {outcomeForecast.forecast_note||"Fresh outcome probabilities are available for this creative."}
+                  </div>
+                ):(
+                  <div style={{padding:18,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`,fontSize:14,color:C.dim,lineHeight:1.75}}>
+                    Outcome Forecast will appear on fresh analyses generated with the latest model. Older saved reports remain compatible and do not break this tab.
+                  </div>
+                )}
+              </Card>
+
+              {outcomeForecast&&(<>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14}}>
+                  {[
+                    ["Spontaneous Awareness",outcomeForecast.spontaneous_awareness_lift,"Brand memory retrieval",false],
+                    ["Aided Awareness",outcomeForecast.aided_awareness_lift,"Recognition when prompted",false],
+                    ["Consideration",outcomeForecast.consideration_lift,"Preference movement",false],
+                    ["Purchase Intent",outcomeForecast.purchase_intent_lift,"Action readiness",false],
+                    ["Brand Memory Efficiency",outcomeForecast.brand_memory_efficiency,"Exposure to memory",false],
+                  ].map(([label,value,sub,invert])=>(
+                    <Card C={C} key={label} style={{padding:18}}>
+                      <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
+                      <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
+                      <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
+                      <div style={{marginTop:12,fontSize:10,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace"}}>{outcomeBandLabel(value,invert)}</div>
+                    </Card>
+                  ))}
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14}}>
+                  {[
+                    [completionOutcomeLabel,outcomeForecast.vtr_completion_potential,isCompletionOutcomeRelevant?"Hook and hold response":"First-glance retention fit",false],
+                    ["CTR / Response Potential",outcomeForecast.ctr_response_potential,"Click or response readiness",false],
+                    ["Media Wastage Risk",outcomeForecast.media_wastage_risk,"Exposure unlikely to convert",true],
+                    ["Creative Accountability",outcomeForecast.creative_accountability,"Creative-led outcome risk",false],
+                    ["Media Dependency",outcomeForecast.media_dependency,"Needs media optimization",false],
+                  ].map(([label,value,sub,invert])=>(
+                    <Card C={C} key={label} style={{padding:18}}>
+                      <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
+                      <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
+                      <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
+                      <div style={{marginTop:12,fontSize:10,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace"}}>{outcomeBandLabel(value,invert)}</div>
+                    </Card>
+                  ))}
+                </div>
+
+                <Card C={C} style={{padding:isMobile?20:26}}>
+                  <CardTitle C={C} label={C.gold}>Accountability Split</CardTitle>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.3fr 0.7fr",gap:22,alignItems:"center"}}>
+                    <div>
+                      <div style={{display:"flex",height:18,borderRadius:999,overflow:"hidden",background:C.s3,border:`1px solid ${C.border}`,marginBottom:12}}>
+                        <div style={{width:`${Math.min(100,Math.max(0,outcomeForecast.creative_accountability||0))}%`,background:C.gold}}/>
+                        <div style={{flex:1,background:C.cyan}}/>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap",fontSize:12,color:C.dim,fontFamily:"'DM Mono',monospace"}}>
+                        <span><b style={{color:C.gold}}>{outcomeForecast.creative_accountability||0}%</b> Creative accountability</span>
+                        <span><b style={{color:C.cyan}}>{outcomeForecast.media_dependency||0}%</b> Media dependency</span>
+                      </div>
+                    </div>
+                    <div style={{padding:16,borderRadius:12,background:C.s2,border:`1px solid ${C.border}`,fontSize:13,color:C.dim,lineHeight:1.7}}>
+                      {accountabilityDecision}
+                    </div>
+                  </div>
+                </Card>
+
+                <Card C={C} style={{padding:isMobile?20:26}}>
+                  <CardTitle C={C} label={C.purple}>Outcome Driver Matrix</CardTitle>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14}}>
+                    <div style={{padding:18,borderRadius:14,background:`${C.green}0f`,border:`1px solid ${C.green}33`}}>
+                      <div style={{fontSize:10,color:C.green,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:8}}>Primary growth driver</div>
+                      <div style={{fontSize:22,color:C.text,fontWeight:900}}>{readableOutcomeKey(outcomeForecast.primary_growth_driver)}</div>
+                    </div>
+                    <div style={{padding:18,borderRadius:14,background:`${C.red}0f`,border:`1px solid ${C.red}33`}}>
+                      <div style={{fontSize:10,color:C.red,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:8}}>Primary failure risk</div>
+                      <div style={{fontSize:22,color:C.text,fontWeight:900}}>{readableOutcomeKey(outcomeForecast.primary_failure_risk)}</div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card C={C} style={{padding:isMobile?20:26}}>
+                  <CardTitle C={C} label={C.cyan}>Platform Outcome Matrix</CardTitle>
+                  {platformOutcomeRows.length?(
+                    <div style={{display:"grid",gap:10}}>
+                      {platformOutcomeRows.map(row=>{
+                        const brand=row.data.brand_lift;
+                        const perf=row.data.performance_lift;
+                        const riskColor=row.data.risk==="low"?C.green:row.data.risk==="medium"?C.amber:C.red;
+                        return(
+                          <div key={row.key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"170px 1fr 1fr 90px 1.6fr",gap:12,alignItems:"center",padding:"13px 0",borderBottom:`1px solid ${C.border}`}}>
+                            <div style={{fontSize:14,color:C.text,fontWeight:900}}>{row.label}</div>
+                            <div>
+                              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginBottom:4}}><span>Brand lift readiness</span><b style={{color:outcomeScoreColor(brand)}}>{brand??"—"}</b></div>
+                              <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(100,Math.max(0,brand||0))}%`,background:outcomeScoreColor(brand),borderRadius:999}}/></div>
+                            </div>
+                            <div>
+                              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginBottom:4}}><span>Performance readiness</span><b style={{color:outcomeScoreColor(perf)}}>{perf??"—"}</b></div>
+                              <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(100,Math.max(0,perf||0))}%`,background:outcomeScoreColor(perf),borderRadius:999}}/></div>
+                            </div>
+                            <div style={{justifySelf:isMobile?"start":"center",padding:"4px 9px",borderRadius:999,background:`${riskColor}16`,border:`1px solid ${riskColor}44`,color:riskColor,fontSize:10,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>{row.data.risk||"—"}</div>
+                            <div style={{fontSize:12,color:C.dim,lineHeight:1.55}}>{row.data.note}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ):(
+                    <div style={{fontSize:13,color:C.dim,lineHeight:1.7}}>Platform-adjusted outcome probabilities will appear on fresh analyses generated with the latest model.</div>
+                  )}
+                </Card>
+
+                <Card C={C} style={{padding:22,borderColor:C.gold+"44",background:`linear-gradient(180deg,${C.gold}0d,${C.s1})`}}>
+                  <div style={{fontSize:18,color:C.text,fontWeight:900,marginBottom:8}}>CMO interpretation</div>
+                  <div style={{fontSize:14,color:C.dim,lineHeight:1.75}}>Media buys exposure. Creative determines whether exposure becomes memory, preference, action, or waste. Use this forecast to decide whether to fix creative first, optimize media first, or scale with controlled platform-specific learning.</div>
+                </Card>
+              </>)}
             </div>
           )}
 
@@ -4066,6 +4326,62 @@ export default function App(){
                   </div>
                 </Card>
                 </MethSection>
+                <MethSection sectionKey="grading_outcome_forecasting" title="Creative-to-Media Outcome Forecasting">
+                <Card C={C}>
+                  <CardTitle C={C} label={C.cyan}>Creative-to-Media Outcome Forecasting</CardTitle>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.85,marginBottom:18}}>The Outcome Forecast translates creative diagnostics into directional brand and performance probability. It separates media delivery from creative response, so teams can see whether poor results are more likely to be creative-led, media-dependent, or mixed.</p>
+                  <div style={{background:C.s2,borderRadius:12,padding:22,marginBottom:18,border:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:11,fontWeight:900,color:C.gold,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:12}}>Core Equation</div>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,color:C.text,lineHeight:2}}>
+                      Expected Campaign Outcome =<br/>
+                      <span style={{color:C.gold}}>Media Delivery Quality</span><br/>
+                      × <span style={{color:C.cyan}}>Creative Response Probability</span><br/>
+                      × <span style={{color:C.purple}}>Platform / Format Fit</span><br/>
+                      × <span style={{color:C.green}}>Category / Market Elasticity</span><br/>
+                      × <span style={{color:C.amber}}>Brand Baseline Strength</span>
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:14,marginBottom:18}}>
+                    <div style={{padding:18,borderRadius:12,background:`${C.cyan}0f`,border:`1px solid ${C.cyan}33`}}>
+                      <div style={{fontSize:13,color:C.cyan,fontWeight:900,marginBottom:8}}>What AdCritIQ predicts now</div>
+                      <p style={{fontSize:13,color:C.dim,lineHeight:1.75}}>Creative Response Probability and Platform / Format Fit: whether the ad is likely to turn delivered impressions into attention, memory, preference, action, or waste.</p>
+                    </div>
+                    <div style={{padding:18,borderRadius:12,background:`${C.amber}0f`,border:`1px solid ${C.amber}33`}}>
+                      <div style={{fontSize:13,color:C.amber,fontWeight:900,marginBottom:8}}>What AdCritIQ does not ingest yet</div>
+                      <p style={{fontSize:13,color:C.dim,lineHeight:1.75}}>Actual reach, frequency, targeting quality, CPM/CPC, sales data, brand baseline survey data, competitor media weight, or real campaign delivery logs.</p>
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gap:10,marginBottom:18}}>
+                    {[
+                      ["Spontaneous + Aided Awareness","Memory Encoding, Brand Recall, Attention-Brand Coupling, Brand Prominence, Sound-Off Survival"],
+                      ["Consideration Lift","Message Clarity, Emotional Coherence, Creative Efficiency, Trust / Prefrontal Activation, Brand Safety"],
+                      ["Purchase Intent + Response","CTA Clarity, Product Desire / Nucleus Accumbens, Message Clarity, Brand Recall, Regulatory Compliance"],
+                      ["VTR / Completion","Hook Strength, Hold Rate, Sustained Attention Index, Attention Recovery Speed, inverse Ad Fatigue Risk"],
+                      ["Media Wastage Risk","Low memory, weak brand linkage, poor hook, platform mismatch, high fatigue, or weak CTA despite paid reach"],
+                    ].map(([kpi,drivers])=>(
+                      <div key={kpi} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"220px 1fr",gap:12,padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:13,color:C.text,fontWeight:900}}>{kpi}</div>
+                        <div style={{fontSize:13,color:C.dim,lineHeight:1.65}}>{drivers}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:12,marginBottom:18}}>
+                    {[
+                      ["Creative-led failure","Media delivered exposure, but weak hook, memory encoding, brand linkage, or CTA prevents response.",C.red],
+                      ["Media-led failure","Creative is viable, but platform mix, audience targeting, frequency, or sequencing needs correction.",C.cyan],
+                      ["Mixed failure","Both creative response probability and media delivery assumptions need adjustment before scaling.",C.amber],
+                    ].map(([title,body,color])=>(
+                      <div key={title} style={{padding:16,borderRadius:12,background:`${color}0f`,border:`1px solid ${color}33`}}>
+                        <div style={{fontSize:13,color:color,fontWeight:900,marginBottom:8}}>{title}</div>
+                        <p style={{fontSize:12,color:C.dim,lineHeight:1.65,margin:0}}>{body}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{padding:"12px 14px",borderRadius:10,background:`${C.gold}0f`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.75}}>
+                    <b style={{color:C.gold}}>Important:</b> These forecasts are calibrated AI predictions based on published advertising science and neural-response research. They are not measured biometric results, media delivery data, or guaranteed business outcomes.
+                  </div>
+                </Card>
+                </MethSection>
                 <MethHint/>
               </>)}
 
@@ -4252,6 +4568,8 @@ export default function App(){
                       {title:"Karen Nelson-Field — Attention Economics (2020)",color:C.amber,application:"The Attention Curve and Hold Rate scoring implement Nelson-Field's active vs passive attention distinction. Active attention (viewer chooses to watch) has 4× the brand recall impact of passive attention. The platform penalises creatives that rely on passive attention contexts.",metric:"Attention Curve + Hold Rate"},
                       {title:"Antonio Damasio — Somatic Marker Hypothesis",color:C.pink,application:"Emotional Peak scoring reflects Damasio's finding that emotional experiences create somatic markers — physiological tags in memory that drive future retrieval and decision-making. A creative with no emotional peak forms no somatic marker, and the brand will not surface spontaneously at point of purchase.",metric:"Emotional Peak + Memory Encoding"},
                       {title:"TRIBE v2 — Meta AI Research (2026)",color:C.green,application:"Foundation model of vision, audition and language for in-silico neuroscience. 720 subjects, 1,000+ hours fMRI. Validates cortical activation patterns for naturalistic video/audio/language stimuli. Calibrates AdCritIQ™ multisensory integration and temporal coherence scoring.",metric:"TribeV2 Neural Markers"},
+                      {title:"Binet & Field — Long and Short of It",color:C.blue,application:"Brand-building and activation work on different time horizons. The Outcome Forecast separates brand memory effects from immediate response probability so CMOs can distinguish long-term brand lift readiness from short-term performance readiness.",metric:"Outcome Forecast"},
+                      {title:"LAMBDA — Long-Term Ad Memorability Research",color:C.teal,application:"Large-scale multimodal ad memorability research covering thousands of ads and hundreds of brands. Supports the AdCritIQ™ principle that creative features such as pacing, emotion, salience, and brand linkage influence long-term memory outcomes.",metric:"Brand Memory Efficiency"},
                       {title:"Robert Heath — Low-Attention Processing (2012)",color:C.purple,application:"Heath's research demonstrates that advertising can build brand associations even without conscious attention — but only if emotional content is present. This informs the Sound-Off Survival score: a creative that loses all message value when muted loses the ability to build associations in low-attention contexts.",metric:"Sound-Off Survival"},
                       {title:"Weber-Fechner Law — Stimulus Adaptation",color:C.orange,application:"Ad Fatigue Risk scoring is based on the Weber-Fechner Law of diminishing stimulus response. Repeated identical stimuli produce logarithmically declining responses. Creatives with low scene variety, static imagery, or repetitive dialogue are predicted to fatigue faster.",metric:"Ad Fatigue Risk"},
                       {title:"Vittorio Gallese — Mirror Neuron Theory",color:C.teal,application:"Mirror Neuron activation scoring reflects Gallese's work on simulation theory. Viewers who see on-screen humans expressing emotion neurologically simulate that emotion. High mirror neuron activation directly correlates with share intent and emotional contagion in advertising.",metric:"Mirror Neurons + Share Intent"},

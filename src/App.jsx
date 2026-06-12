@@ -487,6 +487,7 @@ export default function App(){
   const [downloading,setDownloading]=useState(false);
   const [gradeTooltipVisible,setGradeTooltipVisible]=useState(false);
   const [methTab,setMethTab]=useState("overview");
+  const [expandedMethSections,setExpandedMethSections]=useState({});
   const [savedAnalyses, setSavedAnalyses] = useState([]);
   const [repoLoading, setRepoLoading] = useState(false);
   const [token, setToken] = useState(localStorage.getItem("adcritiq_token") || "");
@@ -494,7 +495,6 @@ export default function App(){
   const [showPricing, setShowPricing] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
   const [isTablet, setIsTablet] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 && window.innerWidth < 1120 : false);
-  const [expandedPlatform, setExpandedPlatform] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [fileB, setFileB] = useState(null);
@@ -1147,6 +1147,13 @@ export default function App(){
     if(next==="repository")loadRepository();
   };
 
+  const toggleMethSection=(key)=>{
+    setExpandedMethSections(prev=>({
+      ...prev,
+      [key]:!prev[key]
+    }));
+  };
+
   const resetToForm=()=>{
     setStage("form");
     setResults(null);
@@ -1165,6 +1172,7 @@ export default function App(){
     setFormB({brand:"",client:"",campaign:"",script:""});
     setProductionStage("final");
     setStoryboardFiles([]);
+    setExpandedMethSections({});
     setIsDemoMode(false);
     setDemoLoading(false);
     setIsSharedMode(false);
@@ -3042,6 +3050,47 @@ export default function App(){
               {id:"science",    label:"Research Basis"},
               {id:"limits",     label:"Limitations"},
             ];
+            const MethSection=({sectionKey,title,children})=>{
+              const open=!!expandedMethSections[sectionKey];
+              return(
+                <div style={{marginBottom:8}}>
+                  <div
+                    onClick={()=>toggleMethSection(sectionKey)}
+                    style={{
+                      display:"flex",
+                      alignItems:"center",
+                      justifyContent:"space-between",
+                      padding:"12px 16px",
+                      cursor:"pointer",
+                      borderRadius:open?"8px 8px 0 0":8,
+                      background:open?"rgba(245,158,11,0.07)":C.s2,
+                      border:`1px solid ${open?C.gold+"44":C.border}`,
+                      borderBottom:open?"none":`1px solid ${C.border}`,
+                      marginBottom:open?0:8,
+                      transition:"all 0.15s ease",
+                      userSelect:"none"
+                    }}
+                  >
+                    <span style={{fontSize:12,fontWeight:700,color:open?C.gold:C.text,fontFamily:"monospace",letterSpacing:"0.08em",textTransform:"uppercase"}}>
+                      {title}
+                    </span>
+                    <span style={{fontSize:10,color:open?C.gold:C.dim,fontFamily:"monospace",transition:"transform 0.15s ease",transform:open?"rotate(180deg)":"rotate(0deg)",display:"inline-block"}}>
+                      ▼
+                    </span>
+                  </div>
+                  {open&&(
+                    <div style={{padding:16,background:C.s1,border:`1px solid ${C.gold}44`,borderTop:"none",borderRadius:"0 0 8px 8px",marginBottom:8}}>
+                      {children}
+                    </div>
+                  )}
+                </div>
+              );
+            };
+            const MethHint=()=>!Object.keys(expandedMethSections).some(k=>k.startsWith(methTab)&&expandedMethSections[k])&&(
+              <div style={{padding:16,textAlign:"center",color:C.muted,fontSize:11,fontStyle:"italic",marginTop:8}}>
+                Click any section above to expand
+              </div>
+            );
             return(<>
               {/* Sub-tab nav */}
               <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:28}}>
@@ -3055,6 +3104,7 @@ export default function App(){
 
               {/* ── OVERVIEW ── */}
               {methTab==="overview"&&(<>
+                <MethSection sectionKey="overview_how_it_works" title="What AdCritIQ Does">
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.cyan}>What AdCritIQ Does</CardTitle>
                   <p style={{fontSize:15,color:C.dim,lineHeight:1.9,marginBottom:24}}>AdCritIQ is a predictive neural creative intelligence platform. It does not measure actual brain activity — it <b style={{color:C.text}}>predicts</b> how the human brain is likely to respond to an advertising creative based on visual signals, advertising science, and platform-specific norms.</p>
@@ -3072,6 +3122,8 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
+                </MethSection>
+                <MethSection sectionKey="overview_output_map" title="What You Get — Full Output Map">
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.amber}>What You Get — Full Output Map</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:threeGrid,gap:12}}>
@@ -3090,10 +3142,13 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
+                </MethSection>
+                <MethHint/>
               </>)}
 
               {/* ── GRADING ── */}
               {methTab==="grading"&&(<>
+                <MethSection sectionKey="grading_overall_grade" title="Overall Grade — Full Calculation">
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.gold}>Overall Grade — Full Calculation</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>The Overall Grade is a <b style={{color:C.text}}>weighted composite score</b> derived from 7 of the 17 neural metrics. These 7 were selected because they have the strongest empirical correlation with in-market advertising effectiveness outcomes (brand recall lift, purchase intent, and organic reach) in published advertising effectiveness research.</p>
@@ -3142,6 +3197,8 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
+                </MethSection>
+                <MethSection sectionKey="grading_grade_drivers" title="Why These 7 Metrics Drive the Grade">
                 <Card C={C}>
                   <CardTitle C={C} label={C.purple}>Why These 7 Metrics Drive the Grade</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:12}}>
@@ -3164,10 +3221,13 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
+                </MethSection>
+                <MethHint/>
               </>)}
 
               {/* ── ALL 17 METRICS ── */}
               {methTab==="metrics"&&(<>
+                <MethSection sectionKey="metrics_neural_metrics" title="All 17 Neural Metrics — Complete Reference">
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.cyan}>All 17 Neural Metrics — Complete Reference</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Every metric is scored 0–100. Below is the full definition, what drives a high score, what a low score means, and what to do about it.</p>
@@ -3191,11 +3251,12 @@ export default function App(){
                       {name:"Carbon Signal",good:"Lower = better",color:C.lime,def:"Estimated digital carbon footprint indicator based on creative complexity, file size proxy, and platform distribution.",drives:"High carbon: heavy video, autoplay across many platforms, high-frequency delivery. Low carbon: compressed creative, contextual targeting.",low:"High score = high estimated carbon footprint. Relevant for ESG reporting and Green Media commitments."},
                       {name:"System 1 / System 2",good:"65–75 optimal",color:C.orange,def:"Balance between emotional (System 1) and rational (System 2) processing. Kahneman (2011).",drives:"System 1: emotional imagery, music, faces, storytelling. System 2: claims, prices, comparisons, text-heavy frames.",low:"Below 40: Over-rational — viewer is thinking, not feeling. Above 85: Over-emotional — no rational anchor for purchase decision."},
                     ].map(({name,good,color,def,drives,low})=>{
-                      const open=expandedPlatform===`metric:${name}`;
+                      const metricKey=`metrics_${name.toLowerCase().replace(/[^a-z0-9]+/g,"_")}`;
+                      const open=!!expandedMethSections[metricKey];
                       return(
                         <div key={name} style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden",transition:"all 0.2s ease",background:C.s1}}>
                           <div
-                            onClick={()=>setExpandedPlatform(open?null:`metric:${name}`)}
+                            onClick={()=>toggleMethSection(metricKey)}
                             style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"14px 16px",cursor:"pointer",background:open?C.s2:C.s1,borderLeft:`3px solid ${color}`}}
                           >
                             <span style={{fontSize:14,fontWeight:700,color:C.text}}>{name}</span>
@@ -3218,10 +3279,13 @@ export default function App(){
                     })}
                   </div>
                 </Card>
+                </MethSection>
+                <MethHint/>
               </>)}
 
               {/* ── NEURAL SCIENCE ── */}
               {methTab==="neural"&&(<>
+                <MethSection sectionKey="neural_brain_regions" title="Brain Region Activation — What Each Region Means">
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.purple}>Brain Region Activation — What Each Region Means</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>AdCritIQ predicts activation levels across 8 brain regions based on visual stimuli present in the creative. These predictions are derived from established neuromarketing research mapping visual advertising stimuli to neural activation patterns.</p>
@@ -3245,6 +3309,8 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
+                </MethSection>
+                <MethSection sectionKey="neural_system_1_vs_system_2" title="System 1 vs System 2 — The Balance That Drives Effectiveness">
                 <Card C={C}>
                   <CardTitle C={C} label={C.orange}>System 1 vs System 2 — The Balance That Drives Effectiveness</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:20}}>
@@ -3262,10 +3328,13 @@ export default function App(){
                     <p style={{fontSize:13,color:C.dim,lineHeight:1.8}}>Creatives scoring 65–75 lead with emotion (System 1) to earn attention and build memory, then layer in just enough rational messaging (System 2) to justify the purchase decision. This is the sweet spot identified across Byron Sharp's effectiveness research and the Ehrenberg-Bass Institute's long-term brand building studies.</p>
                   </div>
                 </Card>
+                </MethSection>
+                <MethHint/>
               </>)}
 
               {/* ── PLATFORM SCORING ── */}
               {methTab==="platforms"&&(<>
+                <MethSection sectionKey="platforms_scoring_calculation" title="How Platform Scores Are Calculated">
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.blue}>How Platform Scores Are Calculated</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Each platform score is derived from the base neural metrics adjusted by platform-specific weighting coefficients. These coefficients reflect the attention norms, sound environment, format constraints, and viewer behaviour on each platform.</p>
@@ -3291,11 +3360,12 @@ export default function App(){
                       {platform:"DOOH",color:C.purple,score:"Zero sound, 3–5 second viewing window",weights:"Only hook strength (first frame) + brand recall count. No audio score. No hold rate. Visual cortex + brand elements only."},
                       {platform:"Programmatic Display",color:C.teal,score:"Banner format — visual brand only",weights:"Brand elements score + visual cortex activation only. Attention curve irrelevant. Brand safety weighted heavily."},
                     ].map(({platform,color,score,weights})=>{
-                      const open=expandedPlatform===`platform:${platform}`;
+                      const platformKey=`platforms_${platform.toLowerCase().replace(/[^a-z0-9]+/g,"_")}`;
+                      const open=!!expandedMethSections[platformKey];
                       return(
                         <div key={platform} style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden",transition:"all 0.2s ease"}}>
                           <div
-                            onClick={()=>setExpandedPlatform(open?null:`platform:${platform}`)}
+                            onClick={()=>toggleMethSection(platformKey)}
                             style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"14px 16px",cursor:"pointer",background:open?C.s2:C.s1,borderLeft:`3px solid ${color||C.gold}`}}
                           >
                             <span style={{fontWeight:700,color:C.text,fontSize:14,display:"flex",alignItems:"center",minWidth:0}}>
@@ -3317,10 +3387,13 @@ export default function App(){
                     })}
                   </div>
                 </Card>
+                </MethSection>
+                <MethHint/>
               </>)}
 
               {/* ── SCIENCE ── */}
               {methTab==="science"&&(<>
+                <MethSection sectionKey="science_research_foundations" title="Scientific Research Foundations">
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.purple}>Scientific Research Foundations</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>AdCritIQ's scoring methodology is grounded in published advertising effectiveness research and cognitive neuroscience. Below are the key frameworks and how each is operationalised in the platform.</p>
@@ -3344,10 +3417,13 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
+                </MethSection>
+                <MethHint/>
               </>)}
 
               {/* ── LIMITATIONS ── */}
               {methTab==="limits"&&(<>
+                <MethSection sectionKey="limits_what_it_is" title="What AdCritIQ Is — and Is Not">
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.red}>What AdCritIQ Is — and Is Not</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:pairGrid,gap:16,marginBottom:20}}>
@@ -3387,6 +3463,8 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
+                </MethSection>
+                <MethSection sectionKey="limits_responsible_use" title="How to Use AdCritIQ Responsibly">
                 <Card C={C}>
                   <CardTitle C={C} label={C.gold}>How to Use AdCritIQ Responsibly</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:threeGrid,gap:14}}>
@@ -3405,6 +3483,8 @@ export default function App(){
                     ))}
                   </div>
                 </Card>
+                </MethSection>
+                <MethHint/>
               </>)}
             </>);
           })()}

@@ -1272,7 +1272,7 @@ export default function App(){
               </span>
             </h1>
             <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.75,maxWidth:620,margin:"0 0 32px"}}>
-              AdCritIQ™ analyses advertising creatives using multimodal AI trained on neuroscience research — delivering 17 neural metrics, 15 platform scores, and CMO-level strategic recommendations in under 2 minutes. Built for brand teams and agencies worldwide.
+              AdCritIQ™ analyses advertising creatives using multimodal AI trained on neuroscience research — delivering 17 neural metrics, 15 platform scores, and CMO-level strategic recommendations in under 2 minutes. Test at any production stage: concept, storyboard, rough cut, or final film. Built for brand teams and agencies worldwide.
             </p>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:34}}>
               <button onClick={()=>setStage("form")} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:`0 16px 40px ${C.gold}24`,transition:"transform 0.12s ease"}}>
@@ -1306,8 +1306,32 @@ export default function App(){
             <div style={{fontSize:12,color:C.muted,lineHeight:1.6,margin:"-18px 0 28px",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
               Sample report opens instantly. No upload, token, or credit required.
             </div>
+            <div style={{marginTop:28,marginBottom:8,width:"100%",maxWidth:isMobile?"100%":680}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+                <div style={{height:1,flex:1,background:`linear-gradient(90deg,transparent,${C.border2})`}}/>
+                <span style={{fontSize:10,color:C.muted,fontFamily:"monospace",letterSpacing:"0.15em"}}>TEST AT EVERY PRODUCTION STAGE</span>
+                <div style={{height:1,flex:1,background:`linear-gradient(90deg,${C.border2},transparent)`}}/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:8}}>
+                {[
+                  {icon:"💡",stage:"Concept",note:"Before production starts"},
+                  {icon:"🎞️",stage:"Storyboard",note:"Before the shoot"},
+                  {icon:"🎬",stage:"Rough Cut",note:"Before finishing"},
+                  {icon:"✅",stage:"Final Film",note:"Before going live",highlight:true},
+                ].map((s,i)=>(
+                  <div key={i} style={{padding:"10px 12px",background:s.highlight?"rgba(245,158,11,0.06)":C.s1,border:`1px solid ${s.highlight?C.gold+"44":C.border}`,borderRadius:8,textAlign:"center"}}>
+                    <div style={{fontSize:isMobile?18:20,marginBottom:4}}>{s.icon}</div>
+                    <div style={{fontSize:11,fontWeight:700,color:s.highlight?C.gold:C.text,marginBottom:2}}>{s.stage}</div>
+                    <div style={{fontSize:9,color:C.muted,fontFamily:"monospace",letterSpacing:"0.06em"}}>{s.note}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{marginTop:12,padding:"8px 14px",background:"rgba(245,158,11,0.04)",border:`1px solid ${C.gold}22`,borderRadius:8,textAlign:"center",fontSize:11,color:C.dim,fontStyle:"italic"}}>
+                Fix it at storyboard for <span style={{color:C.gold,fontWeight:700}}>₹299</span> — not at reshoot for <span style={{color:C.red,fontWeight:700}}>₹80 lakh.</span>
+              </div>
+            </div>
             <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:720}}>
-              {["17 neural metrics","15 platform scores","scene intelligence","CMO playbook","NeurIQ chat","repository"].map(t=>(
+              {["🎞️ PRE-PRODUCTION TESTING","17 neural metrics","15 platform scores","scene intelligence","CMO playbook","NeurIQ chat","repository"].map(t=>(
                 <span key={t} style={{padding:"8px 12px",background:C.s1,borderRadius:8,border:`1px solid ${C.border}`,fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>{t}</span>
               ))}
             </div>
@@ -1317,6 +1341,10 @@ export default function App(){
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,borderBottom:`1px solid ${C.border}`,paddingBottom:18,marginBottom:20}}>
               <div>
                 <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1.4,textTransform:"uppercase"}}>Live Output</div>
+                <div style={{fontSize:8,fontFamily:"monospace",color:C.gold,letterSpacing:"0.15em",marginTop:6,marginBottom:4,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                  <span style={{background:"rgba(245,158,11,0.12)",border:`1px solid ${C.gold}44`,padding:"2px 6px",borderRadius:4}}>FINAL FILM</span>
+                  <span style={{color:C.muted}}>→ ALSO: CONCEPT · STORYBOARD · ROUGH CUT</span>
+                </div>
                 <div style={{fontSize:22,fontWeight:900,color:C.text,marginTop:6}}>Creative Diagnostic</div>
               </div>
               <div style={{width:58,height:58,borderRadius:14,background:`${C.gold}14`,border:`1px solid ${C.gold}44`,display:"grid",placeItems:"center",fontSize:24,fontWeight:900,color:C.gold,fontFamily:"'DM Mono',monospace"}}>A</div>
@@ -1522,10 +1550,10 @@ export default function App(){
                 <label style={{...lbl,marginBottom:10}}>Production Stage</label>
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"repeat(2,1fr)":"repeat(4,1fr)",gap:12}}>
                   {[
-                    ["concept","💡","Concept / Script","Test the idea before anything is made"],
-                    ["storyboard","🎞️","Storyboard","Test frames before the shoot"],
-                    ["roughcut","🎬","Rough Cut","Test the edit before finishing"],
-                    ["final","✅","Final Creative","Pre-flight check before launch"],
+                    ["concept","💡","Concept / Script","Test the idea — zero production spend needed"],
+                    ["storyboard","🎞️","Storyboard","Test frames before the shoot — fix now, not in reshoots"],
+                    ["roughcut","🎬","Rough Cut","Edit-level fixes only — no reshoot advice"],
+                    ["final","✅","Final Creative","Pre-flight check before media budget commits"],
                   ].map(([id,icon,title,sub])=>(
                     <button
                       key={id}

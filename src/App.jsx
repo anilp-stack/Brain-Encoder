@@ -2474,7 +2474,7 @@ export default function App(){
                   )}
 
                   <div style={{marginTop:12,fontSize:9,color:C.muted,lineHeight:1.5}}>
-                    Scores calibrated against validated brain activation patterns from TRIBE v2 (d'Ascoli et al., Meta AI Research, 2026) — a foundation model trained on 1,000+ hours of fMRI data across 720 subjects. AdCritIQ™ applies these published neural correlates as a calibration framework for AI prediction. Not a live TRIBE v2 model inference.
+                    Scores calibrated against validated brain activation patterns from TRIBE v2 (d'Ascoli et al., Meta AI Research, 2026) — a foundation model trained on 1,000+ hours of fMRI data across 720 subjects. AdCritIQ™ applies these published neural correlates as a calibration framework — not a live TRIBE v2 model inference.
                   </div>
                 </div>
               </Card>

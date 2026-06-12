@@ -117,6 +117,47 @@ const computeDnaMatch = (currentResult, dnaData) => {
   return { score, topDeviations };
 };
 
+const CERT_SCORE_KEYS = [
+  ["Brand Recall", "brand_recall"],
+  ["Memory Encoding", "memory_encoding"],
+  ["Hook Strength", "hook_strength"],
+  ["Emotional Peak", "emotional_peak"],
+  ["Cultural Resonance", "cultural_resonance"],
+];
+
+const certNum = (result, key) => {
+  const value = result?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+};
+
+const computeCertificationEligibility = (result) => {
+  if (!result) return { eligible: false, weighted_score: 0, failed_criteria: [] };
+  const weighted_score =
+    (certNum(result, "memory_encoding") || 0) * 0.20 +
+    (certNum(result, "brand_recall") || 0) * 0.20 +
+    (certNum(result, "hook_strength") || 0) * 0.15 +
+    (certNum(result, "hold_rate") || 0) * 0.15 +
+    (certNum(result, "emotional_peak") || 0) * 0.10 +
+    (certNum(result, "creative_efficiency") || 0) * 0.10 +
+    (certNum(result, "cultural_resonance") || 0) * 0.10;
+  const checks = [
+    ["Overall weighted score", Math.round(weighted_score), 75],
+    ["Brand Recall", certNum(result, "brand_recall"), 65],
+    ["Memory Encoding", certNum(result, "memory_encoding"), 60],
+    ["Hook Strength", certNum(result, "hook_strength"), 65],
+    ["Brand Safety", certNum(result, "brand_safety"), 85],
+    ["Regulatory Compliance", certNum(result, "regulatory_compliance"), 85],
+  ];
+  const failed_criteria = checks
+    .filter(([, value, min]) => typeof value !== "number" || value < min)
+    .map(([label, value, min]) => `${label}: ${typeof value === "number" ? Math.round(value) : "missing"} (minimum ${min})`);
+  return {
+    eligible: failed_criteria.length === 0,
+    weighted_score: Math.round(weighted_score),
+    failed_criteria,
+  };
+};
+
 // ============================================================
 // SHARED COMPONENTS — Premium Edition
 // ============================================================
@@ -706,6 +747,10 @@ export default function App(){
   const [repoDnaLoading, setRepoDnaLoading] = useState(false);
   const [repoDnaBrand, setRepoDnaBrand] = useState("");
   const [dnaMatchData, setDnaMatchData] = useState(null);
+  const [certData, setCertData] = useState(null);
+  const [certLoading, setCertLoading] = useState(false);
+  const [showCertModal, setShowCertModal] = useState(false);
+  const [certVerifyData, setCertVerifyData] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
       return localStorage.getItem("adcritiq_theme") !== "light";
@@ -790,6 +835,22 @@ export default function App(){
     document.body.style.background=C.bg;
     document.body.style.color=C.text;
   },[isDarkMode]);
+
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    const certParam=params.get("cert");
+    if(!certParam||!certParam.startsWith("ACI-"))return;
+    setCertVerifyData({loading:true,cert_id:certParam});
+    (async()=>{
+      try{
+        const resp=await fetch(`/api/verify-certificate?cert_id=${encodeURIComponent(certParam)}`);
+        const data=await resp.json();
+        setCertVerifyData(resp.ok&&data.valid?data:{valid:false,cert_id:certParam});
+      }catch{
+        setCertVerifyData({valid:false,cert_id:certParam});
+      }
+    })();
+  },[]);
 
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
@@ -1088,6 +1149,8 @@ export default function App(){
       setProgress(100);setProgressMsg("Report ready.");
       await new Promise(r=>setTimeout(r,400));
       setResults(combined);
+      setCertData(null);
+      setShowCertModal(false);
       loadDnaMatchForResult(combined,form.brand,isCompetitorAnalysis);
       if (token.trim()) {
         fetch("/api/deduct-credit", {
@@ -1230,7 +1293,7 @@ export default function App(){
       });
       const data=await resp.json();
       if(!resp.ok||!data.success)throw new Error(data.error||"Save failed");
-      setResults(p=>({...p,__saveStatus:"saved",__saveError:""}));
+      setResults(p=>({...p,__saveStatus:"saved",__saveError:"",__savedAnalysisId:data.id}));
       setTimeout(()=>setResults(p=>{
         if(!p||p.__saveStatus!=="saved")return p;
         const next={...p};delete next.__saveStatus;return next;
@@ -1278,6 +1341,8 @@ export default function App(){
       setFormB({brand:"",client:"",campaign:"",script:""});
       setResults({...cleanResult,creative_format:cleanResult.creative_format||creativeType});
       setDnaMatchData(null);
+      setCertData(null);
+      setShowCertModal(false);
       setProductionStage(cleanResult.production_stage||"final");
       setStoryboardFiles([]);
       setIsDemoMode(true);
@@ -1389,6 +1454,67 @@ export default function App(){
     }
   };
 
+  const certificateUrl=(certId)=>`https://adcritiq.com/?cert=${encodeURIComponent(certId||"")}`;
+
+  const copyCertificateLink=async(certId)=>{
+    if(!certId)return;
+    try{
+      await navigator.clipboard.writeText(certificateUrl(certId));
+      setShareCopied(true);
+      setTimeout(()=>setShareCopied(false),1800);
+    }catch{
+      alert("Could not copy link. Please copy it manually: "+certificateUrl(certId));
+    }
+  };
+
+  const openLinkedInCertificateShare=(certId)=>{
+    if(!certId)return;
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificateUrl(certId))}`,"_blank","noopener,noreferrer");
+  };
+
+  const openCertificateFromId=async(certId)=>{
+    if(!certId)return;
+    setCertLoading(true);
+    try{
+      const resp=await fetch(`/api/verify-certificate?cert_id=${encodeURIComponent(certId)}`);
+      const data=await resp.json();
+      if(!resp.ok||!data.valid)throw new Error(data.error||"Certificate not found");
+      setCertData({certified:true,...data});
+      setShowCertModal(true);
+    }catch(e){
+      alert("Certificate load failed: "+e.message);
+    }finally{
+      setCertLoading(false);
+    }
+  };
+
+  const issueCertificate=async()=>{
+    const analysisId=results?.__savedAnalysisId||results?.id;
+    if(!analysisId){
+      alert("Save this analysis to Repository before issuing a certificate.");
+      return;
+    }
+    setCertLoading(true);
+    try{
+      const resp=await fetch("/api/issue-certificate",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({analysis_id:analysisId})
+      });
+      const data=await resp.json();
+      if(!resp.ok||data.success===false)throw new Error(data.error||"Certificate issue failed");
+      setCertData(data);
+      if(data.certified){
+        setResults(p=>p?({...p,is_certified:true,cert_id:data.cert_id,cert_issued_at:data.cert_issued_at}):p);
+        setShowCertModal(true);
+      }
+    }catch(e){
+      alert("Certificate issue failed: "+e.message);
+    }finally{
+      setCertLoading(false);
+    }
+  };
+
   const deleteSavedAnalysis=async(id)=>{
     if(!confirm("Delete this analysis? This cannot be undone."))return;
     try{
@@ -1425,6 +1551,8 @@ export default function App(){
     setStage("form");
     setResults(null);
     setDnaMatchData(null);
+    setCertData(null);
+    setShowCertModal(false);
     setFile(null);
     setPreview(null);
     setToken("");
@@ -1460,6 +1588,71 @@ export default function App(){
     setRepoDnaLoading(false);
     setRepoDnaBrand("");
     localStorage.removeItem("adcritiq_token");
+  };
+
+  const formatCertDate=(date)=>{
+    if(!date)return "—";
+    return new Date(date).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+  };
+  const renderCertificateCard=(data,options={})=>{
+    const scores=data?.key_scores||{};
+    const certGrade=data?.grade||data?.overall_grade||"—";
+    const gradeColor=certGrade==="A+"||certGrade==="A"?C.green:certGrade==="A-"||certGrade==="B+"?C.gold:C.amber;
+    return(
+      <div className="adcritiq-cert-print" style={{width:"100%",maxWidth:540,boxSizing:"border-box",padding:isMobile?24:40,background:"#0A0A18",border:`2px solid ${C.gold}`,borderRadius:12,boxShadow:"0 22px 70px rgba(0,0,0,0.45)",color:"#F8F6EA"}}>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:11,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:4,fontWeight:900}}>ADCRITIQ™</div>
+          <div style={{fontSize:9,color:"#8B88A8",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginTop:5}}>NEURAL CREATIVE INTELLIGENCE</div>
+        </div>
+        <div style={{height:1,background:C.gold,opacity:0.4,margin:"16px 0"}}/>
+        <div style={{textAlign:"center",fontSize:22,color:C.gold,fontWeight:900,letterSpacing:3,marginBottom:10}}>CERTIFIED CREATIVE</div>
+        <div style={{fontSize:11,color:"#A8A5C4",textAlign:"center",fontStyle:"italic",lineHeight:1.7,maxWidth:380,margin:"0 auto 22px"}}>
+          This creative has been independently verified against 17 neural dimensions and meets AdCritIQ™ certification standards.
+        </div>
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{fontSize:20,color:"#FFFFFF",fontWeight:900,marginBottom:6}}>{data?.brand||"Certified Brand"}</div>
+          <div style={{fontSize:13,color:"#A8A5C4",marginBottom:12}}>{data?.campaign||"Certified Campaign"}</div>
+          <div style={{display:"flex",justifyContent:"center",gap:8,flexWrap:"wrap"}}>
+            {[data?.industry,data?.creative_type].filter(Boolean).map(label=>(
+              <span key={label} style={{fontSize:9,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase",padding:"4px 8px",borderRadius:5,border:`1px solid ${C.gold}44`,background:"rgba(245,166,35,0.08)"}}>{String(label).replace(/_/g," ")}</span>
+            ))}
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"150px 1fr",gap:18,alignItems:"center",marginBottom:24}}>
+          <div style={{display:"grid",justifyItems:"center",gap:8}}>
+            <div style={{width:92,height:92,borderRadius:"50%",border:`3px solid ${gradeColor}`,display:"grid",placeItems:"center",fontSize:34,fontWeight:900,color:gradeColor,boxShadow:`0 0 24px ${gradeColor}55`}}>{certGrade}</div>
+            <div style={{fontSize:9,color:"#8B88A8",fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em"}}>NEURAL GRADE</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+            {CERT_SCORE_KEYS.map(([label,key])=>(
+              <div key={key} style={{padding:"10px 12px",borderRadius:8,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
+                <div style={{fontSize:8,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:5}}>{label}</div>
+                <div style={{fontSize:16,color:"#FFFFFF",fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{scores[key]??"—"}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{height:1,background:C.gold,opacity:0.4,margin:"16px 0"}}/>
+        <div style={{display:"flex",justifyContent:"space-between",gap:18,flexWrap:"wrap",marginBottom:18}}>
+          <div>
+            <div style={{fontSize:8,color:"#8B88A8",fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginBottom:5}}>CERTIFICATE ID</div>
+            <div style={{fontSize:12,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{data?.cert_id||"—"}</div>
+          </div>
+          <div style={{textAlign:isMobile?"left":"right"}}>
+            <div style={{fontSize:8,color:"#8B88A8",fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",marginBottom:5}}>ISSUED</div>
+            <div style={{fontSize:12,color:"#FFFFFF",fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{formatCertDate(data?.cert_issued_at)}</div>
+          </div>
+        </div>
+        <div style={{textAlign:"center",fontSize:9,color:C.gold,opacity:0.42,fontFamily:"'DM Mono',monospace",letterSpacing:2,lineHeight:1.6}}>
+          VERIFY AT ADCRITIQ.COM · JUST THE SIGNAL BEFORE THE SPEND.
+        </div>
+        {options.readOnly&&(
+          <div style={{marginTop:18,textAlign:"center",fontSize:11,color:"#A8A5C4",lineHeight:1.6}}>
+            This certificate is a public authenticity snapshot. Full analysis data remains private.
+          </div>
+        )}
+      </div>
+    );
   };
 
   const pricingModal = showPricing && (
@@ -1564,6 +1757,38 @@ export default function App(){
     </div>
   );
 
+  const certificateModal = showCertModal && certData?.certified && (
+    <div onClick={()=>setShowCertModal(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.86)",zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"}}>
+      <style>{`@media print{body *{visibility:hidden!important}.adcritiq-cert-print,.adcritiq-cert-print *{visibility:visible!important}.adcritiq-cert-print{position:fixed!important;left:0!important;top:0!important;width:100%!important;max-width:none!important;box-shadow:none!important}}`}</style>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:680,display:"grid",justifyItems:"center",gap:14}}>
+        <button onClick={()=>setShowCertModal(false)} style={{justifySelf:"end",background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,color:C.dim,padding:"7px 10px",cursor:"pointer"}}>✕</button>
+        {renderCertificateCard(certData)}
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
+          <button onClick={()=>window.print()} style={{padding:"10px 14px",borderRadius:8,border:`1px solid ${C.gold}55`,background:`${C.gold}18`,color:C.gold,fontWeight:900,cursor:"pointer"}}>↓ Download Certificate</button>
+          <button onClick={()=>openLinkedInCertificateShare(certData.cert_id)} style={{padding:"10px 14px",borderRadius:8,border:`1px solid ${C.blue}55`,background:`${C.blue}18`,color:C.blue,fontWeight:900,cursor:"pointer"}}>Share on LinkedIn</button>
+          <button onClick={()=>copyCertificateLink(certData.cert_id)} style={{padding:"10px 14px",borderRadius:8,border:`1px solid ${C.green}55`,background:`${C.green}18`,color:C.green,fontWeight:900,cursor:"pointer"}}>{shareCopied?"Copied!":"Copy Verification Link"}</button>
+          <button onClick={()=>setShowCertModal(false)} style={{padding:"10px 14px",borderRadius:8,border:`1px solid ${C.border}`,background:C.s2,color:C.dim,fontWeight:900,cursor:"pointer"}}>Close</button>
+        </div>
+        <div style={{width:"100%",maxWidth:540,padding:14,borderRadius:10,background:C.s1,border:`1px solid ${C.border}`}}>
+          <div style={{fontSize:9,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>Suggested Post Copy</div>
+          <div style={{fontSize:12,color:C.dim,lineHeight:1.65,whiteSpace:"pre-wrap"}}>
+{`Our ${certData.campaign||"creative"} creative earned AdCritIQ™ Certified Creative status.
+
+Neural Grade: ${certData.grade||"—"}
+Brand Recall: ${certData.key_scores?.brand_recall??"—"}/100
+Memory Encoding: ${certData.key_scores?.memory_encoding??"—"}/100
+
+Tested before media spend was committed.
+
+Verify at: ${certificateUrl(certData.cert_id)}
+
+#AdCritIQ #NeuralCreativeIntelligence #JustTheSignalBeforeTheSpend`}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const shareModal = showShareModal && shareUrl && (
     <div
       style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.78)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
@@ -1623,6 +1848,43 @@ export default function App(){
       </div>
     </div>
   );
+
+  const certParamForRender=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("cert"):null;
+  if(certParamForRender?.startsWith("ACI-")){
+    const loading=!certVerifyData||certVerifyData.loading;
+    const verified=certVerifyData?.valid===true;
+    return (
+      <div style={{minHeight:"100vh",background:"#050507",color:"#F2F2FF",display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?18:40,boxSizing:"border-box",fontFamily:"'Inter','DM Sans',sans-serif"}}>
+        <div style={{width:"100%",maxWidth:760,display:"grid",justifyItems:"center",gap:20}}>
+          {loading?(
+            <>
+              <div style={{fontSize:11,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.18em",fontWeight:900}}>ADCRITIQ™ CERTIFICATE VERIFICATION</div>
+              <div style={{fontSize:isMobile?26:34,color:"#FFFFFF",fontWeight:900,textAlign:"center"}}>Verifying certificate...</div>
+            </>
+          ):verified?(
+            <>
+              <div style={{fontSize:isMobile?26:38,color:C.gold,fontWeight:900,textAlign:"center"}}>✅ Verified Certificate</div>
+              <div style={{fontSize:15,color:"#A8A5C4",textAlign:"center",lineHeight:1.7}}>This AdCritIQ™ certificate has been verified as authentic.</div>
+              {renderCertificateCard(certVerifyData,{readOnly:true})}
+              <button onClick={()=>{window.location.href="/";}} style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:`${C.gold}18`,color:C.gold,fontWeight:900,cursor:"pointer"}}>
+                Run Your Own Analysis →
+              </button>
+            </>
+          ):(
+            <Card C={C} style={{maxWidth:560,textAlign:"center",padding:isMobile?24:36,borderColor:C.red+"55"}}>
+              <div style={{fontSize:isMobile?26:36,color:C.red,fontWeight:900,marginBottom:12}}>❌ Certificate Not Found</div>
+              <div style={{fontSize:15,color:C.dim,lineHeight:1.75,marginBottom:20}}>
+                This certificate ID ({certParamForRender}) was not found or has been revoked. Contact AdCritIQ™ if you believe this is an error.
+              </div>
+              <button onClick={()=>{window.location.href="/";}} style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:`${C.gold}18`,color:C.gold,fontWeight:900,cursor:"pointer"}}>
+                Go to AdCritIQ.com
+              </button>
+            </Card>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // ============================================================
   // LANDING PAGE
@@ -1804,6 +2066,7 @@ export default function App(){
           <span>Predictive, not biometric</span>
         </footer>
         {pricingModal}
+        {certificateModal}
         {shareModal}
       </div>
     );
@@ -2377,6 +2640,7 @@ export default function App(){
           </div>
         </main>
       {pricingModal}
+      {certificateModal}
       {shareModal}
     </div>
     );
@@ -2555,6 +2819,9 @@ export default function App(){
     const resultFormat=r.creative_format||getCreativeFormat(form.type,file);
     const resultStage=r.production_stage||productionStage||"final";
     const stageLabel={concept:"CONCEPT",storyboard:"STORYBOARD",roughcut:"ROUGH CUT",final:"FINAL"}[resultStage]||String(resultStage).toUpperCase();
+    const savedAnalysisId=r.__savedAnalysisId||r.id||null;
+    const certEligibility=computeCertificationEligibility(r);
+    const canShowCertCta=!isDemoMode&&!isSharedMode&&savedAnalysisId&&certEligibility.eligible&&(certData===null||certData?.certified===true);
     const impactLabel=formatImpactLabel(resultFormat);
     const formatMetrics=r.format_metrics||{};
     const staticAttentionMetrics=[
@@ -2754,7 +3021,16 @@ export default function App(){
     const groupedCompetitorAnalyses=groupAnalysesByBrand(competitiveRows);
     const repoLoadAnalysis=(a)=>{
       const isComp=isCompetitorEntry(a);
-      setResults({...a.full_result,is_competitor:isComp,competitor_of:a.competitor_of||a.full_result?.competitor_of});
+      setResults({
+        ...a.full_result,
+        __savedAnalysisId:a.id,
+        is_competitor:isComp,
+        competitor_of:a.competitor_of||a.full_result?.competitor_of,
+        is_certified:a.is_certified===true||a.full_result?.is_certified===true,
+        cert_id:a.cert_id||a.full_result?.cert_id,
+        cert_issued_at:a.cert_issued_at||a.full_result?.cert_issued_at,
+      });
+      setCertData(a.is_certified&&a.cert_id?{certified:true,cert_id:a.cert_id,cert_issued_at:a.cert_issued_at,brand:a.brand,campaign:a.campaign,industry:a.industry,creative_type:analysisFormat(a),grade:analysisGrade(a),key_scores:Object.fromEntries(CERT_SCORE_KEYS.map(([,key])=>[key,Math.round(a.full_result?.[key]||0)]))}:null);
       setDnaMatchData(null);
       setTab("summary");
     };
@@ -2764,6 +3040,8 @@ export default function App(){
           const fmt=analysisFormat(a);
           const stage=analysisStage(a);
           const headline=analysisHeadline(a);
+          const isCertified=a.is_certified===true||a.full_result?.is_certified===true;
+          const certId=a.cert_id||a.full_result?.cert_id;
           return(
             <div key={a.id||idx} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",background:idx%2===0?C.s1:C.s2,borderTop:idx>0?`1px solid ${C.border}`:"none",flexWrap:isMobile?"wrap":"nowrap"}}>
               <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",minWidth:80,flexShrink:0}}>
@@ -2780,6 +3058,11 @@ export default function App(){
               <span style={{fontSize:12,fontWeight:900,color:C.gold,minWidth:28,flexShrink:0,fontFamily:"'DM Mono',monospace"}}>
                 {analysisGrade(a)}
               </span>
+              {isCertified&&certId&&(
+                <button onClick={()=>openCertificateFromId(certId)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:C.ink,background:C.gold,border:`1px solid ${C.gold}`,padding:"3px 7px",borderRadius:999,flexShrink:0,textTransform:"uppercase",fontWeight:900,cursor:"pointer"}}>
+                  🏅 Certified
+                </button>
+              )}
               <span style={{fontSize:11,color:C.dim,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:isMobile?"normal":"nowrap",fontStyle:"italic",minWidth:0}}>
                 {headline?`"${headline.slice(0,80)}${headline.length>80?"...":""}"`:"—"}
               </span>
@@ -3251,6 +3534,35 @@ export default function App(){
                       </div>
                     ))}
                   </div>
+                )}
+              </Card>
+            )}
+            {canShowCertCta&&(
+              <Card C={C} style={{marginBottom:isMobile?18:24,padding:isMobile?16:18,background:"rgba(245,166,35,0.05)",border:`1px solid ${C.gold}33`,borderLeft:`3px solid ${C.gold}`,borderRadius:8}}>
+                {certData?.certified||r.is_certified?(
+                  <div style={{display:"flex",alignItems:isMobile?"stretch":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row"}}>
+                    <div>
+                      <div style={{fontSize:12,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:7}}>✅ AdCritIQ™ Certified Creative · {certData?.cert_id||r.cert_id}</div>
+                      <div style={{fontSize:13,color:C.dim}}>Issued {formatCertDate(certData?.cert_issued_at||r.cert_issued_at)}</div>
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      <button onClick={()=>certData?.certified?setShowCertModal(true):openCertificateFromId(r.cert_id)} style={{padding:"9px 12px",borderRadius:8,border:`1px solid ${C.gold}55`,background:`${C.gold}16`,color:C.gold,fontWeight:900,cursor:"pointer"}}>View Certificate</button>
+                      <button onClick={()=>copyCertificateLink(certData?.cert_id||r.cert_id)} style={{padding:"9px 12px",borderRadius:8,border:`1px solid ${C.green}55`,background:`${C.green}12`,color:C.green,fontWeight:900,cursor:"pointer"}}>{shareCopied?"Copied!":"Copy Verification Link"}</button>
+                    </div>
+                  </div>
+                ):(
+                  <>
+                    <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:12,flexDirection:isMobile?"column":"row",marginBottom:10}}>
+                      <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>🏅 This Creative Qualifies For Certification</div>
+                      <div style={{fontSize:10,color:C.ink,background:C.gold,borderRadius:999,padding:"5px 9px",fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.06em"}}>
+                        {certEligibility.weighted_score}/100 · ELIGIBLE
+                      </div>
+                    </div>
+                    <div style={{fontSize:13,color:C.dim,lineHeight:1.65,marginBottom:12}}>This creative meets all AdCritIQ™ certification criteria. Issue a verified badge to share with your brand and agency.</div>
+                    <button onClick={issueCertificate} disabled={certLoading} style={{width:isMobile?"100%":"auto",padding:"11px 16px",borderRadius:10,border:"none",background:C.gold,color:C.ink,fontWeight:900,cursor:certLoading?"wait":"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                      {certLoading?"Issuing Certificate...":"🏅 Issue AdCritIQ™ Certificate"}
+                    </button>
+                  </>
                 )}
               </Card>
             )}
@@ -4988,6 +5300,7 @@ export default function App(){
             </>
           )}
         </div>
+        {certificateModal}
         {shareModal}
       </div>
     );

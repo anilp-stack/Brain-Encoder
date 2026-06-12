@@ -1331,7 +1331,7 @@ export default function App(){
               </div>
             </div>
             <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:720}}>
-              {["🎞️ PRE-PRODUCTION TESTING","17 neural metrics","15 platform scores","scene intelligence","CMO playbook","NeurIQ chat","repository"].map(t=>(
+              {["🎞️ PRE-PRODUCTION TESTING","🧠 TRIBE V2 CALIBRATED","17 neural metrics","15 platform scores","scene intelligence","CMO playbook","NeurIQ chat","repository"].map(t=>(
                 <span key={t} style={{padding:"8px 12px",background:C.s1,borderRadius:8,border:`1px solid ${C.border}`,fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>{t}</span>
               ))}
             </div>
@@ -1899,6 +1899,14 @@ export default function App(){
       ["CTA Clarity",formatMetrics.cta_clarity??formatMetrics.cta_strength??formatMetrics.cta_recall??r.share_intent,C.amber],
       ["Clutter Risk",formatMetrics.clutter_risk??formatMetrics.claim_risk??r.ad_fatigue_risk,C.red],
     ].map(([label,value,color])=>[label,typeof value==="number"?value:0,color]);
+    const tribeMetrics=r.tribe_metrics||{};
+    const tribeMetricRows=[
+      {key:"audio_visual_integration",label:"Audio-Visual Integration",sub:"STS cortical congruence",invert:false,tooltip:"How aligned are visual and audio signals? Predicts multisensory memory encoding."},
+      {key:"cortical_coherence",label:"Cortical Coherence",sub:"Narrative neural consistency",invert:false,tooltip:"Does the ad activate consistent brain regions? Predicts story comprehension."},
+      {key:"language_cortex_activation",label:"Language Cortex Activation",sub:"Broca's / Wernicke's engagement",invert:false,tooltip:"Strength of VO and copy neural encoding. Predicts verbal brand recall."},
+      {key:"neural_peak_density",label:"Neural Peak Density",sub:"High-activation moments per 30s",invert:false,tooltip:"More peaks = more memorable moments = higher recall probability."},
+      {key:"multisensory_fatigue_risk",label:"Multisensory Fatigue Risk",sub:"Cortical adaptation risk - lower is better",invert:true,tooltip:"Risk that the brain tunes out before brand appears. Below 30 is optimal."},
+    ].map(metric=>({...metric,value:tribeMetrics?.[metric.key]})).filter(metric=>typeof metric.value==="number");
     const isTimelineAttention=resultFormat==="video"||resultFormat==="motion_static";
     const compareReady=compareMode&&resultsB;
     const compareLabelA=compareType==="brands"?(form.brand||labelA):labelA;
@@ -2417,6 +2425,60 @@ export default function App(){
               </div>
               <div style={{textAlign:"center",marginTop:12,fontSize:13,color:C.dim}}>Score: {s1s2}/100 — {s1s2>=65&&s1s2<=75?"Optimal zone (65-75)":s1s2>75?"Over-indexing on emotion":"Over-indexing on rational"}</div>
             </Card>
+            {tribeMetricRows.length>0&&(
+              <Card C={C} style={{marginTop:24}}>
+                <div style={{paddingTop:2}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+                    <div style={{fontSize:10,color:C.gold,fontFamily:"monospace",letterSpacing:"0.15em"}}>
+                      TRIBE V2 CALIBRATED NEURAL MARKERS
+                    </div>
+                    <div style={{padding:"2px 8px",background:"rgba(245,158,11,0.08)",border:`1px solid ${C.gold}44`,borderRadius:4,fontSize:9,color:C.gold,fontFamily:"monospace"}}>
+                      META AI RESEARCH 2026
+                    </div>
+                    <div style={{fontSize:9,color:C.muted,fontStyle:"italic"}}>
+                      720 subjects · 1,000+ hours fMRI
+                    </div>
+                  </div>
+
+                  {tribeMetricRows.map(metric=>{
+                    const displayVal=Math.max(0,Math.min(100,metric.value));
+                    const barColor=metric.invert
+                      ? (displayVal<30?C.green:displayVal<60?C.amber:C.red)
+                      : (displayVal>=70?C.green:displayVal>=50?C.amber:C.red);
+                    return(
+                      <div key={metric.key} title={metric.tooltip} style={{marginBottom:14}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12,marginBottom:4}}>
+                          <div>
+                            <span style={{fontSize:12,color:C.text,fontWeight:600}}>{metric.label}</span>
+                            <span style={{fontSize:9,color:C.muted,fontFamily:"monospace",marginLeft:8,letterSpacing:"0.06em"}}>{metric.sub}</span>
+                          </div>
+                          <div style={{fontSize:14,fontWeight:800,color:barColor,minWidth:32,textAlign:"right"}}>
+                            {displayVal}
+                            {metric.invert&&<span style={{fontSize:8,color:C.muted,marginLeft:3,fontFamily:"monospace"}}>↓</span>}
+                          </div>
+                        </div>
+                        <div style={{height:6,borderRadius:3,background:C.s2,overflow:"hidden"}}>
+                          <div style={{height:"100%",width:`${displayVal}%`,background:barColor,borderRadius:3,transition:"width 0.8s ease",opacity:0.85}}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {tribeMetrics?.tribe_calibration_note&&(
+                    <div style={{marginTop:16,padding:"10px 14px",background:"rgba(245,158,11,0.04)",border:`1px solid ${C.gold}22`,borderRadius:8,fontSize:11,color:C.dim,fontStyle:"italic",lineHeight:1.6}}>
+                      <span style={{color:C.gold,fontStyle:"normal",fontWeight:700,marginRight:6,fontFamily:"monospace",fontSize:9,letterSpacing:"0.1em"}}>
+                        TRIBE V2 DIAGNOSTIC ·
+                      </span>
+                      {tribeMetrics.tribe_calibration_note}
+                    </div>
+                  )}
+
+                  <div style={{marginTop:12,fontSize:9,color:C.muted,lineHeight:1.5}}>
+                    Scores calibrated against validated brain activation patterns from TRIBE v2 (d'Ascoli et al., Meta AI Research, 2026) — a foundation model trained on 1,000+ hours of fMRI data across 720 subjects. AdCritIQ™ applies these published neural correlates as a calibration framework for AI prediction. Not a live TRIBE v2 model inference.
+                  </div>
+                </div>
+              </Card>
+            )}
             <Takeaway C={C} icon="🧠" title="Neural Map — What to Do" color={C.purple} items={tw.neural}/>
           </>)}
 
@@ -3151,6 +3213,7 @@ export default function App(){
                       {title:"Ehrenberg-Bass Institute — Long-Term Brand Building",color:C.gold,application:"The 7-metric composite grade formula weights Memory Encoding and Brand Recall at 20% each — reflecting EBI research that long-term brand building requires both emotional memory formation and correct brand attribution.",metric:"Overall Grade composite"},
                       {title:"Karen Nelson-Field — Attention Economics (2020)",color:C.amber,application:"The Attention Curve and Hold Rate scoring implement Nelson-Field's active vs passive attention distinction. Active attention (viewer chooses to watch) has 4× the brand recall impact of passive attention. The platform penalises creatives that rely on passive attention contexts.",metric:"Attention Curve + Hold Rate"},
                       {title:"Antonio Damasio — Somatic Marker Hypothesis",color:C.pink,application:"Emotional Peak scoring reflects Damasio's finding that emotional experiences create somatic markers — physiological tags in memory that drive future retrieval and decision-making. A creative with no emotional peak forms no somatic marker, and the brand will not surface spontaneously at point of purchase.",metric:"Emotional Peak + Memory Encoding"},
+                      {title:"TRIBE v2 — Meta AI Research (2026)",color:C.green,application:"Foundation model of vision, audition and language for in-silico neuroscience. 720 subjects, 1,000+ hours fMRI. Validates cortical activation patterns for naturalistic video/audio/language stimuli. Calibrates AdCritIQ™ multisensory integration and temporal coherence scoring.",metric:"TribeV2 Neural Markers"},
                       {title:"Robert Heath — Low-Attention Processing (2012)",color:C.purple,application:"Heath's research demonstrates that advertising can build brand associations even without conscious attention — but only if emotional content is present. This informs the Sound-Off Survival score: a creative that loses all message value when muted loses the ability to build associations in low-attention contexts.",metric:"Sound-Off Survival"},
                       {title:"Weber-Fechner Law — Stimulus Adaptation",color:C.orange,application:"Ad Fatigue Risk scoring is based on the Weber-Fechner Law of diminishing stimulus response. Repeated identical stimuli produce logarithmically declining responses. Creatives with low scene variety, static imagery, or repetitive dialogue are predicted to fatigue faster.",metric:"Ad Fatigue Risk"},
                       {title:"Vittorio Gallese — Mirror Neuron Theory",color:C.teal,application:"Mirror Neuron activation scoring reflects Gallese's work on simulation theory. Viewers who see on-screen humans expressing emotion neurologically simulate that emotion. High mirror neuron activation directly correlates with share intent and emotional contagion in advertising.",metric:"Mirror Neurons + Share Intent"},

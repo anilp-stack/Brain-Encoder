@@ -1511,79 +1511,118 @@ export default function App(){
             </div>
           </section>
 
+          {/* Neural Signal Brain — desktop only */}
           {!isMobile&&(
-            <div style={{marginBottom:20,opacity:0.95}}>
-              <svg width="100%" viewBox="0 0 680 420" role="img" xmlns="http://www.w3.org/2000/svg">
-                <title>Neural Signal Brain — AdCritIQ™ cortical region map for advertising creative analysis</title>
+            <div style={{
+              marginBottom:28,
+              borderRadius:16,
+              overflow:"hidden",
+              boxShadow:isDarkMode
+                ?"0 0 40px rgba(245,166,35,0.08)"
+                :"0 8px 32px rgba(0,0,0,0.25)",
+            }}>
+              <svg width="100%" viewBox="0 0 680 520" role="img" xmlns="http://www.w3.org/2000/svg">
+                <title>AdCritIQ™ Neural Signal Map — 8 cortical regions predictive advertising analysis</title>
                 <defs>
                   <style>{`
-                    @keyframes np1{0%,100%{r:7;opacity:.9}50%{r:10;opacity:1}}
-                    @keyframes np2{0%,100%{r:7;opacity:.8}50%{r:10;opacity:1}}
-                    @keyframes np3{0%,100%{r:7;opacity:.7}50%{r:10;opacity:1}}
-                    @keyframes nglo{0%,100%{opacity:.2}50%{opacity:.5}}
-                    @keyframes nsig{0%{stroke-dashoffset:200}100%{stroke-dashoffset:0}}
-                    @keyframes nsig2{0%{stroke-dashoffset:300}100%{stroke-dashoffset:0}}
-                    .an1{animation:np1 2.1s ease-in-out infinite}
-                    .an2{animation:np1 2.4s ease-in-out .3s infinite}
-                    .an3{animation:np2 2.2s ease-in-out .6s infinite}
-                    .an4{animation:np3 2.6s ease-in-out .9s infinite}
-                    .an5{animation:np1 2.3s ease-in-out 1.2s infinite}
-                    .an6{animation:np2 2.5s ease-in-out .4s infinite}
-                    .an7{animation:np3 2.1s ease-in-out .8s infinite}
-                    .an8{animation:np1 2.7s ease-in-out 1.5s infinite}
-                    .asig{animation:nsig 3s linear infinite;stroke-dasharray:8 4}
-                    .asig2{animation:nsig2 4s linear 1s infinite;stroke-dasharray:6 6}
-                    .aglo{animation:nglo 3s ease-in-out infinite}
+                    @keyframes bp{0%,100%{opacity:.55;r:14}50%{opacity:1;r:17}}
+                    @keyframes rp{0%,100%{opacity:.1}50%{opacity:.4}}
+                    @keyframes sd{0%{stroke-dashoffset:180}100%{stroke-dashoffset:0}}
+                    @keyframes sd2{0%{stroke-dashoffset:260}100%{stroke-dashoffset:0}}
+                    @keyframes sd3{0%{stroke-dashoffset:140}100%{stroke-dashoffset:0}}
+                    .b1{animation:bp 2.2s ease-in-out infinite}
+                    .b2{animation:bp 2.6s ease-in-out .4s infinite}
+                    .b3{animation:bp 2.0s ease-in-out .7s infinite}
+                    .b4{animation:bp 2.8s ease-in-out 1.0s infinite}
+                    .b5{animation:bp 2.3s ease-in-out 1.3s infinite}
+                    .b6{animation:bp 2.5s ease-in-out .2s infinite}
+                    .b7{animation:bp 2.1s ease-in-out .9s infinite}
+                    .b8{animation:bp 2.7s ease-in-out .6s infinite}
+                    .r1{animation:rp 2.2s ease-in-out infinite}
+                    .r2{animation:rp 2.6s ease-in-out .4s infinite}
+                    .r3{animation:rp 2.0s ease-in-out .7s infinite}
+                    .r4{animation:rp 2.8s ease-in-out 1.0s infinite}
+                    .r5{animation:rp 2.3s ease-in-out 1.3s infinite}
+                    .r6{animation:rp 2.5s ease-in-out .2s infinite}
+                    .r7{animation:rp 2.1s ease-in-out .9s infinite}
+                    .r8{animation:rp 2.7s ease-in-out .6s infinite}
+                    .s1{animation:sd 2.8s linear infinite;stroke-dasharray:10 6}
+                    .s2{animation:sd2 3.6s linear 1s infinite;stroke-dasharray:8 8}
+                    .s3{animation:sd3 2.2s linear .5s infinite;stroke-dasharray:6 5}
                   `}</style>
-                  <pattern id="abgrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#F5A623" strokeWidth="0.2" opacity="0.1"/>
+                  <pattern id="bg2" width="36" height="36" patternUnits="userSpaceOnUse">
+                    <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#C8860A" strokeWidth="0.4" opacity="0.18"/>
                   </pattern>
                 </defs>
-                <rect width="680" height="420" fill="url(#abgrid)" rx="0"/>
-                <path d="M 220 95 C 160 75,100 100,85 150 C 68 205,75 240,90 270 C 108 305,130 325,155 335 C 178 344,200 340,215 330 C 225 322,230 310,235 298 C 240 285,240 270,245 255 C 250 240,258 228,265 218 C 272 208,278 200,280 190 C 285 175,278 160,278 148 C 278 132,282 115,275 105 C 262 88,242 100,220 95 Z" fill="none" stroke="#F5A623" strokeWidth="1.5" opacity="0.5"/>
-                <path d="M 460 95 C 520 75,580 100,595 150 C 612 205,605 240,590 270 C 572 305,550 325,525 335 C 502 344,480 340,465 330 C 455 322,450 310,445 298 C 440 285,440 270,435 255 C 430 240,422 228,415 218 C 408 208,402 200,400 190 C 395 175,402 160,402 148 C 402 132,398 115,405 105 C 418 88,438 100,460 95 Z" fill="none" stroke="#F5A623" strokeWidth="1.5" opacity="0.5"/>
-                <path d="M 280 190 C 295 178,320 172,340 172 C 360 172,385 178,400 190" fill="none" stroke="#F5A623" strokeWidth="2" opacity="0.4"/>
-                <path d="M 110 170 C 130 160,155 158,170 170 C 185 182,188 200,180 215" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.25"/>
-                <path d="M 95 230 C 115 220,140 222,158 238" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.25"/>
-                <path d="M 570 170 C 550 160,525 158,510 170 C 495 182,492 200,500 215" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.25"/>
-                <path d="M 585 230 C 565 220,540 222,522 238" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.25"/>
-                <path d="M 182 145 C 185 175,182 195,180 215" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.35"/>
-                <path d="M 193 228 C 220 235,258 238,275 248" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.35"/>
-                <path d="M 290 262 C 305 295,328 315,340 322" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.35"/>
-                <path d="M 205 138 C 255 135,290 138,340 138" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.35"/>
-                <path d="M 340 138 C 390 138,420 135,475 138" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.35"/>
-                <path d="M 495 218 C 480 240,455 248,435 255" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.35"/>
-                <path d="M 360 325 C 390 310,415 285,428 258" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.35"/>
-                <path d="M 148 210 C 220 205,380 208,480 210" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.2"/>
-                <path d="M 182 145 C 185 175,182 195,180 215" fill="none" stroke="#F5A623" strokeWidth="1.5" opacity="0.8" className="asig"/>
-                <path d="M 340 138 C 390 138,420 135,475 138" fill="none" stroke="#FFD580" strokeWidth="1.5" opacity="0.6" className="asig2"/>
-                <circle cx="190" cy="132" r="14" fill="#07070F" stroke="#F5A623" strokeWidth="1.5" opacity="0.25" className="aglo"/>
-                <circle cx="190" cy="132" r="7" fill="#F5A623" className="an1"/>
-                <text x="190" y="115" textAnchor="middle" fontFamily="monospace" fontSize="8" fill="#F5A623" opacity="0.85" letterSpacing="0.5">PREFRONTAL CORTEX</text>
-                <text x="190" y="105" textAnchor="middle" fontFamily="monospace" fontSize="7" fill="#F5A623" opacity="0.45">DECISION · BRAND TRUST</text>
-                <circle cx="178" cy="228" r="7" fill="#FF6B9D" className="an2"/>
-                <text x="145" y="222" textAnchor="end" fontFamily="monospace" fontSize="8" fill="#FF6B9D" opacity="0.85">AMYGDALA</text>
-                <text x="145" y="232" textAnchor="end" fontFamily="monospace" fontSize="7" fill="#FF6B9D" opacity="0.45">EMOTION · DESIRE</text>
-                <circle cx="282" cy="255" r="7" fill="#22D3EE" className="an3"/>
-                <text x="258" y="245" textAnchor="middle" fontFamily="monospace" fontSize="8" fill="#22D3EE" opacity="0.85">HIPPOCAMPUS</text>
-                <text x="258" y="278" textAnchor="middle" fontFamily="monospace" fontSize="7" fill="#22D3EE" opacity="0.45">MEMORY ENCODING</text>
-                <circle cx="340" cy="325" r="7" fill="#10B981" className="an4"/>
-                <text x="340" y="347" textAnchor="middle" fontFamily="monospace" fontSize="8" fill="#10B981" opacity="0.85">VISUAL CORTEX</text>
-                <text x="340" y="357" textAnchor="middle" fontFamily="monospace" fontSize="7" fill="#10B981" opacity="0.45">ATTENTION · SALIENCE</text>
-                <circle cx="118" cy="210" r="7" fill="#8B5CF6" className="an5"/>
-                <text x="80" y="204" textAnchor="middle" fontFamily="monospace" fontSize="8" fill="#8B5CF6" opacity="0.85">AUDITORY</text>
-                <text x="80" y="214" textAnchor="middle" fontFamily="monospace" fontSize="7" fill="#8B5CF6" opacity="0.45">SONIC BRAND</text>
-                <circle cx="340" cy="138" r="7" fill="#F5A623" className="an6"/>
-                <text x="340" y="118" textAnchor="middle" fontFamily="monospace" fontSize="8" fill="#F5A623" opacity="0.85">ANTERIOR CINGULATE</text>
-                <text x="340" y="108" textAnchor="middle" fontFamily="monospace" fontSize="7" fill="#F5A623" opacity="0.45">ATTENTION CONTROL</text>
-                <circle cx="502" cy="218" r="7" fill="#F97316" className="an7"/>
-                <text x="535" y="213" textAnchor="start" fontFamily="monospace" fontSize="8" fill="#F97316" opacity="0.85">MIRROR NEURONS</text>
-                <text x="535" y="223" textAnchor="start" fontFamily="monospace" fontSize="7" fill="#F97316" opacity="0.45">EMPATHY · DESIRE</text>
-                <circle cx="430" cy="258" r="7" fill="#EC4899" className="an8"/>
-                <text x="462" y="253" textAnchor="start" fontFamily="monospace" fontSize="8" fill="#EC4899" opacity="0.85">NUCLEUS ACCUMBENS</text>
-                <text x="462" y="263" textAnchor="start" fontFamily="monospace" fontSize="7" fill="#EC4899" opacity="0.45">REWARD · BRAND LOVE</text>
-                <circle cx="490" cy="132" r="5" fill="#F5A623" opacity="0.5" className="an2"/>
-                <text x="340" y="398" textAnchor="middle" fontFamily="monospace" fontSize="8" fill="#F5A623" opacity="0.3" letterSpacing="3">ADCRITIQ™ · NEURAL SIGNAL MAP · PREDICTIVE · NOT BIOMETRIC</text>
+                <rect width="680" height="520" rx="16" fill="#080810"/>
+                <rect width="680" height="520" rx="16" fill="url(#bg2)"/>
+                <rect x="1" y="1" width="678" height="518" rx="15" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.25"/>
+                <rect x="0" y="0" width="680" height="38" fill="#0C0C18"/>
+                <rect x="0" y="37" width="680" height="1" fill="#F5A623" opacity="0.2"/>
+                <text x="26" y="23" fontFamily="monospace" fontSize="11" fill="#F5A623" opacity="0.7" letterSpacing="3">ADCRITIQ™</text>
+                <text x="340" y="23" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity="0.5" letterSpacing="2">NEURAL SIGNAL MAP</text>
+                <text x="654" y="23" textAnchor="end" fontFamily="monospace" fontSize="10" fill="#4ADE80" opacity="0.7" letterSpacing="1">● LIVE</text>
+                <path d="M 240 90 C 168 68,95 100,76 162 C 56 228,66 272,84 310 C 105 354,132 382,165 394 C 192 405,220 400,238 388 C 252 378,258 362,264 344 C 272 322,272 300,278 280 C 285 260,295 244,303 230 C 312 215,318 203,320 190 C 326 172,318 152,318 136 C 318 117,323 97,314 84 C 298 64,264 78,240 90 Z" fill="#F5A623" fillOpacity="0.03" stroke="#F5A623" strokeWidth="2.5" opacity="0.75"/>
+                <path d="M 440 90 C 512 68,585 100,604 162 C 624 228,614 272,596 310 C 575 354,548 382,515 394 C 488 405,460 400,442 388 C 428 378,422 362,416 344 C 408 322,408 300,402 280 C 395 260,385 244,377 230 C 368 215,362 203,360 190 C 354 172,362 152,362 136 C 362 117,357 97,366 84 C 382 64,416 78,440 90 Z" fill="#F5A623" fillOpacity="0.03" stroke="#F5A623" strokeWidth="2.5" opacity="0.75"/>
+                <path d="M 320 190 C 330 176,340 170,340 170 C 340 170,350 176,360 190" fill="none" stroke="#F5A623" strokeWidth="3" opacity="0.6"/>
+                <ellipse cx="340" cy="170" rx="22" ry="8" fill="#F5A623" fillOpacity="0.08" stroke="#F5A623" strokeWidth="1.5" opacity="0.4"/>
+                <path d="M 104 185 C 130 172,162 170,182 185 C 200 200,204 224,194 242" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
+                <path d="M 88 258 C 116 244,152 248,174 268" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
+                <path d="M 122 334 C 152 320,186 326,208 346" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
+                <path d="M 184 118 C 212 106,244 108,258 125" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.25"/>
+                <path d="M 576 185 C 550 172,518 170,498 185 C 480 200,476 224,486 242" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
+                <path d="M 592 258 C 564 244,528 248,506 268" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
+                <path d="M 558 334 C 528 320,494 326,472 346" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
+                <path d="M 216 168 C 218 200,214 225,212 250" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
+                <path d="M 228 264 C 260 272,295 276,314 288" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
+                <path d="M 330 304 C 338 340,340 368,340 385" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
+                <path d="M 246 158 C 285 152,316 154,340 160" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
+                <path d="M 340 160 C 364 154,395 152,434 158" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
+                <path d="M 528 258 C 510 276,480 286,460 296" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
+                <path d="M 354 390 C 388 372,444 338,458 300" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
+                <path d="M 148 252 C 240 246,440 248,522 252" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.18"/>
+                <path d="M 246 158 C 285 152,316 154,340 160" fill="none" stroke="#FFD580" strokeWidth="2.5" className="s1"/>
+                <path d="M 340 160 C 364 154,395 152,434 158" fill="none" stroke="#F5A623" strokeWidth="2" className="s2"/>
+                <path d="M 216 168 C 218 200,214 225,212 250" fill="none" stroke="#FF6B9D" strokeWidth="2" className="s3"/>
+                <circle cx="216" cy="158" r="28" fill="#F5A623" className="r1"/>
+                <circle cx="216" cy="158" r="14" fill="#F5A623" className="b1"/>
+                <text x="216" y="126" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#F5A623" fontWeight="700" letterSpacing="0.6">PREFRONTAL CORTEX</text>
+                <text x="216" y="139" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity="0.55">DECISION · BRAND TRUST</text>
+                <circle cx="212" cy="262" r="24" fill="#FF6B9D" className="r2"/>
+                <circle cx="212" cy="262" r="13" fill="#FF6B9D" className="b2"/>
+                <text x="160" y="254" textAnchor="end" fontFamily="monospace" fontSize="11" fill="#FF6B9D" fontWeight="700" letterSpacing="0.6">AMYGDALA</text>
+                <text x="160" y="267" textAnchor="end" fontFamily="monospace" fontSize="10" fill="#FF6B9D" opacity="0.55">EMOTION · DESIRE · FEAR</text>
+                <circle cx="318" cy="296" r="24" fill="#22D3EE" className="r3"/>
+                <circle cx="318" cy="296" r="13" fill="#22D3EE" className="b3"/>
+                <text x="296" y="330" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#22D3EE" fontWeight="700" letterSpacing="0.6">HIPPOCAMPUS</text>
+                <text x="296" y="343" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#22D3EE" opacity="0.55">MEMORY ENCODING</text>
+                <circle cx="340" cy="392" r="28" fill="#10B981" className="r4"/>
+                <circle cx="340" cy="392" r="15" fill="#10B981" className="b4"/>
+                <text x="340" y="432" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#10B981" fontWeight="700" letterSpacing="0.6">VISUAL CORTEX</text>
+                <text x="340" y="445" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#10B981" opacity="0.55">ATTENTION · SALIENCE · V1-V4</text>
+                <circle cx="130" cy="252" r="24" fill="#A78BFA" className="r5"/>
+                <circle cx="130" cy="252" r="13" fill="#A78BFA" className="b5"/>
+                <text x="130" y="214" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#A78BFA" fontWeight="700" letterSpacing="0.6">AUDITORY CORTEX</text>
+                <text x="130" y="227" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#A78BFA" opacity="0.55">SONIC BRAND · STS BINDING</text>
+                <circle cx="340" cy="160" r="30" fill="#F5A623" className="r6"/>
+                <circle cx="340" cy="160" r="16" fill="#F5A623" className="b6"/>
+                <text x="340" y="124" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#FFD580" fontWeight="700" letterSpacing="0.6">ANTERIOR CINGULATE</text>
+                <text x="340" y="137" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#FFD580" opacity="0.55">ATTENTION CONTROL</text>
+                <circle cx="528" cy="258" r="24" fill="#FB923C" className="r7"/>
+                <circle cx="528" cy="258" r="13" fill="#FB923C" className="b7"/>
+                <text x="574" y="243" textAnchor="start" fontFamily="monospace" fontSize="11" fill="#FB923C" fontWeight="700" letterSpacing="0.6">MIRROR NEURONS</text>
+                <text x="574" y="256" textAnchor="start" fontFamily="monospace" fontSize="10" fill="#FB923C" opacity="0.55">EMPATHY · PRODUCT DESIRE</text>
+                <circle cx="458" cy="296" r="24" fill="#EC4899" className="r8"/>
+                <circle cx="458" cy="296" r="13" fill="#EC4899" className="b8"/>
+                <text x="490" y="327" textAnchor="start" fontFamily="monospace" fontSize="11" fill="#EC4899" fontWeight="700" letterSpacing="0.6">NUCLEUS ACCUMBENS</text>
+                <text x="490" y="340" textAnchor="start" fontFamily="monospace" fontSize="10" fill="#EC4899" opacity="0.55">REWARD · BRAND LOVE</text>
+                <circle cx="434" cy="158" r="22" fill="#F5A623" className="r2"/>
+                <circle cx="434" cy="158" r="12" fill="#F5A623" opacity="0.65" className="b2"/>
+                <text x="434" y="126" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#F5A623" opacity="0.65" fontWeight="600">PREFRONTAL CORTEX</text>
+                <text x="434" y="139" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity="0.4">EXECUTIVE FUNCTION</text>
+                <rect x="0" y="489" width="680" height="31" fill="#0C0C18"/>
+                <rect x="0" y="489" width="680" height="1" fill="#F5A623" opacity="0.2"/>
+                <text x="340" y="509" textAnchor="middle" fontFamily="monospace" fontSize="9" fill="#F5A623" opacity="0.4" letterSpacing="3">PREDICTIVE · NOT BIOMETRIC · CALIBRATED AGAINST TRIBE V2 RESEARCH</text>
               </svg>
             </div>
           )}

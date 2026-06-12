@@ -21,6 +21,31 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
 
   if (isMobile) return null;
 
+  const groupedTabs = NAV_TABS.reduce((groups, item) => {
+    const label = item.category || "Dashboard";
+    if (!groups.find((group) => group.label === label)) {
+      groups.push({
+        label,
+        colorKey: item.categoryColor || "gold",
+        items: [],
+      });
+    }
+    groups.find((group) => group.label === label).items.push(item);
+    return groups;
+  }, []);
+
+  const categoryColor = (key) => {
+    const map = {
+      gold: C.gold,
+      goldD: C.goldD || C.gold,
+      cyan: C.cyan,
+      teal: C.teal || C.cyan,
+      amber: C.amber || C.gold,
+      purple: C.purple || C.gold,
+    };
+    return map[key] || C.gold;
+  };
+
   const gc =
     gr === "A+" || gr === "A" || gr === "A-"
       ? C.green
@@ -117,46 +142,73 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
 
       {/* Nav items */}
       <nav style={{ flex: 1, padding: "14px 10px" }}>
-        {NAV_TABS.map((n) => {
-          const active = tab === n.id;
-          const hovered = hoveredTab === n.id;
+        {groupedTabs.map((group, groupIdx) => {
+          const accent = categoryColor(group.colorKey);
           return (
-            <button
-              key={n.id}
-              onClick={() => setTab(n.id)}
-              onMouseEnter={() => setHoveredTab(n.id)}
-              onMouseLeave={() => setHoveredTab(null)}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "11px 12px",
-                marginBottom: 4,
-                background: active
-                  ? "linear-gradient(90deg, rgba(245,158,11,0.10) 0%, transparent 100%)"
-                  : hovered
-                    ? "rgba(255,255,255,0.03)"
-                    : "transparent",
-                borderLeft: active ? `3px solid ${C.gold}` : "3px solid transparent",
-                borderRight: "none",
-                borderTop: "none",
-                borderBottom: "none",
-                borderRadius: 0,
-                cursor: "pointer",
-                color: active ? C.gold : C.text,
-                opacity: active || hovered ? 1 : 0.55,
-                fontSize: 12,
-                fontWeight: active ? 700 : 500,
-                transition: "all 0.15s ease",
-                fontFamily: "'Inter','DM Sans',sans-serif",
-                letterSpacing: 0,
-                textAlign: "left",
-              }}
-            >
-              <span style={{ display: "flex", opacity: 1, flexShrink: 0, color: active ? C.gold : C.text }}>{n.icon}</span>
-              <span style={{ lineHeight: 1.3 }}>{n.label}</span>
-            </button>
+            <div key={group.label} style={{ marginTop: groupIdx === 0 ? 0 : 13 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "0 12px 7px",
+                  color: C.dim,
+                  opacity: 0.78,
+                  fontSize: 8,
+                  fontWeight: 800,
+                  fontFamily: "'DM Mono',monospace",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                }}
+              >
+                <span style={{ width: 3, height: 14, borderRadius: 999, background: accent, opacity: 0.75, flexShrink: 0 }} />
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{group.label}</span>
+              </div>
+              <div style={{ paddingBottom: groupIdx === groupedTabs.length - 1 ? 0 : 3, borderBottom: groupIdx === groupedTabs.length - 1 ? "none" : `1px solid ${C.border2}` }}>
+                {group.items.map((n) => {
+                  const active = tab === n.id;
+                  const hovered = hoveredTab === n.id;
+                  return (
+                    <button
+                      key={n.id}
+                      onClick={() => setTab(n.id)}
+                      onMouseEnter={() => setHoveredTab(n.id)}
+                      onMouseLeave={() => setHoveredTab(null)}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: "10px 12px",
+                        marginBottom: 2,
+                        background: active
+                          ? "linear-gradient(90deg, rgba(245,158,11,0.10) 0%, transparent 100%)"
+                          : hovered
+                            ? "rgba(255,255,255,0.03)"
+                            : "transparent",
+                        borderLeft: active ? `3px solid ${C.gold}` : "3px solid transparent",
+                        borderRight: "none",
+                        borderTop: "none",
+                        borderBottom: "none",
+                        borderRadius: 0,
+                        cursor: "pointer",
+                        color: active ? C.gold : C.text,
+                        opacity: active || hovered ? 1 : 0.55,
+                        fontSize: 12,
+                        fontWeight: active ? 700 : 500,
+                        transition: "all 0.15s ease",
+                        fontFamily: "'Inter','DM Sans',sans-serif",
+                        letterSpacing: 0,
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ display: "flex", opacity: 1, flexShrink: 0, color: active ? C.gold : C.text }}>{n.icon}</span>
+                      <span style={{ lineHeight: 1.3 }}>{n.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>

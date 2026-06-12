@@ -193,20 +193,20 @@ const Icon = {
 
 // Vertical Sidebar Nav
 const NAV_TABS = [
-  {id:"summary",  label:"Executive Summary", icon:Icon.summary},
-  {id:"neural",   label:"Neural Map",         icon:Icon.neural},
-  {id:"attention",label:"Attention",          icon:Icon.attn},
-  {id:"emotion",  label:"Emotional Arch.",    icon:Icon.emotion},
-  {id:"scenes",   label:"Scene Intelligence", icon:Icon.scene},
-  {id:"platforms",label:"Platform Scores",    icon:Icon.platform},
-  {id:"sound",    label:"Sound & Sensory",    icon:Icon.sound},
-  {id:"privacy",  label:"Privacy & Compliance",icon:Icon.privacy},
-  {id:"strategy", label:"Strategic Insights", icon:Icon.strategy},
-  {id:"cmo",      label:"CMO Playbook",       icon:Icon.cmo},
-  {id:"outcomes", label:"Outcome Forecast",    icon:Icon.outcomes},
-  {id:"neuriq",   label:"NeurIQ™",            icon:Icon.neuriq},
-  {id:"repository", label:"Repository",        icon:"🗄️"},
-  {id:"methodology",label:"Methodology",      icon:Icon.glossary},
+  {id:"summary",  label:"Executive Summary", icon:Icon.summary, category:"Executive Readout", categoryColor:"gold"},
+  {id:"outcomes", label:"Outcome Forecast",   icon:Icon.outcomes, category:"Executive Readout", categoryColor:"gold"},
+  {id:"neural",   label:"Neural Map",         icon:Icon.neural, category:"Neural Diagnostics", categoryColor:"cyan"},
+  {id:"attention",label:"Attention",          icon:Icon.attn, category:"Neural Diagnostics", categoryColor:"cyan"},
+  {id:"emotion",  label:"Emotional Arch.",    icon:Icon.emotion, category:"Neural Diagnostics", categoryColor:"cyan"},
+  {id:"scenes",   label:"Scene Intelligence", icon:Icon.scene, category:"Neural Diagnostics", categoryColor:"cyan"},
+  {id:"platforms",label:"Platform Scores",    icon:Icon.platform, category:"Channel & Platform Fit", categoryColor:"teal"},
+  {id:"sound",    label:"Sound & Sensory",    icon:Icon.sound, category:"Channel & Platform Fit", categoryColor:"teal"},
+  {id:"privacy",  label:"Privacy & Compliance",icon:Icon.privacy, category:"Risk & Governance", categoryColor:"amber"},
+  {id:"strategy", label:"Strategic Insights", icon:Icon.strategy, category:"CMO Decision Layer", categoryColor:"purple"},
+  {id:"cmo",      label:"CMO Playbook",       icon:Icon.cmo, category:"CMO Decision Layer", categoryColor:"purple"},
+  {id:"neuriq",   label:"NeurIQ™",            icon:Icon.neuriq, category:"CMO Decision Layer", categoryColor:"purple"},
+  {id:"repository", label:"Repository",        icon:"🗄️", category:"Workspace & Evidence", categoryColor:"goldD"},
+  {id:"methodology",label:"Methodology",      icon:Icon.glossary, category:"Workspace & Evidence", categoryColor:"goldD"},
 ];
 
 const PLATFORM_META = {

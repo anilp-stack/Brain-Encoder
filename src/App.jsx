@@ -1549,8 +1549,8 @@ export default function App(){
           </div>
         </header>
 
-        <main style={{flex:1,display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.08fr) minmax(340px,0.92fr)",gap:isMobile?36:56,alignItems:"center",padding:isMobile?"44px 20px 28px":"72px 48px 44px",maxWidth:1280,width:"100%",margin:"0 auto",boxSizing:"border-box",position:"relative",zIndex:1}}>
-          <section>
+        <main style={{flex:1,display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"minmax(0,1fr) minmax(360px,0.92fr)":"minmax(300px,0.86fr) minmax(420px,1.05fr) minmax(300px,0.86fr)",gap:isMobile?28:isTablet?34:34,alignItems:"center",padding:isMobile?"42px 20px 30px":isTablet?"58px 38px 40px":"64px 48px 46px",maxWidth:1480,width:"100%",margin:"0 auto",boxSizing:"border-box",position:"relative",zIndex:1}}>
+          <section style={{minWidth:0}}>
             <div style={{fontSize:11,fontWeight:900,color:C.gold,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:18}}>Creative-to-Media Outcome Intelligence</div>
             <h1 style={{fontSize:isMobile?34:isTablet?50:64,fontWeight:800,color:C.text,lineHeight:1.08,letterSpacing:0,margin:"0 0 24px",fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif"}}>
               Forecast creative impact<br/>
@@ -1565,7 +1565,7 @@ export default function App(){
             <p style={{fontSize:isMobile?16:18,color:C.dim,lineHeight:1.75,maxWidth:620,margin:"0 0 32px"}}>
               AdCritIQ™ predicts whether your creative will turn media exposure into memory, consideration, action, or waste — using neural diagnostics, platform-fit scoring, and outcome forecasting across concept, storyboard, rough cut, and final assets. Built for CMOs, brand teams, and agencies who need to separate creative risk from media-plan risk before budgets go live.
             </p>
-            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:34}}>
+            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:26}}>
               <button onClick={()=>setStage("form")} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:isDarkMode?`0 16px 40px ${C.gold}24`:elevationShadow,transition:"transform 0.12s ease"}}>
                 Start Outcome Forecast
               </button>
@@ -1597,7 +1597,7 @@ export default function App(){
             <div style={{fontSize:12,color:C.muted,lineHeight:1.6,margin:"-18px 0 28px",fontFamily:"'DM Mono',monospace",letterSpacing:0.8,textTransform:"uppercase"}}>
               Sample report opens instantly. No upload, token, or credit required.
             </div>
-            <div style={{marginTop:28,marginBottom:8,width:"100%",maxWidth:isMobile?"100%":680}}>
+            <div style={{marginTop:8,marginBottom:16,width:"100%",maxWidth:isMobile?"100%":600}}>
               <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
                 <div style={{height:1,flex:1,background:`linear-gradient(90deg,transparent,${C.border2})`}}/>
                 <span style={{fontSize:10,color:C.muted,fontFamily:"monospace",letterSpacing:"0.15em"}}>TEST AT EVERY PRODUCTION STAGE</span>
@@ -1621,155 +1621,35 @@ export default function App(){
                 Fix it at storyboard for <span style={{color:C.gold,fontWeight:700}}>₹299</span> — not at reshoot for <span style={{color:C.red,fontWeight:700}}>₹80 lakh.</span>
               </div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:12,margin:"0 0 24px",maxWidth:720}}>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:620}}>
+              {["OUTCOME FORECASTING","MEDIA WASTAGE RISK","CREATIVE ACCOUNTABILITY","PLATFORM OUTCOME MATRIX"].map(t=>(
+                <span key={t} style={{padding:"8px 12px",background:C.s1,borderRadius:8,border:`1px solid ${C.border}`,fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>{t}</span>
+              ))}
+            </div>
+          </section>
+
+          <section style={{minWidth:0,alignSelf:isMobile?"auto":"center",transform:isMobile?"none":isTablet?"translateY(10px)":"translateY(18px)"}}>
+            <NeuralSignalBrainPanel isDarkMode={isDarkMode}/>
+          </section>
+
+          <section style={{display:"grid",gap:14,minWidth:0}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr",gap:10}}>
               {[
                 ["Before Production","Test concept, storyboard, rough cut, or final film before costly rework.",C.gold],
                 ["Before Media Spend","Forecast whether exposure is likely to create memory, action, or waste.",C.cyan],
                 ["Before The Blame Game","Separate creative-led risk from media-dependent risk.",C.purple],
               ].map(([title,body,color])=>(
-                <div key={title} style={{padding:16,borderRadius:12,background:`${color}0d`,border:`1px solid ${color}33`}}>
-                  <div style={{fontSize:11,color:color,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:8}}>{title}</div>
+                <div key={title} style={{padding:15,borderRadius:14,background:`linear-gradient(135deg,${color}12,${C.s1})`,border:`1px solid ${color}33`,boxShadow:isDarkMode?"none":elevationShadow}}>
+                  <div style={{fontSize:10,color:color,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:7}}>{title}</div>
                   <div style={{fontSize:12,color:C.dim,lineHeight:1.55}}>{body}</div>
                 </div>
               ))}
             </div>
-            <div style={{margin:"0 0 22px",padding:"12px 14px",background:`${C.gold}0d`,border:`1px solid ${C.gold}30`,borderRadius:10,color:C.dim,fontSize:13,lineHeight:1.65,fontStyle:"italic",maxWidth:720}}>
+            <div style={{padding:"14px 16px",background:`${C.gold}0d`,border:`1px solid ${C.gold}30`,borderRadius:14,color:C.dim,fontSize:13,lineHeight:1.65,fontStyle:"italic"}}>
               <span style={{color:C.gold,fontWeight:900,fontStyle:"normal"}}>Why this matters: </span>
               Media buys exposure. Creative decides whether exposure becomes memory, preference, action, or waste.
             </div>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:720}}>
-              {["OUTCOME FORECASTING","MEDIA WASTAGE RISK","CREATIVE ACCOUNTABILITY","PLATFORM OUTCOME MATRIX","🎞️ PRE-PRODUCTION TESTING","🧠 TRIBE V2 CALIBRATED","17 NEURAL METRICS","15 PLATFORM SCORES"].map(t=>(
-                <span key={t} style={{padding:"8px 12px",background:C.s1,borderRadius:8,border:`1px solid ${C.border}`,fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:0.8}}>{t}</span>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap",maxWidth:720,marginTop:12}}>
-              {["Predictive, not biometric","TRIBE v2-informed neural markers","LAMBDA memorability research","Ehrenberg-Bass mental availability principles"].map(t=>(
-                <span key={t} style={{padding:"7px 10px",background:"transparent",borderRadius:8,border:`1px solid ${C.border2}`,fontSize:11,fontWeight:800,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:0.7}}>{t}</span>
-              ))}
-            </div>
-            <div style={{fontSize:11,color:C.muted,lineHeight:1.65,marginTop:16,maxWidth:720}}>
-              AdCritIQ™ forecasts creative-response probability. It does not guarantee sales lift, replace media measurement, or claim live biometric testing.
-            </div>
-          </section>
-
-          {/* Neural Signal Brain — desktop only */}
-          {!isMobile&&<NeuralSignalBrainPanel isDarkMode={isDarkMode}/>}
-          {false&&(
-            <div style={{
-              marginBottom:28,
-              borderRadius:16,
-              overflow:"hidden",
-              boxShadow:isDarkMode
-                ?"0 0 40px rgba(245,166,35,0.08)"
-                :"0 8px 32px rgba(0,0,0,0.25)",
-            }}>
-              <svg width="100%" viewBox="0 0 680 520" role="img" xmlns="http://www.w3.org/2000/svg">
-                <title>AdCritIQ™ Neural Signal Map — 8 cortical regions predictive advertising analysis</title>
-                <defs>
-                  <style>{`
-                    @keyframes bp{0%,100%{opacity:.55;r:14}50%{opacity:1;r:17}}
-                    @keyframes rp{0%,100%{opacity:.1}50%{opacity:.4}}
-                    @keyframes sd{0%{stroke-dashoffset:180}100%{stroke-dashoffset:0}}
-                    @keyframes sd2{0%{stroke-dashoffset:260}100%{stroke-dashoffset:0}}
-                    @keyframes sd3{0%{stroke-dashoffset:140}100%{stroke-dashoffset:0}}
-                    .b1{animation:bp 2.2s ease-in-out infinite}
-                    .b2{animation:bp 2.6s ease-in-out .4s infinite}
-                    .b3{animation:bp 2.0s ease-in-out .7s infinite}
-                    .b4{animation:bp 2.8s ease-in-out 1.0s infinite}
-                    .b5{animation:bp 2.3s ease-in-out 1.3s infinite}
-                    .b6{animation:bp 2.5s ease-in-out .2s infinite}
-                    .b7{animation:bp 2.1s ease-in-out .9s infinite}
-                    .b8{animation:bp 2.7s ease-in-out .6s infinite}
-                    .r1{animation:rp 2.2s ease-in-out infinite}
-                    .r2{animation:rp 2.6s ease-in-out .4s infinite}
-                    .r3{animation:rp 2.0s ease-in-out .7s infinite}
-                    .r4{animation:rp 2.8s ease-in-out 1.0s infinite}
-                    .r5{animation:rp 2.3s ease-in-out 1.3s infinite}
-                    .r6{animation:rp 2.5s ease-in-out .2s infinite}
-                    .r7{animation:rp 2.1s ease-in-out .9s infinite}
-                    .r8{animation:rp 2.7s ease-in-out .6s infinite}
-                    .s1{animation:sd 2.8s linear infinite;stroke-dasharray:10 6}
-                    .s2{animation:sd2 3.6s linear 1s infinite;stroke-dasharray:8 8}
-                    .s3{animation:sd3 2.2s linear .5s infinite;stroke-dasharray:6 5}
-                  `}</style>
-                  <pattern id="bg2" width="36" height="36" patternUnits="userSpaceOnUse">
-                    <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#C8860A" strokeWidth="0.4" opacity="0.18"/>
-                  </pattern>
-                </defs>
-                <rect width="680" height="520" rx="16" fill="#080810"/>
-                <rect width="680" height="520" rx="16" fill="url(#bg2)"/>
-                <rect x="1" y="1" width="678" height="518" rx="15" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.25"/>
-                <rect x="0" y="0" width="680" height="38" fill="#0C0C18"/>
-                <rect x="0" y="37" width="680" height="1" fill="#F5A623" opacity="0.2"/>
-                <text x="26" y="23" fontFamily="monospace" fontSize="11" fill="#F5A623" opacity="0.7" letterSpacing="3">ADCRITIQ™</text>
-                <text x="340" y="23" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity="0.5" letterSpacing="2">NEURAL SIGNAL MAP</text>
-                <text x="654" y="23" textAnchor="end" fontFamily="monospace" fontSize="10" fill="#4ADE80" opacity="0.7" letterSpacing="1">● LIVE</text>
-                <path d="M 240 90 C 168 68,95 100,76 162 C 56 228,66 272,84 310 C 105 354,132 382,165 394 C 192 405,220 400,238 388 C 252 378,258 362,264 344 C 272 322,272 300,278 280 C 285 260,295 244,303 230 C 312 215,318 203,320 190 C 326 172,318 152,318 136 C 318 117,323 97,314 84 C 298 64,264 78,240 90 Z" fill="#F5A623" fillOpacity="0.03" stroke="#F5A623" strokeWidth="2.5" opacity="0.75"/>
-                <path d="M 440 90 C 512 68,585 100,604 162 C 624 228,614 272,596 310 C 575 354,548 382,515 394 C 488 405,460 400,442 388 C 428 378,422 362,416 344 C 408 322,408 300,402 280 C 395 260,385 244,377 230 C 368 215,362 203,360 190 C 354 172,362 152,362 136 C 362 117,357 97,366 84 C 382 64,416 78,440 90 Z" fill="#F5A623" fillOpacity="0.03" stroke="#F5A623" strokeWidth="2.5" opacity="0.75"/>
-                <path d="M 320 190 C 330 176,340 170,340 170 C 340 170,350 176,360 190" fill="none" stroke="#F5A623" strokeWidth="3" opacity="0.6"/>
-                <ellipse cx="340" cy="170" rx="22" ry="8" fill="#F5A623" fillOpacity="0.08" stroke="#F5A623" strokeWidth="1.5" opacity="0.4"/>
-                <path d="M 104 185 C 130 172,162 170,182 185 C 200 200,204 224,194 242" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
-                <path d="M 88 258 C 116 244,152 248,174 268" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
-                <path d="M 122 334 C 152 320,186 326,208 346" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
-                <path d="M 184 118 C 212 106,244 108,258 125" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.25"/>
-                <path d="M 576 185 C 550 172,518 170,498 185 C 480 200,476 224,486 242" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
-                <path d="M 592 258 C 564 244,528 248,506 268" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
-                <path d="M 558 334 C 528 320,494 326,472 346" fill="none" stroke="#F5A623" strokeWidth="1.2" opacity="0.3"/>
-                <path d="M 216 168 C 218 200,214 225,212 250" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
-                <path d="M 228 264 C 260 272,295 276,314 288" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
-                <path d="M 330 304 C 338 340,340 368,340 385" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
-                <path d="M 246 158 C 285 152,316 154,340 160" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
-                <path d="M 340 160 C 364 154,395 152,434 158" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
-                <path d="M 528 258 C 510 276,480 286,460 296" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
-                <path d="M 354 390 C 388 372,444 338,458 300" fill="none" stroke="#F5A623" strokeWidth="1" opacity="0.35"/>
-                <path d="M 148 252 C 240 246,440 248,522 252" fill="none" stroke="#F5A623" strokeWidth="0.8" opacity="0.18"/>
-                <path d="M 246 158 C 285 152,316 154,340 160" fill="none" stroke="#FFD580" strokeWidth="2.5" className="s1"/>
-                <path d="M 340 160 C 364 154,395 152,434 158" fill="none" stroke="#F5A623" strokeWidth="2" className="s2"/>
-                <path d="M 216 168 C 218 200,214 225,212 250" fill="none" stroke="#FF6B9D" strokeWidth="2" className="s3"/>
-                <circle cx="216" cy="158" r="28" fill="#F5A623" className="r1"/>
-                <circle cx="216" cy="158" r="14" fill="#F5A623" className="b1"/>
-                <text x="216" y="126" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#F5A623" fontWeight="700" letterSpacing="0.6">PREFRONTAL CORTEX</text>
-                <text x="216" y="139" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity="0.55">DECISION · BRAND TRUST</text>
-                <circle cx="212" cy="262" r="24" fill="#FF6B9D" className="r2"/>
-                <circle cx="212" cy="262" r="13" fill="#FF6B9D" className="b2"/>
-                <text x="160" y="254" textAnchor="end" fontFamily="monospace" fontSize="11" fill="#FF6B9D" fontWeight="700" letterSpacing="0.6">AMYGDALA</text>
-                <text x="160" y="267" textAnchor="end" fontFamily="monospace" fontSize="10" fill="#FF6B9D" opacity="0.55">EMOTION · DESIRE · FEAR</text>
-                <circle cx="318" cy="296" r="24" fill="#22D3EE" className="r3"/>
-                <circle cx="318" cy="296" r="13" fill="#22D3EE" className="b3"/>
-                <text x="296" y="330" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#22D3EE" fontWeight="700" letterSpacing="0.6">HIPPOCAMPUS</text>
-                <text x="296" y="343" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#22D3EE" opacity="0.55">MEMORY ENCODING</text>
-                <circle cx="340" cy="392" r="28" fill="#10B981" className="r4"/>
-                <circle cx="340" cy="392" r="15" fill="#10B981" className="b4"/>
-                <text x="340" y="432" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#10B981" fontWeight="700" letterSpacing="0.6">VISUAL CORTEX</text>
-                <text x="340" y="445" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#10B981" opacity="0.55">ATTENTION · SALIENCE · V1-V4</text>
-                <circle cx="130" cy="252" r="24" fill="#A78BFA" className="r5"/>
-                <circle cx="130" cy="252" r="13" fill="#A78BFA" className="b5"/>
-                <text x="130" y="214" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#A78BFA" fontWeight="700" letterSpacing="0.6">AUDITORY CORTEX</text>
-                <text x="130" y="227" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#A78BFA" opacity="0.55">SONIC BRAND · STS BINDING</text>
-                <circle cx="340" cy="160" r="30" fill="#F5A623" className="r6"/>
-                <circle cx="340" cy="160" r="16" fill="#F5A623" className="b6"/>
-                <text x="340" y="124" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#FFD580" fontWeight="700" letterSpacing="0.6">ANTERIOR CINGULATE</text>
-                <text x="340" y="137" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#FFD580" opacity="0.55">ATTENTION CONTROL</text>
-                <circle cx="528" cy="258" r="24" fill="#FB923C" className="r7"/>
-                <circle cx="528" cy="258" r="13" fill="#FB923C" className="b7"/>
-                <text x="574" y="243" textAnchor="start" fontFamily="monospace" fontSize="11" fill="#FB923C" fontWeight="700" letterSpacing="0.6">MIRROR NEURONS</text>
-                <text x="574" y="256" textAnchor="start" fontFamily="monospace" fontSize="10" fill="#FB923C" opacity="0.55">EMPATHY · PRODUCT DESIRE</text>
-                <circle cx="458" cy="296" r="24" fill="#EC4899" className="r8"/>
-                <circle cx="458" cy="296" r="13" fill="#EC4899" className="b8"/>
-                <text x="490" y="327" textAnchor="start" fontFamily="monospace" fontSize="11" fill="#EC4899" fontWeight="700" letterSpacing="0.6">NUCLEUS ACCUMBENS</text>
-                <text x="490" y="340" textAnchor="start" fontFamily="monospace" fontSize="10" fill="#EC4899" opacity="0.55">REWARD · BRAND LOVE</text>
-                <circle cx="434" cy="158" r="22" fill="#F5A623" className="r2"/>
-                <circle cx="434" cy="158" r="12" fill="#F5A623" opacity="0.65" className="b2"/>
-                <text x="434" y="126" textAnchor="middle" fontFamily="monospace" fontSize="11" fill="#F5A623" opacity="0.65" fontWeight="600">PREFRONTAL CORTEX</text>
-                <text x="434" y="139" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#F5A623" opacity="0.4">EXECUTIVE FUNCTION</text>
-                <rect x="0" y="489" width="680" height="31" fill="#0C0C18"/>
-                <rect x="0" y="489" width="680" height="1" fill="#F5A623" opacity="0.2"/>
-                <text x="340" y="509" textAnchor="middle" fontFamily="monospace" fontSize="9" fill="#F5A623" opacity="0.4" letterSpacing="3">PREDICTIVE · NOT BIOMETRIC · CALIBRATED AGAINST TRIBE V2 RESEARCH</text>
-              </svg>
-            </div>
-          )}
-
-          <section style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:isMobile?22:28,boxShadow:isDarkMode?`0 24px 80px ${C.shadow}`:elevationShadow}}>
+            <section style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:isMobile?20:22,boxShadow:isDarkMode?`0 24px 80px ${C.shadow}`:elevationShadow}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,borderBottom:`1px solid ${C.border}`,paddingBottom:18,marginBottom:20}}>
               <div>
                 <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1.4,textTransform:"uppercase"}}>Live Output</div>
@@ -1804,6 +1684,15 @@ export default function App(){
               {["Outcome drivers","Risk flags","Platform matrix","PDF report"].map(item=>(
                 <div key={item} style={{padding:14,borderRadius:10,background:C.s2,border:`1px solid ${C.border}`,fontSize:13,color:C.text,fontWeight:700}}>{item}</div>
               ))}
+            </div>
+            </section>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {["TRIBE v2-informed","LAMBDA memorability","Predictive, not biometric","17 neural metrics","15 platform scores"].map(t=>(
+                <span key={t} style={{padding:"7px 10px",background:"transparent",borderRadius:8,border:`1px solid ${C.border2}`,fontSize:10,fontWeight:800,color:C.muted,fontFamily:"'DM Mono',monospace",letterSpacing:0.7,textTransform:"uppercase"}}>{t}</span>
+              ))}
+            </div>
+            <div style={{fontSize:10,color:C.muted,lineHeight:1.65}}>
+              AdCritIQ™ forecasts creative-response probability. It does not guarantee sales lift, replace media measurement, or claim live biometric testing.
             </div>
           </section>
         </main>

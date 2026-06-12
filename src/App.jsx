@@ -1510,18 +1510,15 @@ export default function App(){
     );
     const inp={width:"100%",boxSizing:"border-box",height:56,padding:"0 18px",borderRadius:14,border:`1px solid ${C.border}`,borderTop:`1px solid ${isDarkMode?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.85)"}`,background:`linear-gradient(180deg,${isDarkMode?"rgba(255,255,255,0.035)":"rgba(255,255,255,0.45)"},${isDarkMode?"rgba(255,255,255,0.01)":"rgba(255,255,255,0.12)"}),${C.s2}`,color:C.text,fontSize:15,outline:"none",fontFamily:"inherit",boxShadow:isDarkMode?"inset 0 1px 0 rgba(255,255,255,0.03)":"inset 0 1px 0 rgba(255,255,255,0.7)",transition:"border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease"};
     const lbl={fontSize:10,fontWeight:900,letterSpacing:2.4,color:C.dim,textTransform:"uppercase",marginBottom:0,display:"block",fontFamily:"'DM Mono',monospace"};
-    const selectArrowColor=encodeURIComponent(C.dim);
     const selStyle={
       ...inp,
-      WebkitAppearance:"none",
-      MozAppearance:"none",
-      appearance:"none",
+      WebkitAppearance:"auto",
+      MozAppearance:"auto",
+      appearance:"auto",
       backgroundColor:C.s2,
-      backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='${selectArrowColor}' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+      backgroundImage:"none",
       backgroundRepeat:"no-repeat",
-      backgroundPosition:"right 16px center",
-      backgroundSize:"12px 12px",
-      paddingRight:44,
+      paddingRight:18,
     };
     return(
       <div style={{minHeight:"100vh",background:`radial-gradient(circle at 18% 0%,${C.gold}12 0%,transparent 30%),radial-gradient(circle at 100% 15%,${C.purple}10 0%,transparent 26%),linear-gradient(180deg,${C.bg},${C.ink})`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",position:"relative",overflow:"hidden"}}>

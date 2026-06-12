@@ -19,6 +19,8 @@ export default async function handler(req, res) {
 
     const brand = req.query?.brand;
     const grade = req.query?.grade;
+    const isCompetitor = req.query?.is_competitor;
+    const competitorOf = req.query?.competitor_of;
     const limit = req.query?.limit || "50";
 
     const query = new URLSearchParams();
@@ -27,6 +29,8 @@ export default async function handler(req, res) {
     query.set("limit", limit);
     if (brand) query.set("brand", `eq.${brand}`);
     if (grade) query.set("overall_grade", `eq.${grade}`);
+    if (isCompetitor === "true" || isCompetitor === "false") query.set("is_competitor", `eq.${isCompetitor}`);
+    if (competitorOf) query.set("competitor_of", `eq.${competitorOf}`);
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/analyses?${query.toString()}`, {
       method: "GET",

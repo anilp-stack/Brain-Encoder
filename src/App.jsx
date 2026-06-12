@@ -60,6 +60,18 @@ const LIGHT_THEME = {
 
 const grade=(v)=>v>=90?"A+":v>=85?"A":v>=80?"A-":v>=75?"B+":v>=70?"B":v>=65?"B-":v>=60?"C+":v>=55?"C":v>=50?"C-":v>=40?"D":"F";
 
+const COMPETITIVE_METRICS = [
+  ["Viral Potential", "viral_potential"],
+  ["Hook Strength", "hook_strength"],
+  ["Hold Rate", "hold_rate"],
+  ["Emotional Peak", "emotional_peak"],
+  ["Brand Recall", "brand_recall"],
+  ["Memory Encoding", "memory_encoding"],
+  ["Sound-Off Survival", "sound_off_survival"],
+  ["Share Intent", "share_intent"],
+  ["Creative Efficiency", "creative_efficiency"],
+];
+
 // ============================================================
 // SHARED COMPONENTS — Premium Edition
 // ============================================================
@@ -516,6 +528,12 @@ export default function App(){
   const [shareCopied, setShareCopied] = useState(false);
   const [productionStage, setProductionStage] = useState("final");
   const [storyboardFiles, setStoryboardFiles] = useState([]);
+  const [isCompetitorAnalysis, setIsCompetitorAnalysis] = useState(false);
+  const [competitorOf, setCompetitorOf] = useState("");
+  const [repoMode, setRepoMode] = useState("saved");
+  const [competitiveBrand, setCompetitiveBrand] = useState("");
+  const [competitiveIntel, setCompetitiveIntel] = useState(null);
+  const [competitiveIntelLoading, setCompetitiveIntelLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
       return localStorage.getItem("adcritiq_theme") !== "light";
@@ -709,6 +727,7 @@ export default function App(){
     if(!form.country) missingFields.push("Country");
     if(!form.industry) missingFields.push("Industry Vertical");
     if(!form.type) missingFields.push("Creative Type");
+    if(isCompetitorAnalysis&&!competitorOf.trim()) missingFields.push("This is a competitor of");
     if(productionStage==="concept"&&form.script.trim().length<100) missingFields.push("Concept / Script (minimum 100 characters)");
     if(productionStage==="storyboard"&&storyboardFiles.length<2) missingFields.push("Storyboard Frames (minimum 2)");
     if(productionStage==="roughcut"&&(!file||!file.type.startsWith("video/"))) missingFields.push("Rough Cut Video File");
@@ -784,6 +803,8 @@ export default function App(){
           creative_format:creativeFormat,
           creative_subtype:form.type,
           script:form.script,
+          is_competitor:isCompetitorAnalysis,
+          competitor_of:isCompetitorAnalysis?competitorOf.trim():null,
           isStatic:creativeFormat==="static_image"||productionStage==="storyboard",
           duration:frameData.duration,
           duration_seconds:frameData.duration_seconds,
@@ -866,6 +887,8 @@ export default function App(){
         creative_format:creativeFormat,
         creative_subtype:form.type,
         production_stage:productionStage,
+        is_competitor:isCompetitorAnalysis,
+        competitor_of:isCompetitorAnalysis?competitorOf.trim():null,
         scenes: richData?.scenes||fastData?.scenes||[],
         strategic_insights: richData?.strategic_insights||fastData?.strategic_insights||[],
         cmo_actions: richData?.cmo_actions||fastData?.cmo_actions||[],
@@ -970,7 +993,7 @@ export default function App(){
       setStage("results");setTab("summary");
 
     }catch(e){setError(e.message);setStage("form");}
-  },[file,fileB,form,token,compareMode,compareType,formB,labelB,productionStage,storyboardFiles]);
+  },[file,fileB,form,token,compareMode,compareType,formB,labelB,productionStage,storyboardFiles,isCompetitorAnalysis,competitorOf]);
 
   const cleanResultForSave=(source)=>{
     const clean={};
@@ -995,6 +1018,8 @@ export default function App(){
           industry:form.industry,
           market:form.market,
           country:form.country,
+          is_competitor:fullResult.is_competitor===true||isCompetitorAnalysis,
+          competitor_of:fullResult.competitor_of||(isCompetitorAnalysis?competitorOf.trim():null),
           creative_type:fullResult.creative_format||getCreativeFormat(form.type,file),
           overall_grade:fullResult.overall_grade,
           headline_verdict:fullResult.headline_verdict,
@@ -1131,6 +1156,26 @@ export default function App(){
     }
   };
 
+  const loadCompetitiveIntel=async(brandOverride)=>{
+    const brand=(brandOverride||competitiveBrand||competitorOf||form.brand||"").trim();
+    if(!brand){
+      alert("Enter your own brand name to load competitive intelligence.");
+      return;
+    }
+    setCompetitiveBrand(brand);
+    setCompetitiveIntelLoading(true);
+    try{
+      const resp=await fetch(`/api/get-competitive-intel?brand=${encodeURIComponent(brand)}`);
+      const data=await resp.json();
+      if(!resp.ok||!data.success)throw new Error(data.error||"Failed to load competitive intelligence");
+      setCompetitiveIntel(data);
+    }catch(e){
+      alert("Competitive intelligence load failed: "+e.message);
+    }finally{
+      setCompetitiveIntelLoading(false);
+    }
+  };
+
   const deleteSavedAnalysis=async(id)=>{
     if(!confirm("Delete this analysis? This cannot be undone."))return;
     try{
@@ -1145,7 +1190,12 @@ export default function App(){
 
   const setDashboardTab=(next)=>{
     setTab(next);
-    if(next==="repository")loadRepository();
+    if(next==="repository"){
+      loadRepository();
+      if(!competitiveBrand){
+        setCompetitiveBrand(competitorOf||form.brand||"");
+      }
+    }
   };
 
   const toggleMethSection=(key)=>{
@@ -1183,6 +1233,12 @@ export default function App(){
     setShowShareModal(false);
     setShareLoading(false);
     setShareCopied(false);
+    setIsCompetitorAnalysis(false);
+    setCompetitorOf("");
+    setRepoMode("saved");
+    setCompetitiveBrand("");
+    setCompetitiveIntel(null);
+    setCompetitiveIntelLoading(false);
     localStorage.removeItem("adcritiq_token");
   };
 
@@ -1574,7 +1630,11 @@ export default function App(){
             <section style={sectionSurface(C.gold)}>
               {sectionHead("01","Campaign Context","Define the brand, audience and market inputs used to frame the analysis.")}
               <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
-                <div style={fieldWrap}><label style={lbl}>Brand Name *</label><input placeholder="e.g. Dabur, Nestlé, Coca-Cola" style={inp} value={form.brand} onChange={e=>u("brand",e.target.value)}/></div>
+                <div style={fieldWrap}>
+                  <label style={lbl}>{isCompetitorAnalysis?"Competitor Brand Name *":"Brand Name *"}</label>
+                  <input placeholder={isCompetitorAnalysis?"e.g. Coca-Cola, Pepsi, Samsung":"e.g. Dabur, Nestlé, Coca-Cola"} style={inp} value={form.brand} onChange={e=>u("brand",e.target.value)}/>
+                  {isCompetitorAnalysis&&<div style={{fontSize:11,color:C.dim,lineHeight:1.5,marginTop:7}}>Brand field now means the competitor's brand name.</div>}
+                </div>
                 <div style={fieldWrap}><label style={lbl}>Client / Advertiser</label><input placeholder="e.g. Dabur India Ltd" style={inp} value={form.client} onChange={e=>u("client",e.target.value)}/></div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
@@ -1638,6 +1698,40 @@ export default function App(){
                     <div style={{position:"absolute",top:3,left:compareMode?23:3,width:18,height:18,borderRadius:"50%",background:compareMode?C.ink:C.muted,transition:"left 0.2s ease"}}/>
                   </div>
                 </div>
+              </div>
+              <div style={{display:"grid",gap:12,marginBottom:20,padding:"15px 18px",background:isCompetitorAnalysis?`linear-gradient(135deg,${C.purple}18,${C.s2})`:C.s2,border:`1px solid ${isCompetitorAnalysis?C.purple+"66":C.border}`,borderRadius:16,boxShadow:isCompetitorAnalysis?`0 14px 34px ${C.purple}14`:"none"}}>
+                <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row"}}>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:900,color:isCompetitorAnalysis?C.purple:C.text,letterSpacing:0.4}}>
+                      🔍 Competitive Intelligence Mode
+                    </div>
+                    <div style={{fontSize:12,color:C.dim,marginTop:5,lineHeight:1.55}}>
+                      Analysing a competitor's creative downloaded from Meta Ad Library, YouTube, or another public source.
+                    </div>
+                  </div>
+                  <div
+                    onClick={()=>setIsCompetitorAnalysis(v=>!v)}
+                    style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none",alignSelf:isMobile?"flex-end":"center",padding:"8px 10px",borderRadius:999,background:C.s1,border:`1px solid ${isCompetitorAnalysis?C.purple+"66":C.border}`}}
+                  >
+                    <div style={{fontSize:12,color:isCompetitorAnalysis?C.purple:C.dim,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>
+                      {isCompetitorAnalysis?"ON":"OFF"}
+                    </div>
+                    <div style={{width:44,height:24,borderRadius:999,background:isCompetitorAnalysis?C.purple:C.border2,position:"relative",transition:"background 0.2s ease",flexShrink:0}}>
+                      <div style={{position:"absolute",top:3,left:isCompetitorAnalysis?23:3,width:18,height:18,borderRadius:"50%",background:isCompetitorAnalysis?C.text:C.muted,transition:"left 0.2s ease"}}/>
+                    </div>
+                  </div>
+                </div>
+                {isCompetitorAnalysis&&(
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(260px,0.48fr) 1fr",gap:14,alignItems:"end"}}>
+                    <div style={fieldWrap}>
+                      <label style={lbl}>This is a competitor of (your brand) *</label>
+                      <input placeholder="e.g. Coca-Cola" style={{...inp,borderColor:!competitorOf.trim()?C.purple:C.border}} value={competitorOf} onChange={e=>setCompetitorOf(e.target.value)}/>
+                    </div>
+                    <div style={{fontSize:12,color:C.dim,lineHeight:1.65,padding:"12px 14px",borderRadius:12,background:`${C.purple}10`,border:`1px solid ${C.purple}33`}}>
+                      Download the competitor ad from Meta Ad Library or YouTube and upload it here. The analysis will be tagged to your competitive dashboard.
+                    </div>
+                  </div>
+                )}
               </div>
               {compareMode&&(
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12,marginBottom:16}}>
@@ -2105,6 +2199,24 @@ export default function App(){
       ["Share Intent","share_intent"],
       ["Creative Efficiency","creative_efficiency"],
     ];
+    const competitiveOwn=competitiveIntel?.own||null;
+    const competitiveCompetitors=competitiveIntel?.competitors||[];
+    const competitiveGapRows=COMPETITIVE_METRICS.map(([label,key])=>{
+      const ownVal=competitiveOwn?.averages?.[key];
+      const best=competitiveCompetitors.reduce((winner,competitor)=>{
+        const val=competitor?.averages?.[key];
+        if(typeof val!=="number")return winner;
+        if(!winner||val>winner.value)return {brand:competitor.brand,value:val};
+        return winner;
+      },null);
+      const gap=typeof ownVal==="number"&&best?ownVal-best.value:null;
+      return {label,key,ownVal,best,gap};
+    });
+    const competitiveInsights=competitiveGapRows
+      .filter(row=>typeof row.gap==="number"&&row.gap<0&&row.best)
+      .sort((a,b)=>a.gap-b.gap)
+      .slice(0,3)
+      .map(row=>`Trailing ${row.best.brand} on ${row.label} by ${Math.abs(row.gap)} points — prioritize this gap in the next creative iteration.`);
     const gradeRank=(g)=>{
       const order=["A+","A","A-","B+","B","B-","C+","C","C-","D","F"];
       const idx=order.indexOf(g||"C");
@@ -2404,6 +2516,11 @@ export default function App(){
                 {resultStage!=="final"&&(
                   <div style={{display:"inline-flex",alignItems:"center",gap:8,marginTop:8,padding:"5px 10px",borderRadius:999,border:`1px solid ${C.gold}55`,background:`${C.gold}12`,color:C.gold,fontSize:10,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>
                     {stageLabel} · projected scores
+                  </div>
+                )}
+                {r.is_competitor&&(
+                  <div style={{display:"inline-flex",alignItems:"center",gap:8,marginTop:8,marginLeft:resultStage!=="final"&&!isMobile?8:0,padding:"5px 10px",borderRadius:999,border:`1px solid ${C.purple}66`,background:`${C.purple}18`,color:C.purple,fontSize:10,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>
+                    COMPETITOR INTEL — vs {r.competitor_of||competitorOf||"Your Brand"}
                   </div>
                 )}
                 {r.headline_verdict&&<div style={{fontSize:13,color:C.dim,marginTop:6,fontStyle:"italic",opacity:1}}>"{r.headline_verdict}"</div>}
@@ -3043,27 +3160,136 @@ export default function App(){
           {/* ===== REPOSITORY ===== */}
           {tab==="repository"&&(<>
             <Card C={C} style={{marginBottom:20}}>
-              <CardTitle C={C} label={C.gold}>Saved Analysis Repository</CardTitle>
-              <div style={{display:"grid",gridTemplateColumns:repoFilterGrid,gap:12,alignItems:"end"}}>
-                <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
-                  Brand
-                  <input id="repoBrandFilter" onChange={(e)=>loadRepository({brand:e.target.value,grade:document.getElementById("repoGradeFilter")?.value||""})}
-                    placeholder="Filter by brand"
-                    style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
-                </label>
-                <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
-                  Grade
-                  <input id="repoGradeFilter" onChange={(e)=>loadRepository({brand:document.getElementById("repoBrandFilter")?.value||"",grade:e.target.value})}
-                    placeholder="A+"
-                    style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
-                </label>
-                <button onClick={()=>loadRepository({brand:document.getElementById("repoBrandFilter")?.value||"",grade:document.getElementById("repoGradeFilter")?.value||""})}
-                  style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.gold}44`,background:`${C.gold}16`,color:C.gold,fontWeight:800,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
-                  Refresh
-                </button>
+              <div style={{display:"flex",alignItems:isMobile?"stretch":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row",marginBottom:18}}>
+                <CardTitle C={C} label={C.gold}>{repoMode==="competitive"?"Competitive Creative Intelligence":"Saved Analysis Repository"}</CardTitle>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {[
+                    ["saved","Saved Reports"],
+                    ["competitive","🔍 Competitive Intel"],
+                  ].map(([id,label])=>(
+                    <button key={id} onClick={()=>{
+                      setRepoMode(id);
+                      if(id==="saved")loadRepository();
+                      if(id==="competitive")loadCompetitiveIntel(competitiveBrand||competitorOf||form.brand);
+                    }} style={{padding:"9px 12px",borderRadius:10,border:`1px solid ${repoMode===id?C.gold+"66":C.border}`,background:repoMode===id?`${C.gold}16`:C.s2,color:repoMode===id?C.gold:C.dim,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
+              {repoMode==="saved"?(
+                <div style={{display:"grid",gridTemplateColumns:repoFilterGrid,gap:12,alignItems:"end"}}>
+                  <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
+                    Brand
+                    <input id="repoBrandFilter" onChange={(e)=>loadRepository({brand:e.target.value,grade:document.getElementById("repoGradeFilter")?.value||""})}
+                      placeholder="Filter by brand"
+                      style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                  </label>
+                  <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
+                    Grade
+                    <input id="repoGradeFilter" onChange={(e)=>loadRepository({brand:document.getElementById("repoBrandFilter")?.value||"",grade:e.target.value})}
+                      placeholder="A+"
+                      style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                  </label>
+                  <button onClick={()=>loadRepository({brand:document.getElementById("repoBrandFilter")?.value||"",grade:document.getElementById("repoGradeFilter")?.value||""})}
+                    style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.gold}44`,background:`${C.gold}16`,color:C.gold,fontWeight:800,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                    Refresh
+                  </button>
+                </div>
+              ):(
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(240px,0.45fr) auto",gap:12,alignItems:"end"}}>
+                  <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
+                    Your Brand
+                    <input value={competitiveBrand} onChange={e=>setCompetitiveBrand(e.target.value)}
+                      placeholder="e.g. Coca-Cola"
+                      style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                  </label>
+                  <button onClick={()=>loadCompetitiveIntel(competitiveBrand)}
+                    style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.purple}55`,background:`${C.purple}16`,color:C.purple,fontWeight:900,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                    Load Competitive Dashboard
+                  </button>
+                </div>
+              )}
             </Card>
-            {repoLoading?(
+            {repoMode==="competitive"?(
+              competitiveIntelLoading?(
+                <Card C={C} style={{textAlign:"center"}}>
+                  <div style={{fontSize:15,color:C.purple,fontWeight:800}}>Loading competitive intelligence...</div>
+                </Card>
+              ):!competitiveIntel||competitiveCompetitors.length===0?(
+                <Card C={C} style={{padding:28}}>
+                  <div style={{fontSize:18,color:C.text,fontWeight:900,marginBottom:10}}>No competitor analyses yet</div>
+                  <div style={{fontSize:14,color:C.dim,lineHeight:1.7,marginBottom:18}}>Build a competitive dashboard by tagging competitor creative uploads against your own brand.</div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:12}}>
+                    {[
+                      ["01","Download competitor ad","Use Meta Ad Library, YouTube, or another public source."],
+                      ["02","Toggle Competitive Mode","Enter your own brand in the competitor-of field."],
+                      ["03","Analyse and save","Saved competitor entries appear in this dashboard."],
+                    ].map(([num,title,body])=>(
+                      <div key={num} style={{padding:16,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:11,color:C.purple,fontWeight:900,fontFamily:"'DM Mono',monospace",marginBottom:8}}>{num}</div>
+                        <div style={{fontSize:14,color:C.text,fontWeight:900,marginBottom:6}}>{title}</div>
+                        <div style={{fontSize:12,color:C.dim,lineHeight:1.55}}>{body}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ):(
+                <div style={{display:"grid",gap:18}}>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fit,minmax(220px,1fr))",gap:14}}>
+                    {[competitiveOwn,...competitiveCompetitors].filter(Boolean).map((brandCard,idx)=>{
+                      const isOwn=idx===0;
+                      const score=brandCard?.averages?.grade_score;
+                      const color=isOwn?C.gold:C.purple;
+                      return(
+                        <Card C={C} key={`${brandCard.brand}-${idx}`} style={{padding:20,borderColor:isOwn?C.gold+"66":C.border}}>
+                          <div style={{fontSize:10,color:color,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>{isOwn?"Your Brand":"Competitor"}</div>
+                          <div style={{fontSize:20,color:C.text,fontWeight:900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{brandCard.brand}</div>
+                          <div style={{display:"flex",alignItems:"baseline",gap:8,marginTop:12}}>
+                            <span style={{fontSize:34,color:score!=null?color:C.dim,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{score??"—"}</span>
+                            <span style={{fontSize:11,color:C.dim,fontWeight:800}}>avg score</span>
+                          </div>
+                          <div style={{fontSize:12,color:C.dim,marginTop:6}}>{brandCard.count} analysis{brandCard.count===1?"":"es"}{brandCard.latest?` · latest ${new Date(brandCard.latest).toLocaleDateString("en-GB")}`:""}</div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                  <Card C={C} style={{padding:22}}>
+                    <CardTitle C={C} label={C.purple}>Metric Gap Analysis</CardTitle>
+                    <div style={{display:"grid",gap:10}}>
+                      {competitiveGapRows.map(row=>{
+                        const lead=row.gap==null?null:row.gap>=0;
+                        const gapColor=row.gap==null?C.dim:lead?C.green:C.red;
+                        return(
+                          <div key={row.key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.1fr 0.7fr 0.9fr 0.5fr",gap:10,alignItems:"center",padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                            <div style={{fontSize:13,color:C.text,fontWeight:900}}>{row.label}</div>
+                            <div style={{fontSize:12,color:C.dim}}>Own avg: <span style={{color:C.gold,fontWeight:900}}>{row.ownVal??"—"}</span></div>
+                            <div style={{fontSize:12,color:C.dim}}>Best competitor: <span style={{color:C.purple,fontWeight:900}}>{row.best?`${row.best.brand} ${row.best.value}`:"—"}</span></div>
+                            <div style={{justifySelf:isMobile?"start":"end",padding:"5px 9px",borderRadius:999,background:`${gapColor}15`,border:`1px solid ${gapColor}40`,color:gapColor,fontSize:12,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>
+                              {row.gap==null?"—":`${row.gap>=0?"+":""}${row.gap}`}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                  <Card C={C} style={{padding:22}}>
+                    <CardTitle C={C} label={C.red}>Biggest Competitive Gaps</CardTitle>
+                    {competitiveInsights.length?(
+                      <div style={{display:"grid",gap:10}}>
+                        {competitiveInsights.map((line,idx)=>(
+                          <div key={line} style={{padding:"12px 14px",borderRadius:12,background:`${C.red}10`,border:`1px solid ${C.red}30`,fontSize:13,color:C.dim,lineHeight:1.6}}>
+                            <span style={{color:C.red,fontWeight:900,fontFamily:"'DM Mono',monospace",marginRight:8}}>GAP {idx+1}</span>{line}
+                          </div>
+                        ))}
+                      </div>
+                    ):(
+                      <div style={{fontSize:14,color:C.green,lineHeight:1.7,fontWeight:800}}>No negative gaps detected against the current competitor set.</div>
+                    )}
+                  </Card>
+                </div>
+              )
+            ):repoLoading?(
               <Card C={C} style={{textAlign:"center"}}>
                 <div style={{fontSize:15,color:C.gold,fontWeight:700}}>Loading repository...</div>
               </Card>
@@ -3077,18 +3303,20 @@ export default function App(){
                 {savedAnalyses.map(a=>{
                   const gr=a.overall_grade||a.full_result?.overall_grade||"—";
                   const gc=gr==="A+"||gr==="A"||gr==="A-"?C.green:String(gr).startsWith("B")?C.amber:String(gr).startsWith("C")?C.gold:C.red;
+                  const isComp=a.is_competitor===true||a.full_result?.is_competitor===true;
                   return(
                     <Card C={C} key={a.id} delay={Math.min(savedAnalyses.indexOf(a)*70,500)} style={{padding:22}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:12}}>
                         <div style={{minWidth:0}}>
-                          <div style={{fontSize:18,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{a.brand||"Untitled Brand"}</div>
+                          <div style={{fontSize:18,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isComp?"🔍 ":""}{a.brand||"Untitled Brand"}</div>
                           <div style={{fontSize:11,color:C.dim,marginTop:4}}>{a.industry||"Unknown industry"} · {a.created_at?new Date(a.created_at).toLocaleDateString("en-GB"):"No date"}</div>
+                          {isComp&&<div style={{display:"inline-flex",marginTop:8,padding:"4px 8px",borderRadius:999,background:`${C.purple}14`,border:`1px solid ${C.purple}40`,color:C.purple,fontSize:9,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase"}}>Competitor of {a.competitor_of||a.full_result?.competitor_of||"your brand"}</div>}
                         </div>
                         <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:8,padding:"5px 10px",fontSize:13,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace"}}>{gr}</div>
                       </div>
                       <p style={{fontSize:13,color:C.dim,lineHeight:1.7,minHeight:44,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{a.headline_verdict||a.full_result?.headline_verdict||"No headline verdict saved."}</p>
                       <div style={{display:"flex",gap:10,marginTop:16}}>
-                        <button onClick={()=>{setResults(a.full_result||{});setTab("summary");}}
+                        <button onClick={()=>{setResults({...a.full_result,is_competitor:isComp,competitor_of:a.competitor_of||a.full_result?.competitor_of});setTab("summary");}}
                           style={{flex:1,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.cyan}44`,background:`${C.cyan}12`,color:C.cyan,fontWeight:800,cursor:"pointer"}}>
                           Load
                         </button>

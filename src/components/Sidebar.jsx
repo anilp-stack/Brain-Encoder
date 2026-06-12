@@ -145,26 +145,35 @@ export default function Sidebar({ C, tab, setTab, grade: gr, brand, onNew, onDow
         {groupedTabs.map((group, groupIdx) => {
           const accent = categoryColor(group.colorKey);
           return (
-            <div key={group.label} style={{ marginTop: groupIdx === 0 ? 0 : 13 }}>
+            <div
+              key={group.label}
+              style={{
+                marginTop: groupIdx === 0 ? 0 : 13,
+                padding: "10px 6px 8px",
+                borderRadius: 10,
+                background: `linear-gradient(135deg, ${accent}10, transparent 72%)`,
+                border: `1px solid ${accent}18`,
+              }}
+            >
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "0 12px 7px",
-                  color: C.dim,
-                  opacity: 0.78,
+                  padding: "0 8px 8px",
+                  color: accent,
+                  opacity: 0.96,
                   fontSize: 8,
-                  fontWeight: 800,
+                  fontWeight: 900,
                   fontFamily: "'DM Mono',monospace",
                   letterSpacing: "0.14em",
                   textTransform: "uppercase",
                 }}
               >
-                <span style={{ width: 3, height: 14, borderRadius: 999, background: accent, opacity: 0.75, flexShrink: 0 }} />
+                <span style={{ width: 3, height: 14, borderRadius: 999, background: accent, opacity: 0.95, flexShrink: 0, boxShadow: `0 0 12px ${accent}44` }} />
                 <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{group.label}</span>
               </div>
-              <div style={{ paddingBottom: groupIdx === groupedTabs.length - 1 ? 0 : 3, borderBottom: groupIdx === groupedTabs.length - 1 ? "none" : `1px solid ${C.border2}` }}>
+              <div style={{ paddingBottom: groupIdx === groupedTabs.length - 1 ? 0 : 3 }}>
                 {group.items.map((n) => {
                   const active = tab === n.id;
                   const hovered = hoveredTab === n.id;

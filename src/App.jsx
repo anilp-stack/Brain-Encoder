@@ -1363,11 +1363,20 @@ export default function App(){
     const formGrid3=isMobile?"1fr":isTablet?"1fr 1fr":"1fr 1fr 1fr";
     const fieldWrap={display:"grid",gap:8};
     const panelStyle={background:`linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01)),${C.s1}`,border:`1px solid ${C.border}`,borderTop:"1px solid rgba(255,255,255,0.09)",borderRadius:20,boxShadow:`0 30px 90px ${C.shadow}`,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)"};
+    const sectionSurface=(accent=C.gold)=>({
+      ...panelStyle,
+      padding:isMobile?20:30,
+      border:`1px solid ${C.border}`,
+      borderLeft:`3px solid ${accent}88`,
+      boxShadow:`0 28px 80px ${C.shadow}, inset 0 1px 0 rgba(255,255,255,0.035)`,
+      position:"relative",
+      overflow:"hidden"
+    });
     const sectionHead=(num,title,sub)=>(
-      <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:18}}>
-        <div style={{width:30,height:30,borderRadius:10,display:"grid",placeItems:"center",background:`${C.gold}18`,border:`1px solid ${C.gold}44`,color:C.gold,fontSize:11,fontWeight:900,fontFamily:"'DM Mono',monospace",flexShrink:0}}>{num}</div>
+      <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:24,paddingBottom:18,borderBottom:`1px solid ${C.border}`}}>
+        <div style={{width:34,height:34,borderRadius:11,display:"grid",placeItems:"center",background:`${C.gold}18`,border:`1px solid ${C.gold}44`,color:C.gold,fontSize:11,fontWeight:900,fontFamily:"'DM Mono',monospace",flexShrink:0,boxShadow:`0 10px 24px ${C.gold}12`}}>{num}</div>
         <div>
-          <div style={{fontSize:12,color:C.gold,fontWeight:900,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:4}}>{title}</div>
+          <div style={{fontSize:13,color:C.gold,fontWeight:900,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:5}}>{title}</div>
           <div style={{fontSize:13,color:C.dim,lineHeight:1.55}}>{sub}</div>
         </div>
       </div>
@@ -1409,75 +1418,8 @@ export default function App(){
 
           {error&&<div style={{padding:"15px 18px",borderRadius:14,background:"rgba(251,113,133,0.12)",color:C.red,fontSize:14,marginBottom:20,border:`1px solid ${C.red}55`,boxShadow:`0 18px 40px ${C.shadow}`}}>{error}</div>}
 
-          <div style={{...panelStyle,padding:isMobile?18:30}}>
-            <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:16,padding:"14px 16px",marginBottom:20,background:C.s2,border:`1px solid ${C.border}`,borderRadius:14,flexDirection:isMobile?"column":"row"}}>
-              <div>
-                <div style={{fontSize:13,fontWeight:800,color:C.text}}>
-                  {compareMode ? "⚖️ Comparing 2 Creatives" : "📁 Single Creative Analysis"}
-                </div>
-                <div style={{fontSize:12,color:C.dim,marginTop:4,lineHeight:1.5}}>
-                  {compareMode
-                    ? "Upload two creatives for side-by-side neural comparison"
-                    : "Analyse one creative across 17 metrics and 15 platforms"}
-                </div>
-              </div>
-              <div
-                onClick={()=>{
-                  if(compareMode){
-                    setCompareMode(false);
-                    setFileB(null);
-                    setPreviewB(null);
-                    setResultsB(null);
-                    setLabelA("Creative A");
-                    setLabelB("Creative B");
-                    setCompareType("versions");
-                    setFormB({brand:"",client:"",campaign:"",script:""});
-                  }else{
-                    setCompareMode(true);
-                  }
-                }}
-                style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none",alignSelf:isMobile?"flex-end":"center"}}
-              >
-                <div style={{fontSize:12,color:C.dim,fontWeight:800}}>
-                  {compareMode ? "Switch to Single" : "Compare 2 Creatives"}
-                </div>
-                <div style={{width:44,height:24,borderRadius:999,background:compareMode?C.gold:C.border2,position:"relative",transition:"background 0.2s ease",flexShrink:0}}>
-                  <div style={{position:"absolute",top:3,left:compareMode?23:3,width:18,height:18,borderRadius:"50%",background:compareMode?C.ink:C.muted,transition:"left 0.2s ease"}}/>
-                </div>
-              </div>
-            </div>
-            {compareMode&&(
-              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12,marginBottom:16}}>
-                {[
-                  {type:"versions",icon:"📁",title:"Two Versions",sub:"Same brand — two cuts of the same creative"},
-                  {type:"brands",icon:"🆚",title:"Brand vs Brand",sub:"Different brands — competitive comparison"},
-                ].map(opt=>(
-                  <div
-                    key={opt.type}
-                    onClick={()=>setCompareType(opt.type)}
-                    style={{padding:"15px 16px",border:`1px solid ${compareType===opt.type?C.gold+"88":C.border}`,borderRadius:14,cursor:"pointer",background:compareType===opt.type?`${C.gold}0f`:C.s2,transition:"all 0.15s ease",boxShadow:compareType===opt.type?`0 14px 34px ${C.gold}12`:"none"}}
-                  >
-                    <div style={{fontSize:22,marginBottom:7}}>{opt.icon}</div>
-                    <div style={{fontWeight:900,color:compareType===opt.type?C.gold:C.text,fontSize:13,marginBottom:5}}>{opt.title}</div>
-                    <div style={{fontSize:12,color:C.dim,lineHeight:1.5}}>{opt.sub}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {compareMode&&(
-              <div style={{background:`${C.gold}0f`,border:`1px solid ${C.gold}44`,borderRadius:14,padding:"14px 16px",marginBottom:24,display:"flex",alignItems:"center",gap:12,boxShadow:`0 16px 40px ${C.gold}0f`}}>
-                <span style={{fontSize:20,flexShrink:0}}>⚖️</span>
-                <div style={{minWidth:0}}>
-                  <div style={{fontWeight:900,color:C.gold,fontSize:13,letterSpacing:1,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>A/B Comparison Mode</div>
-                  <div style={{fontSize:12,color:C.dim,marginTop:4,lineHeight:1.5}}>
-                    {compareType==="brands"
-                      ? `Competitive benchmarking: ${form.brand||labelA} vs ${formB.brand||labelB}`
-                      : "Upload two creatives. AdCritIQ™ will analyse both and declare a winner per metric, platform, and overall."}
-                  </div>
-                </div>
-              </div>
-            )}
-            <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
+          <div style={{display:"grid",gap:isMobile?18:24}}>
+            <section style={sectionSurface(C.gold)}>
               {sectionHead("01","Campaign Context","Define the brand, audience and market inputs used to frame the analysis.")}
               <div style={{display:"grid",gridTemplateColumns:formGrid2,gap:18,marginBottom:18}}>
                 <div style={fieldWrap}><label style={lbl}>Brand Name *</label><input placeholder="e.g. Dabur, Nestlé, Coca-Cola" style={inp} value={form.brand} onChange={e=>u("brand",e.target.value)}/></div>
@@ -1507,8 +1449,75 @@ export default function App(){
               </div>
             </section>
 
-            <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
+            <section style={sectionSurface(C.cyan)}>
               {sectionHead("02","Creative Format","Select the primary creative environment and add any strategic context.")}
+              <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:16,padding:"16px 18px",marginBottom:20,background:`linear-gradient(135deg,${C.cyan}0d,${C.s2})`,border:`1px solid ${C.border}`,borderRadius:16,flexDirection:isMobile?"column":"row"}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:900,color:C.text}}>
+                    {compareMode ? "⚖️ Comparing 2 Creatives" : "📁 Single Creative Analysis"}
+                  </div>
+                  <div style={{fontSize:12,color:C.dim,marginTop:5,lineHeight:1.5}}>
+                    {compareMode
+                      ? "Upload two creatives for side-by-side neural comparison"
+                      : "Analyse one creative across 17 metrics and 15 platforms"}
+                  </div>
+                </div>
+                <div
+                  onClick={()=>{
+                    if(compareMode){
+                      setCompareMode(false);
+                      setFileB(null);
+                      setPreviewB(null);
+                      setResultsB(null);
+                      setLabelA("Creative A");
+                      setLabelB("Creative B");
+                      setCompareType("versions");
+                      setFormB({brand:"",client:"",campaign:"",script:""});
+                    }else{
+                      setCompareMode(true);
+                    }
+                  }}
+                  style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none",alignSelf:isMobile?"flex-end":"center",padding:"8px 10px",borderRadius:999,background:C.s1,border:`1px solid ${C.border}`}}
+                >
+                  <div style={{fontSize:12,color:C.dim,fontWeight:800}}>
+                    {compareMode ? "Switch to Single" : "Compare 2 Creatives"}
+                  </div>
+                  <div style={{width:44,height:24,borderRadius:999,background:compareMode?C.gold:C.border2,position:"relative",transition:"background 0.2s ease",flexShrink:0}}>
+                    <div style={{position:"absolute",top:3,left:compareMode?23:3,width:18,height:18,borderRadius:"50%",background:compareMode?C.ink:C.muted,transition:"left 0.2s ease"}}/>
+                  </div>
+                </div>
+              </div>
+              {compareMode&&(
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12,marginBottom:16}}>
+                  {[
+                    {type:"versions",icon:"📁",title:"Two Versions",sub:"Same brand — two cuts of the same creative"},
+                    {type:"brands",icon:"🆚",title:"Brand vs Brand",sub:"Different brands — competitive comparison"},
+                  ].map(opt=>(
+                    <div
+                      key={opt.type}
+                      onClick={()=>setCompareType(opt.type)}
+                      style={{padding:"15px 16px",border:`1px solid ${compareType===opt.type?C.gold+"88":C.border}`,borderRadius:14,cursor:"pointer",background:compareType===opt.type?`${C.gold}0f`:C.s2,transition:"all 0.15s ease",boxShadow:compareType===opt.type?`0 14px 34px ${C.gold}12`:"none"}}
+                    >
+                      <div style={{fontSize:22,marginBottom:7}}>{opt.icon}</div>
+                      <div style={{fontWeight:900,color:compareType===opt.type?C.gold:C.text,fontSize:13,marginBottom:5}}>{opt.title}</div>
+                      <div style={{fontSize:12,color:C.dim,lineHeight:1.5}}>{opt.sub}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {compareMode&&(
+                <div style={{background:`${C.gold}0f`,border:`1px solid ${C.gold}44`,borderRadius:14,padding:"14px 16px",marginBottom:24,display:"flex",alignItems:"center",gap:12,boxShadow:`0 16px 40px ${C.gold}0f`}}>
+                  <span style={{fontSize:20,flexShrink:0}}>⚖️</span>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontWeight:900,color:C.gold,fontSize:13,letterSpacing:1,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>A/B Comparison Mode</div>
+                    <div style={{fontSize:12,color:C.dim,marginTop:4,lineHeight:1.5}}>
+                      {compareType==="brands"
+                        ? `Competitive benchmarking: ${form.brand||labelA} vs ${formB.brand||labelB}`
+                        : "Upload two creatives. AdCritIQ™ will analyse both and declare a winner per metric, platform, and overall."}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div style={{marginBottom:20}}>
                 <label style={{...lbl,marginBottom:10}}>Production Stage</label>
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"repeat(2,1fr)":"repeat(4,1fr)",gap:12}}>
@@ -1586,7 +1595,7 @@ export default function App(){
               </div>
             </section>
 
-            <section style={{paddingBottom:26,borderBottom:`1px solid ${C.border}`,marginBottom:26}}>
+            <section style={sectionSurface(C.purple)}>
               {sectionHead("03","Upload Asset",productionStage==="concept"?"No file is required for concept testing. Paste the concept or script in the Creative Format section above.":productionStage==="storyboard"?"Upload 2-12 storyboard frames in intended sequence. AdCritIQ will read them as a narrative board.":getCreativeFormat(form.type,file)==="text"?"No file is required for text/script analysis. Paste the copy in the Creative Format section above.":"Upload the creative file that AdCritIQ will decode into neural and platform signals.")}
               <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10,marginBottom:18}}>
                 {[
@@ -1733,7 +1742,7 @@ export default function App(){
               )}
             </section>
 
-            <section>
+            <section style={sectionSurface(C.green)}>
               {sectionHead("04","Access Token","Enter the analysis token tied to your purchased credits.")}
               <label style={lbl}>
                 Analysis Token *&nbsp;

@@ -491,6 +491,7 @@ export default function App(){
   const [savedAnalyses, setSavedAnalyses] = useState([]);
   const [repoLoading, setRepoLoading] = useState(false);
   const [token, setToken] = useState(localStorage.getItem("adcritiq_token") || "");
+  const [showToken, setShowToken] = useState(false);
   const [credits, setCredits] = useState(null);
   const [showPricing, setShowPricing] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
@@ -1161,6 +1162,7 @@ export default function App(){
     setPreview(null);
     setToken("");
     setCredits(null);
+    setShowToken(false);
     setCompareMode(false);
     setFileB(null);
     setPreviewB(null);
@@ -1901,16 +1903,73 @@ export default function App(){
                 </span>
               </label>
               <div style={{display:"flex",gap:10,alignItems:"center",flexDirection:isMobile?"column":"row",marginTop:8,marginBottom:18}}>
-                <input
-                  type="password"
-                  style={{...inp,flex:1,fontFamily:"monospace",letterSpacing:1,width:"100%"}}
-                  placeholder="Paste your token here..."
-                  value={token}
-                  onChange={e=>{
-                    setToken(e.target.value);
-                    localStorage.setItem("adcritiq_token",e.target.value);
-                  }}
-                />
+                <div style={{
+                  display:"flex",
+                  alignItems:"center",
+                  gap:8,
+                  flex:1,
+                  width:isMobile?"100%":"auto"
+                }}>
+                  <input
+                    type={showToken?"text":"password"}
+                    style={{
+                      ...inp,
+                      flex:1,
+                      fontFamily:"monospace",
+                      letterSpacing:showToken?"0.05em":"0.1em",
+                      width:"100%"
+                    }}
+                    placeholder="Paste your token here..."
+                    value={token}
+                    onChange={e=>{
+                      setToken(e.target.value);
+                      localStorage.setItem("adcritiq_token",e.target.value);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={()=>setShowToken(v=>!v)}
+                    title={showToken?"Hide token":"Show token"}
+                    style={{
+                      background:"transparent",
+                      border:`1px solid ${C.border2}`,
+                      borderRadius:6,
+                      padding:"7px 10px",
+                      cursor:"pointer",
+                      color:showToken?C.gold:C.dim,
+                      fontSize:14,
+                      lineHeight:1,
+                      flexShrink:0,
+                      transition:"all 0.15s ease",
+                      display:"flex",
+                      alignItems:"center",
+                      justifyContent:"center",
+                      minWidth:44,
+                      minHeight:44
+                    }}
+                    onMouseEnter={e=>{
+                      e.currentTarget.style.borderColor=C.gold+"55";
+                      e.currentTarget.style.color=C.gold;
+                    }}
+                    onMouseLeave={e=>{
+                      e.currentTarget.style.borderColor=C.border2;
+                      e.currentTarget.style.color=showToken?C.gold:C.dim;
+                    }}
+                  >
+                    {showToken?(
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ):(
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 {credits!==null&&(
                   <div style={{padding:"12px 15px",background:`${C.green}12`,border:`1px solid ${C.green}33`,borderRadius:12,fontSize:13,color:C.green,fontWeight:900,whiteSpace:"nowrap",width:isMobile?"100%":"auto",textAlign:"center"}}>
                     {credits===999?"∞ demo":`${credits} credit${credits!==1?"s":""} left`}

@@ -531,6 +531,12 @@ export default function App(){
   const [isCompetitorAnalysis, setIsCompetitorAnalysis] = useState(false);
   const [competitorOf, setCompetitorOf] = useState("");
   const [repoMode, setRepoMode] = useState("saved");
+  const [repoSearch, setRepoSearch] = useState("");
+  const [repoFilterFormat, setRepoFilterFormat] = useState("");
+  const [repoFilterGrade, setRepoFilterGrade] = useState("");
+  const [repoFilterStage, setRepoFilterStage] = useState("");
+  const [expandedRepoBrands, setExpandedRepoBrands] = useState({});
+  const [expandedCompetitorBrands, setExpandedCompetitorBrands] = useState({});
   const [competitiveBrand, setCompetitiveBrand] = useState("");
   const [competitiveIntel, setCompetitiveIntel] = useState(null);
   const [competitiveIntelLoading, setCompetitiveIntelLoading] = useState(false);
@@ -2228,6 +2234,93 @@ export default function App(){
       .sort((a,b)=>a.gap-b.gap)
       .slice(0,3)
       .map(row=>`Trailing ${row.best.brand} on ${row.label} by ${Math.abs(row.gap)} points — prioritize this gap in the next creative iteration.`);
+    const repoInputStyle={background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif",outline:"none",boxSizing:"border-box"};
+    const repoSelectStyle={...repoInputStyle,appearance:"auto",WebkitAppearance:"auto",MozAppearance:"auto"};
+    const repoMiniButton={background:"transparent",border:`1px solid ${C.border2}`,borderRadius:5,padding:"4px 10px",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",cursor:"pointer",letterSpacing:"0.06em"};
+    const isCompetitorEntry=(a)=>a?.is_competitor===true||a?.full_result?.is_competitor===true;
+    const analysisFormat=(a)=>a?.creative_type||a?.full_result?.creative_format||a?.full_result?.creative_subtype||"video";
+    const analysisStage=(a)=>a?.production_stage||a?.full_result?.production_stage||"final";
+    const analysisGrade=(a)=>a?.overall_grade||a?.full_result?.overall_grade||"—";
+    const analysisHeadline=(a)=>a?.headline_verdict||a?.full_result?.headline_verdict||"";
+    const gradeToNum=(g)=>{
+      const map={"A+":100,A:93,"A-":88,"B+":83,B:78,"B-":73,"C+":68,C:63,"C-":58,D:50,F:30};
+      return map[g]||0;
+    };
+    const groupAnalysesByBrand=(items)=>{
+      const grouped=items.reduce((acc,a)=>{
+        const brand=(a.brand||"Unknown Brand").trim()||"Unknown Brand";
+        if(!acc[brand])acc[brand]=[];
+        acc[brand].push(a);
+        return acc;
+      },{});
+      Object.keys(grouped).forEach(brand=>{
+        grouped[brand].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+      });
+      return grouped;
+    };
+    const filteredRepoAnalyses=(savedAnalyses||[]).filter(a=>{
+      if(isCompetitorEntry(a))return false;
+      if(repoSearch&&!String(a.brand||"").toLowerCase().includes(repoSearch.toLowerCase()))return false;
+      if(repoFilterFormat&&analysisFormat(a)!==repoFilterFormat)return false;
+      if(repoFilterGrade&&analysisGrade(a)!==repoFilterGrade)return false;
+      if(repoFilterStage&&analysisStage(a)!==repoFilterStage)return false;
+      return true;
+    });
+    const groupedByBrand=groupAnalysesByBrand(filteredRepoAnalyses);
+    const competitiveRows=(savedAnalyses||[]).filter(a=>{
+      if(!isCompetitorEntry(a))return false;
+      const target=String(a.competitor_of||a.full_result?.competitor_of||"").toLowerCase();
+      return !competitiveBrand||target===competitiveBrand.toLowerCase();
+    });
+    const groupedCompetitorAnalyses=groupAnalysesByBrand(competitiveRows);
+    const repoLoadAnalysis=(a)=>{
+      const isComp=isCompetitorEntry(a);
+      setResults({...a.full_result,is_competitor:isComp,competitor_of:a.competitor_of||a.full_result?.competitor_of});
+      setTab("summary");
+    };
+    const renderAnalysisRows=(items,brand,options={})=>(
+      <div style={{border:`1px solid ${options.accent||C.gold}33`,borderTop:"none",borderRadius:"0 0 8px 8px",overflow:"hidden"}}>
+        {items.map((a,idx)=>{
+          const fmt=analysisFormat(a);
+          const stage=analysisStage(a);
+          const headline=analysisHeadline(a);
+          return(
+            <div key={a.id||idx} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",background:idx%2===0?C.s1:C.s2,borderTop:idx>0?`1px solid ${C.border}`:"none",flexWrap:isMobile?"wrap":"nowrap"}}>
+              <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",minWidth:80,flexShrink:0}}>
+                {a.created_at?new Date(a.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—"}
+              </span>
+              <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:C.cyan,background:"rgba(34,211,238,0.08)",border:"1px solid rgba(34,211,238,0.2)",padding:"2px 7px",borderRadius:4,flexShrink:0,textTransform:"uppercase"}}>
+                {String(fmt||"video").replace(/_/g," ")}
+              </span>
+              {stage&&stage!=="final"&&(
+                <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:C.amber,background:"rgba(245,158,11,0.08)",border:`1px solid ${C.amber}33`,padding:"2px 7px",borderRadius:4,flexShrink:0,textTransform:"uppercase"}}>
+                  {stage}
+                </span>
+              )}
+              <span style={{fontSize:12,fontWeight:900,color:C.gold,minWidth:28,flexShrink:0,fontFamily:"'DM Mono',monospace"}}>
+                {analysisGrade(a)}
+              </span>
+              <span style={{fontSize:11,color:C.dim,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:isMobile?"normal":"nowrap",fontStyle:"italic",minWidth:0}}>
+                {headline?`"${headline.slice(0,80)}${headline.length>80?"...":""}"`:"—"}
+              </span>
+              <div style={{display:"flex",gap:6,flexShrink:0}}>
+                <button onClick={()=>repoLoadAnalysis(a)} style={{padding:"5px 12px",background:"transparent",border:`1px solid ${C.gold}66`,borderRadius:6,color:C.gold,fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                  Load
+                </button>
+                <button onClick={()=>deleteSavedAnalysis(a.id)} style={{padding:"5px 12px",background:"transparent",border:`1px solid ${C.red}55`,borderRadius:6,color:C.red,fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {items.length===1&&(
+          <div style={{padding:"8px 16px",fontSize:10,color:C.muted,fontStyle:"italic",background:C.s2,borderTop:`1px solid ${C.border}`}}>
+            Analyse more {brand} creatives to build trend data and unlock Brand DNA profile.
+          </div>
+        )}
+      </div>
+    );
     const gradeRank=(g)=>{
       const order=["A+","A","A-","B+","B","B-","C+","C","C-","D","F"];
       const idx=order.indexOf(g||"C");
@@ -3181,7 +3274,10 @@ export default function App(){
                     <button key={id} onClick={()=>{
                       setRepoMode(id);
                       if(id==="saved")loadRepository();
-                      if(id==="competitive")loadCompetitiveIntel(competitiveBrand||competitorOf||form.brand);
+                      if(id==="competitive"){
+                        loadRepository();
+                        loadCompetitiveIntel(competitiveBrand||competitorOf||form.brand);
+                      }
                     }} style={{padding:"9px 12px",borderRadius:10,border:`1px solid ${repoMode===id?C.gold+"66":C.border}`,background:repoMode===id?`${C.gold}16`:C.s2,color:repoMode===id?C.gold:C.dim,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
                       {label}
                     </button>
@@ -3189,23 +3285,37 @@ export default function App(){
                 </div>
               </div>
               {repoMode==="saved"?(
-                <div style={{display:"grid",gridTemplateColumns:repoFilterGrid,gap:12,alignItems:"end"}}>
-                  <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
-                    Brand
-                    <input id="repoBrandFilter" onChange={(e)=>loadRepository({brand:e.target.value,grade:document.getElementById("repoGradeFilter")?.value||""})}
-                      placeholder="Filter by brand"
-                      style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
-                  </label>
-                  <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
-                    Grade
-                    <input id="repoGradeFilter" onChange={(e)=>loadRepository({brand:document.getElementById("repoBrandFilter")?.value||"",grade:e.target.value})}
-                      placeholder="A+"
-                      style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
-                  </label>
-                  <button onClick={()=>loadRepository({brand:document.getElementById("repoBrandFilter")?.value||"",grade:document.getElementById("repoGradeFilter")?.value||""})}
-                    style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.gold}44`,background:`${C.gold}16`,color:C.gold,fontWeight:800,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
-                    Refresh
-                  </button>
+                <div style={{display:"flex",gap:10,flexWrap:"wrap",padding:"12px 16px",background:C.s2,borderRadius:8,border:`1px solid ${C.border}`,marginBottom:16}}>
+                  <input style={{...repoInputStyle,flex:2,minWidth:160}} placeholder="Search brand..." value={repoSearch} onChange={e=>setRepoSearch(e.target.value)}/>
+                  <select style={{...repoSelectStyle,flex:1,minWidth:120}} value={repoFilterFormat} onChange={e=>setRepoFilterFormat(e.target.value)}>
+                    <option value="">All Formats</option>
+                    <option value="video">Video</option>
+                    <option value="static_image">Static Image</option>
+                    <option value="motion_static">Animated / GIF</option>
+                    <option value="audio">Audio</option>
+                    <option value="text">Text / Script</option>
+                  </select>
+                  <select style={{...repoSelectStyle,flex:1,minWidth:100}} value={repoFilterGrade} onChange={e=>setRepoFilterGrade(e.target.value)}>
+                    <option value="">All Grades</option>
+                    {["A+","A","A-","B+","B","B-","C+","C","C-","D","F"].map(g=><option key={g} value={g}>{g}</option>)}
+                  </select>
+                  <select style={{...repoSelectStyle,flex:1,minWidth:120}} value={repoFilterStage} onChange={e=>setRepoFilterStage(e.target.value)}>
+                    <option value="">All Stages</option>
+                    <option value="concept">Concept</option>
+                    <option value="storyboard">Storyboard</option>
+                    <option value="roughcut">Rough Cut</option>
+                    <option value="final">Final</option>
+                  </select>
+                  {(repoSearch||repoFilterFormat||repoFilterGrade||repoFilterStage)&&(
+                    <button onClick={()=>{
+                      setRepoSearch("");
+                      setRepoFilterFormat("");
+                      setRepoFilterGrade("");
+                      setRepoFilterStage("");
+                    }} style={{background:"transparent",border:`1px solid ${C.border2}`,borderRadius:6,padding:"6px 12px",color:C.dim,fontSize:11,cursor:"pointer"}}>
+                      ✕ Clear
+                    </button>
+                  )}
                 </div>
               ):(
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(240px,0.45fr) auto",gap:12,alignItems:"end"}}>
@@ -3298,45 +3408,79 @@ export default function App(){
                       <div style={{fontSize:14,color:C.green,lineHeight:1.7,fontWeight:800}}>No negative gaps detected against the current competitor set.</div>
                     )}
                   </Card>
+                  <Card C={C} style={{padding:22}}>
+                    <CardTitle C={C} label={C.purple}>Competitor Creative History</CardTitle>
+                    {Object.keys(groupedCompetitorAnalyses).length===0?(
+                      <div style={{fontSize:13,color:C.dim,lineHeight:1.7}}>No saved competitor rows are currently loaded for {competitiveBrand||"this brand"}. Refresh the repository or save more competitor analyses to build trend history.</div>
+                    ):(
+                      <>
+                        <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginBottom:8}}>
+                          <button onClick={()=>{
+                            const allExpanded={};
+                            Object.keys(groupedCompetitorAnalyses).forEach(b=>{allExpanded[b]=true;});
+                            setExpandedCompetitorBrands(allExpanded);
+                          }} style={repoMiniButton}>EXPAND ALL</button>
+                          <button onClick={()=>setExpandedCompetitorBrands({})} style={repoMiniButton}>COLLAPSE ALL</button>
+                        </div>
+                        {Object.entries(groupedCompetitorAnalyses).map(([brand,items])=>{
+                          const isExpanded=expandedCompetitorBrands[brand];
+                          const avg=Math.round(items.reduce((sum,a)=>sum+(a.hook_strength||a.full_result?.hook_strength||gradeToNum(analysisGrade(a))),0)/Math.max(items.length,1));
+                          return(
+                            <div key={brand} style={{marginBottom:8}}>
+                              <div onClick={()=>setExpandedCompetitorBrands(prev=>({...prev,[brand]:!prev[brand]}))} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:isExpanded?`${C.purple}12`:C.s2,border:`1px solid ${isExpanded?C.purple+"44":C.border}`,borderRadius:isExpanded?"8px 8px 0 0":8,cursor:"pointer",userSelect:"none",transition:"all 0.15s ease"}}>
+                                <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                                  <span style={{fontSize:14,fontWeight:800,color:C.text}}>🔍 {brand}</span>
+                                  <span style={{fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",background:C.s3,padding:"2px 8px",borderRadius:10}}>{items.length} {items.length===1?"analysis":"analyses"}</span>
+                                  <span style={{fontSize:11,fontWeight:900,color:C.purple,background:`${C.purple}12`,border:`1px solid ${C.purple}44`,padding:"2px 8px",borderRadius:6}}>Avg neural score: {avg||"—"}</span>
+                                </div>
+                                <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",display:"inline-block",transition:"transform 0.15s ease",transform:isExpanded?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
+                              </div>
+                              {isExpanded&&renderAnalysisRows(items,brand,{accent:C.purple})}
+                            </div>
+                          );
+                        })}
+                        <div style={{padding:"10px 14px",borderRadius:10,background:C.s2,border:`1px solid ${C.border}`,fontSize:12,color:C.dim,lineHeight:1.6}}>
+                          Your brand avg: <span style={{color:C.gold,fontWeight:900}}>{competitiveOwn?.averages?.grade_score??"—"}</span> · Best competitor avg: <span style={{color:C.purple,fontWeight:900}}>{Math.max(...competitiveCompetitors.map(c=>c?.averages?.grade_score||0))||"—"}</span>
+                        </div>
+                      </>
+                    )}
+                  </Card>
                 </div>
               )
             ):repoLoading?(
               <Card C={C} style={{textAlign:"center"}}>
                 <div style={{fontSize:15,color:C.gold,fontWeight:700}}>Loading repository...</div>
               </Card>
-            ):savedAnalyses.length===0?(
+            ):Object.keys(groupedByBrand).length===0?(
               <Card C={C} style={{textAlign:"center"}}>
-                <div style={{fontSize:18,color:C.text,fontWeight:700,marginBottom:8}}>No saved analyses yet</div>
-                <div style={{fontSize:14,color:C.dim}}>Saved analysis reports will appear here.</div>
+                <div style={{fontSize:18,color:C.text,fontWeight:700,marginBottom:8}}>{savedAnalyses.length===0?"No saved analyses yet":"No analyses match these filters"}</div>
+                <div style={{fontSize:14,color:C.dim}}>{savedAnalyses.length===0?"Saved analysis reports will appear here.":"Adjust or clear the filters to see more saved reports."}</div>
               </Card>
             ):(
-              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
-                {savedAnalyses.map(a=>{
-                  const gr=a.overall_grade||a.full_result?.overall_grade||"—";
-                  const gc=gr==="A+"||gr==="A"||gr==="A-"?C.green:String(gr).startsWith("B")?C.amber:String(gr).startsWith("C")?C.gold:C.red;
-                  const isComp=a.is_competitor===true||a.full_result?.is_competitor===true;
+              <div>
+                <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginBottom:8}}>
+                  <button onClick={()=>{
+                    const allExpanded={};
+                    Object.keys(groupedByBrand).forEach(b=>{allExpanded[b]=true;});
+                    setExpandedRepoBrands(allExpanded);
+                  }} style={repoMiniButton}>EXPAND ALL</button>
+                  <button onClick={()=>setExpandedRepoBrands({})} style={repoMiniButton}>COLLAPSE ALL</button>
+                </div>
+                {Object.entries(groupedByBrand).map(([brand,items])=>{
+                  const isExpanded=expandedRepoBrands[brand];
+                  const latestGrade=analysisGrade(items[0]);
                   return(
-                    <Card C={C} key={a.id} delay={Math.min(savedAnalyses.indexOf(a)*70,500)} style={{padding:22}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:12}}>
-                        <div style={{minWidth:0}}>
-                          <div style={{fontSize:18,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isComp?"🔍 ":""}{a.brand||"Untitled Brand"}</div>
-                          <div style={{fontSize:11,color:C.dim,marginTop:4}}>{a.industry||"Unknown industry"} · {a.created_at?new Date(a.created_at).toLocaleDateString("en-GB"):"No date"}</div>
-                          {isComp&&<div style={{display:"inline-flex",marginTop:8,padding:"4px 8px",borderRadius:999,background:`${C.purple}14`,border:`1px solid ${C.purple}40`,color:C.purple,fontSize:9,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.08em",textTransform:"uppercase"}}>Competitor of {a.competitor_of||a.full_result?.competitor_of||"your brand"}</div>}
+                    <div key={brand} style={{marginBottom:8}}>
+                      <div onClick={()=>setExpandedRepoBrands(prev=>({...prev,[brand]:!prev[brand]}))} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:isExpanded?"rgba(245,158,11,0.06)":C.s2,border:`1px solid ${isExpanded?C.gold+"44":C.border}`,borderRadius:isExpanded?"8px 8px 0 0":8,cursor:"pointer",userSelect:"none",transition:"all 0.15s ease"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                          <span style={{fontSize:14,fontWeight:800,color:C.text}}>{brand}</span>
+                          <span style={{fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",background:C.s3,padding:"2px 8px",borderRadius:10}}>{items.length} {items.length===1?"analysis":"analyses"}</span>
+                          <span style={{fontSize:11,fontWeight:900,color:C.gold,background:"rgba(245,158,11,0.1)",border:`1px solid ${C.gold}44`,padding:"2px 8px",borderRadius:6}}>Latest: {latestGrade}</span>
                         </div>
-                        <div style={{background:`${gc}18`,border:`1px solid ${gc}44`,borderRadius:8,padding:"5px 10px",fontSize:13,fontWeight:900,color:gc,fontFamily:"'DM Mono',monospace"}}>{gr}</div>
+                        <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",display:"inline-block",transition:"transform 0.15s ease",transform:isExpanded?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
                       </div>
-                      <p style={{fontSize:13,color:C.dim,lineHeight:1.7,minHeight:44,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{a.headline_verdict||a.full_result?.headline_verdict||"No headline verdict saved."}</p>
-                      <div style={{display:"flex",gap:10,marginTop:16}}>
-                        <button onClick={()=>{setResults({...a.full_result,is_competitor:isComp,competitor_of:a.competitor_of||a.full_result?.competitor_of});setTab("summary");}}
-                          style={{flex:1,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.cyan}44`,background:`${C.cyan}12`,color:C.cyan,fontWeight:800,cursor:"pointer"}}>
-                          Load
-                        </button>
-                        <button onClick={()=>deleteSavedAnalysis(a.id)}
-                          style={{flex:1,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.red}44`,background:`${C.red}12`,color:C.red,fontWeight:800,cursor:"pointer"}}>
-                          Delete
-                        </button>
-                      </div>
-                    </Card>
+                      {isExpanded&&renderAnalysisRows(items,brand,{accent:C.gold})}
+                    </div>
                   );
                 })}
               </div>

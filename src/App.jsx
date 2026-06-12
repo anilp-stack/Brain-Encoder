@@ -2192,6 +2192,35 @@ export default function App(){
       ["CTA Clarity",formatMetrics.cta_clarity??formatMetrics.cta_strength??formatMetrics.cta_recall??r.share_intent,C.amber],
       ["Clutter Risk",formatMetrics.clutter_risk??formatMetrics.claim_risk??r.ad_fatigue_risk,C.red],
     ].map(([label,value,color])=>[label,typeof value==="number"?value:0,color]);
+    const deepAttentionRows=[
+      ["Hook Capture Window","Neural capture in first 2s",r?.deep_neuro?.attention_deep?.hook_capture_window],
+      ["Sustained Attention Index","Time above 50% threshold",r?.deep_neuro?.attention_deep?.sustained_attention_index],
+      ["Attention Recovery Speed","Post-drop re-engagement",r?.deep_neuro?.attention_deep?.attention_recovery_speed],
+      ["Cognitive Load Balance","Stimulus variation rhythm",r?.deep_neuro?.attention_deep?.cognitive_load_balance],
+      ["Attention-Brand Coupling","Brand presence during peaks",r?.deep_neuro?.attention_deep?.attention_brand_coupling],
+    ].filter(([, ,value])=>typeof value==="number");
+    const emotionArcType=r?.deep_neuro?.emotion_deep?.emotional_arc_type;
+    const valenceArousalPosition=r?.deep_neuro?.emotion_deep?.valence_arousal_position;
+    const deepEmotionRows=[
+      ["Peak-End Rule Score",r?.deep_neuro?.emotion_deep?.peak_end_rule_score],
+      ["Mirror Neuron Index",r?.deep_neuro?.emotion_deep?.mirror_neuron_index],
+      ["Emotional Contagion Index",r?.deep_neuro?.emotion_deep?.emotional_contagion_index],
+      ["Emotional Coherence",r?.deep_neuro?.emotion_deep?.emotional_coherence],
+    ].filter(([,value])=>typeof value==="number");
+    const showDeepEmotion=Boolean(emotionArcType||valenceArousalPosition||deepEmotionRows.length||r?.deep_neuro?.emotion_deep?.emotion_deep_note);
+    const soundDeepRows=[
+      ["Audio-Visual Temporal Sync","STS binding (200ms window)",r?.deep_neuro?.sound_deep?.audio_visual_temporal_sync],
+      ["Prosodic Persuasion Index","Voiceover neural effectiveness",r?.deep_neuro?.sound_deep?.prosodic_persuasion_index],
+      ["Earworm Formation Probability","Sonic brand memory encoding",r?.deep_neuro?.sound_deep?.earworm_formation_probability],
+      ["Real-World Audibility","Message clarity at ambient volume",r?.deep_neuro?.sound_deep?.real_world_audibility],
+    ].filter(([, ,value])=>typeof value==="number");
+    const showDeepSound=resultFormat!=="static_image"&&resultFormat!=="text"&&soundDeepRows.length>0;
+    const diagnosticCard=(label,text,color=C.gold)=>(
+      <div style={{marginTop:16,padding:"12px 14px",background:`${color}0d`,borderLeft:`3px solid ${color}`,borderRadius:8,fontSize:12,color:C.dim,lineHeight:1.65,fontStyle:"italic"}}>
+        <span style={{color,fontStyle:"normal",fontWeight:900,marginRight:8,fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:"0.1em",textTransform:"uppercase"}}>{label}</span>
+        {text}
+      </div>
+    );
     const tribeMetrics=r.tribe_metrics||{};
     const tribeMetricRows=[
       {key:"audio_visual_integration",label:"Audio-Visual Integration",sub:"STS cortical congruence",invert:false,tooltip:"How aligned are visual and audio signals? Predicts multisensory memory encoding."},
@@ -2984,6 +3013,38 @@ export default function App(){
               </>
             )}
             <Takeaway C={C} icon="👁" title="Attention Economics — Actions" color={C.amber} items={tw.attention}/>
+            {deepAttentionRows.length>0&&(
+              <Card C={C} style={{marginTop:24}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+                  <div style={{fontSize:10,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.15em",fontWeight:900}}>
+                    DEEP ATTENTION DIAGNOSTICS
+                  </div>
+                  <div style={{padding:"2px 8px",background:"rgba(245,158,11,0.08)",border:`1px solid ${C.gold}44`,borderRadius:4,fontSize:9,color:C.gold,fontFamily:"'DM Mono',monospace"}}>
+                    V-JEPA2 · WEBER-FECHNER CALIBRATED
+                  </div>
+                </div>
+                {deepAttentionRows.map(([label,sub,value])=>{
+                  const color=label==="Attention-Brand Coupling"
+                    ? (value<50?C.red:value>=70?C.green:C.amber)
+                    : (value>=70?C.green:value>=50?C.amber:C.red);
+                  return(
+                    <div key={label} style={{marginBottom:14}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12,marginBottom:5}}>
+                        <div>
+                          <span style={{fontSize:13,color:C.text,fontWeight:800}}>{label}</span>
+                          <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginLeft:8,letterSpacing:"0.06em"}}>{sub}</span>
+                        </div>
+                        <span style={{fontSize:15,color,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{value}</span>
+                      </div>
+                      <div style={{height:7,borderRadius:4,background:C.s2,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${Math.max(0,Math.min(100,value))}%`,background:color,borderRadius:4,boxShadow:label==="Attention-Brand Coupling"?`0 0 14px ${color}44`:"none"}}/>
+                      </div>
+                    </div>
+                  );
+                })}
+                {r?.deep_neuro?.attention_deep?.attention_deep_note&&diagnosticCard("Diagnostic Finding",r.deep_neuro.attention_deep.attention_deep_note,C.gold)}
+              </Card>
+            )}
           </>)}
 
           {/* ===== EMOTIONAL ARCHITECTURE ===== */}
@@ -3028,6 +3089,77 @@ export default function App(){
               </Card>
             </div>
             <Takeaway C={C} icon="❤️" title="Emotional Architecture — Actions" color={C.pink} items={tw.emotion}/>
+            {showDeepEmotion&&(
+              <Card C={C} style={{marginTop:24}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+                  <div style={{fontSize:10,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.15em",fontWeight:900}}>
+                    DEEP EMOTION DIAGNOSTICS
+                  </div>
+                  <div style={{padding:"2px 8px",background:"rgba(245,158,11,0.08)",border:`1px solid ${C.gold}44`,borderRadius:4,fontSize:9,color:C.gold,fontFamily:"'DM Mono',monospace"}}>
+                    KAHNEMAN · GALLESE · HEATH CALIBRATED
+                  </div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:18}}>
+                  <div style={{display:"grid",gap:16}}>
+                    {emotionArcType&&(()=>{
+                      const arcColors={RESOLUTION:C.green,ASCENT:C.cyan,WAVE:C.amber,FLAT:C.dim,CLIFF:C.red};
+                      const arcDesc={
+                        RESOLUTION:"Rises and resolves positively, strongest for brand-building memory.",
+                        ASCENT:"Builds emotional intensity throughout the creative.",
+                        WAVE:"Multiple emotional peaks; engaging in longer formats, riskier in short formats.",
+                        FLAT:"Minimal emotional variation; likely more cognitive than affective.",
+                        CLIFF:"Strong opening emotion drops and does not recover."
+                      };
+                      const color=arcColors[emotionArcType]||C.gold;
+                      return(
+                        <div style={{padding:14,borderRadius:12,background:`${color}12`,border:`1px solid ${color}44`}}>
+                          <div style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>Emotional Arc Type</div>
+                          <div style={{display:"inline-flex",padding:"6px 12px",borderRadius:999,background:`${color}18`,border:`1px solid ${color}55`,color,fontSize:14,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.08em"}}>{emotionArcType}</div>
+                          <div style={{fontSize:12,color:C.dim,lineHeight:1.55,marginTop:10}}>{arcDesc[emotionArcType]||"Predicted emotional structure for this creative."}</div>
+                        </div>
+                      );
+                    })()}
+                    {valenceArousalPosition&&(
+                      <div style={{padding:14,borderRadius:12,background:C.s2,border:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:10}}>Valence-Arousal Position</div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gridTemplateRows:"1fr 1fr",gap:6,maxHeight:160}}>
+                          {[
+                            ["HIGH-POSITIVE","Share intent / viral lift"],
+                            ["HIGH-NEGATIVE","Attention with purchase risk"],
+                            ["LOW-POSITIVE","Affinity / premium positioning"],
+                            ["LOW-NEGATIVE","Empathy, weaker CTA"],
+                          ].map(([pos,desc])=>{
+                            const active=valenceArousalPosition===pos;
+                            return(
+                              <div key={pos} style={{padding:"9px 8px",minHeight:52,borderRadius:8,border:`1px solid ${active?C.gold+"77":C.border}`,background:active?`${C.gold}14`:C.s1,color:active?C.gold:C.dim}}>
+                                <div style={{fontSize:9,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.05em",marginBottom:4}}>{pos}</div>
+                                <div style={{fontSize:9,lineHeight:1.3,color:active?C.text:C.muted}}>{desc}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {valenceArousalPosition==="MIXED"&&<div style={{marginTop:8,fontSize:11,color:C.gold,fontStyle:"italic"}}>Mixed emotional contrast detected; useful for narrative tension in longer formats.</div>}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{display:"grid",gap:12}}>
+                    {deepEmotionRows.map(([label,value])=>(
+                      <div key={label}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12,marginBottom:5}}>
+                          <span style={{fontSize:13,color:C.text,fontWeight:800}}>{label}</span>
+                          <span style={{fontSize:15,color:hex(value),fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{value}</span>
+                        </div>
+                        {label==="Peak-End Rule Score"&&<div style={{fontSize:11,color:C.dim,lineHeight:1.45,marginBottom:6}}>Memory is dominated by your emotional peak and final moment. Combined score: {value}/100.</div>}
+                        <div style={{height:7,borderRadius:4,background:C.s2,overflow:"hidden"}}>
+                          <div style={{height:"100%",width:`${Math.max(0,Math.min(100,value))}%`,background:hex(value),borderRadius:4}}/>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {r?.deep_neuro?.emotion_deep?.emotion_deep_note&&diagnosticCard("Diagnostic Finding",r.deep_neuro.emotion_deep.emotion_deep_note,C.gold)}
+              </Card>
+            )}
           </>)}
 
           {/* ===== SCENE INTELLIGENCE ===== */}
@@ -3100,6 +3232,38 @@ export default function App(){
               </Card>
             </div>
             <Takeaway C={C} icon="🔊" title="Sound Strategy — Actions" color={C.purple} items={tw.sound}/>
+            {showDeepSound&&(
+              <Card C={C} style={{marginTop:24}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+                  <div style={{fontSize:10,color:C.gold,fontFamily:"'DM Mono',monospace",letterSpacing:"0.15em",fontWeight:900}}>
+                    DEEP AUDITORY DIAGNOSTICS
+                  </div>
+                  <div style={{padding:"2px 8px",background:"rgba(245,158,11,0.08)",border:`1px solid ${C.gold}44`,borderRadius:4,fontSize:9,color:C.gold,fontFamily:"'DM Mono',monospace"}}>
+                    TRIBE V2 STS · CHERRY COCKTAIL PARTY CALIBRATED
+                  </div>
+                </div>
+                {soundDeepRows.map(([label,sub,value])=>{
+                  const risk=label==="Audio-Visual Temporal Sync"&&value<60;
+                  const color=risk?C.red:value>=70?C.green:value>=50?C.amber:C.red;
+                  return(
+                    <div key={label} style={{marginBottom:14}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12,marginBottom:5}}>
+                        <div>
+                          <span style={{fontSize:13,color:C.text,fontWeight:800}}>{label}</span>
+                          <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginLeft:8,letterSpacing:"0.06em"}}>{sub}</span>
+                          {risk&&<span style={{marginLeft:8,padding:"2px 7px",borderRadius:999,background:`${C.red}16`,border:`1px solid ${C.red}44`,color:C.red,fontSize:9,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>RISK</span>}
+                        </div>
+                        <span style={{fontSize:15,color,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{value}</span>
+                      </div>
+                      <div style={{height:7,borderRadius:4,background:C.s2,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${Math.max(0,Math.min(100,value))}%`,background:color,borderRadius:4}}/>
+                      </div>
+                    </div>
+                  );
+                })}
+                {r?.deep_neuro?.sound_deep?.sound_deep_note&&diagnosticCard("Diagnostic Finding",r.deep_neuro.sound_deep.sound_deep_note,C.gold)}
+              </Card>
+            )}
           </>)}
 
           {/* ===== PRIVACY & COMPLIANCE ===== */}
@@ -3679,6 +3843,9 @@ export default function App(){
                 <Card C={C} style={{marginBottom:20}}>
                   <CardTitle C={C} label={C.cyan}>All 17 Neural Metrics — Complete Reference</CardTitle>
                   <p style={{fontSize:14,color:C.dim,lineHeight:1.8,marginBottom:20}}>Every metric is scored 0–100. Below is the full definition, what drives a high score, what a low score means, and what to do about it.</p>
+                  <div style={{marginBottom:18,padding:"12px 14px",borderRadius:10,background:`${C.gold}0f`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.7}}>
+                    <b style={{color:C.gold}}>Deep diagnostics note:</b> Deep diagnostics (15 additional metrics across Attention, Emotion, and Sound) are available in each respective tab. These metrics are based on published neuroscience research and are returned as AI predictions calibrated against validated neural correlates — not direct neural measurement.
+                  </div>
                   <div style={{display:"grid",gap:12}}>
                     {[
                       {name:"Viral Potential",good:"70+",color:C.cyan,def:"Aggregate shareability prediction.",drives:"Strong emotional peak + identity signaling + novelty + pattern interrupt. Creatives people share because they feel 'this is so me' or 'this is surprising'.",low:"Below 50: The creative will not generate organic amplification. Every impression will be paid."},
@@ -3856,6 +4023,10 @@ export default function App(){
                       {title:"Robert Heath — Low-Attention Processing (2012)",color:C.purple,application:"Heath's research demonstrates that advertising can build brand associations even without conscious attention — but only if emotional content is present. This informs the Sound-Off Survival score: a creative that loses all message value when muted loses the ability to build associations in low-attention contexts.",metric:"Sound-Off Survival"},
                       {title:"Weber-Fechner Law — Stimulus Adaptation",color:C.orange,application:"Ad Fatigue Risk scoring is based on the Weber-Fechner Law of diminishing stimulus response. Repeated identical stimuli produce logarithmically declining responses. Creatives with low scene variety, static imagery, or repetitive dialogue are predicted to fatigue faster.",metric:"Ad Fatigue Risk"},
                       {title:"Vittorio Gallese — Mirror Neuron Theory",color:C.teal,application:"Mirror Neuron activation scoring reflects Gallese's work on simulation theory. Viewers who see on-screen humans expressing emotion neurologically simulate that emotion. High mirror neuron activation directly correlates with share intent and emotional contagion in advertising.",metric:"Mirror Neurons + Share Intent"},
+                      {title:"Russell's Circumplex Model of Affect (1980)",color:C.pink,application:"Two-dimensional valence-arousal model of emotion. Basis for AdCritIQ™ Valence-Arousal Position metric.",metric:"Valence-Arousal Position"},
+                      {title:"Weber-Fechner Law (Fechner, 1860)",color:C.orange,application:"Stimulus contrast required for neural re-orientation. Basis for Attention Recovery Speed metric.",metric:"Attention Recovery Speed"},
+                      {title:"Cherry's Cocktail Party Effect (1953)",color:C.cyan,application:"Speech intelligibility in competing noise environments. Basis for Real-World Audibility metric.",metric:"Real-World Audibility"},
+                      {title:"Williamson et al. Music Cognition (2012)",color:C.gold,application:"Structural properties of involuntary musical imagery (earworms). Basis for Earworm Formation Probability metric.",metric:"Earworm Formation Probability"},
                     ].map(({title,color,application,metric})=>(
                       <div key={title} style={{background:C.s2,borderRadius:12,padding:20,borderLeft:`4px solid ${color}`}}>
                         <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:6}}>{title}</div>

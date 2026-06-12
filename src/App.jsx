@@ -12,7 +12,7 @@ import NeurIQTab from "./components/NeurIQTab";
 // DESIGN TOKENS — Premium Consultancy Edition
 // Palette: Deep Onyx · Champagne Gold · Malachite · Slate
 // ============================================================
-const C = {
+const DARK_THEME = {
   bg:"#050507",ink:"#09090b",s1:"#101014",s2:"#17171d",s3:"#22222a",
   panel:"#101014",panel2:"#17171d",
   border:"#26262d",border2:"#3a3627",
@@ -25,7 +25,39 @@ const C = {
   shadow:"rgba(0,0,0,0.52)",
   sideW:240,
 };
-const hex=(v)=>v>=80?C.green:v>=60?C.amber:v>=40?C.orange:C.red;
+
+const LIGHT_THEME = {
+  bg:"#F2F2F8",
+  ink:"#EDEDF4",
+  s1:"#FFFFFF",
+  s2:"#EDEDF4",
+  s3:"#E4E4EE",
+  panel:"#FFFFFF",
+  panel2:"#EDEDF4",
+  border:"rgba(0,0,0,0.09)",
+  border2:"rgba(0,0,0,0.05)",
+  text:"#0A0A1A",
+  dim:"#3C3C5C",
+  muted:"#7878A0",
+  gold:"#B07D0A",
+  goldL:"#CB9211",
+  goldD:"#8E6408",
+  cyan:"#0882A8",
+  blue:"#1A46CC",
+  green:"#047A57",
+  red:"#C41F1F",
+  amber:"#C47500",
+  orange:"#C44B0A",
+  purple:"#6829D4",
+  pink:"#B81E65",
+  teal:"#0A8A80",
+  rose:"#C41F1F",
+  lime:"#4D7C0F",
+  sky:"#0882A8",
+  shadow:"rgba(0,0,0,0.12)",
+  sideW:240,
+};
+
 const grade=(v)=>v>=90?"A+":v>=85?"A":v>=80?"A-":v>=75?"B+":v>=70?"B":v>=65?"B-":v>=60?"C+":v>=55?"C":v>=50?"C-":v>=40?"D":"F";
 
 // ============================================================
@@ -95,7 +127,7 @@ const PLATFORM_META = {
   "Connected TV": { abbr: "CTV", color: "#22D3EE" },
 };
 
-function PlatformChip({ name }) {
+function PlatformChip({ name, C = DARK_THEME }) {
   const cleanName = String(name || "").replace(/_/g, " ");
   const lower = cleanName.toLowerCase();
   const found = Object.entries(PLATFORM_META).find(([key]) => {
@@ -483,8 +515,67 @@ export default function App(){
   const [shareCopied, setShareCopied] = useState(false);
   const [productionStage, setProductionStage] = useState("final");
   const [storyboardFiles, setStoryboardFiles] = useState([]);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      return localStorage.getItem("adcritiq_theme") !== "light";
+    } catch {
+      return true;
+    }
+  });
   const fileRef=useRef(null);
   const storyboardRef=useRef(null);
+  const C=isDarkMode?DARK_THEME:LIGHT_THEME;
+  const hex=(v)=>v>=80?C.green:v>=60?C.amber:v>=40?C.orange:C.red;
+  const elevationShadow="0 2px 12px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05)";
+  const headerBg=isDarkMode?"rgba(5,5,7,0.9)":"rgba(255,255,255,0.86)";
+  const formHeaderBg=isDarkMode?"rgba(5,5,7,0.82)":"rgba(255,255,255,0.82)";
+  const resultsHeaderBg=isDarkMode?"rgba(16,16,20,0.94)":"rgba(255,255,255,0.94)";
+  const miniHeaderBg=isDarkMode?"rgba(7,7,15,0.82)":"rgba(255,255,255,0.86)";
+
+  const toggleTheme=()=>{
+    setIsDarkMode(prev=>{
+      const next=!prev;
+      try {
+        localStorage.setItem("adcritiq_theme",next?"dark":"light");
+      } catch {}
+      return next;
+    });
+  };
+
+  const ThemeToggle=(
+    <button
+      onClick={toggleTheme}
+      title={isDarkMode?"Switch to Light Mode":"Switch to Dark Mode"}
+      style={{
+        background:"transparent",
+        border:`1px solid ${C.border2}`,
+        borderRadius:8,
+        padding:"6px 10px",
+        cursor:"pointer",
+        fontSize:14,
+        lineHeight:1,
+        color:C.dim,
+        transition:"all 0.15s ease",
+        display:"flex",
+        alignItems:"center",
+        gap:5,
+        whiteSpace:"nowrap",
+      }}
+      onMouseEnter={e=>{
+        e.currentTarget.style.borderColor=C.gold+"66";
+        e.currentTarget.style.color=C.text;
+      }}
+      onMouseLeave={e=>{
+        e.currentTarget.style.borderColor=C.border2;
+        e.currentTarget.style.color=C.dim;
+      }}
+    >
+      {isDarkMode?"☀️":"🌙"}
+      <span style={{fontSize:10,fontFamily:"monospace",letterSpacing:"0.06em",display:isMobile?"none":"inline"}}>
+        {isDarkMode?"LIGHT":"DARK"}
+      </span>
+    </button>
+  );
 
   useEffect(()=>{
     const syncViewport=()=>{
@@ -503,6 +594,11 @@ export default function App(){
     onScroll();
     return()=>window.removeEventListener("scroll",onScroll);
   },[]);
+
+  useEffect(()=>{
+    document.body.style.background=C.bg;
+    document.body.style.color=C.text;
+  },[isDarkMode]);
 
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
@@ -1250,15 +1346,18 @@ export default function App(){
       <div style={{minHeight:"100vh",background:`linear-gradient(180deg,${C.bg} 0%,${C.ink} 100%)`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
         <div aria-hidden="true" style={{position:"absolute",top:"-20%",right:"-10%",width:600,height:600,borderRadius:"50%",background:"radial-gradient(circle, rgba(245,158,11,0.07) 0%, transparent 65%)",animation:"drift 14s ease-in-out infinite alternate",pointerEvents:"none"}}/>
         <div aria-hidden="true" style={{position:"absolute",bottom:"-30%",left:"-10%",width:700,height:700,borderRadius:"50%",background:"radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 65%)",animation:"drift 18s ease-in-out infinite alternate-reverse",pointerEvents:"none"}}/>
-        <header style={{position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:isMobile?"18px 20px":"22px 48px",borderBottom:`1px solid ${C.border}`,background:"rgba(5,5,7,0.9)",backdropFilter:"blur(16px)"}}>
+        <header style={{position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:isMobile?"18px 20px":"22px 48px",borderBottom:`1px solid ${C.border}`,background:headerBg,backdropFilter:"blur(16px)"}}>
           <div style={{display:"flex",alignItems:"center",gap:14,minWidth:0}}>
             <div style={{display:"grid",gap:2}}>
               <span style={{fontSize:12,color:C.dim,fontWeight:700}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
             </div>
           </div>
-          <button onClick={()=>setShowPricing(true)} style={{padding:isMobile?"10px 14px":"11px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:"transparent",color:C.gold,fontSize:12,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
-            Buy Credits
-          </button>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {ThemeToggle}
+            <button onClick={()=>setShowPricing(true)} style={{padding:isMobile?"10px 14px":"11px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:"transparent",color:C.gold,fontSize:12,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
+              Buy Credits
+            </button>
+          </div>
         </header>
 
         <main style={{flex:1,display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.08fr) minmax(340px,0.92fr)",gap:isMobile?36:56,alignItems:"center",padding:isMobile?"44px 20px 28px":"72px 48px 44px",maxWidth:1280,width:"100%",margin:"0 auto",boxSizing:"border-box",position:"relative",zIndex:1}}>
@@ -1275,7 +1374,7 @@ export default function App(){
               AdCritIQ™ analyses advertising creatives using multimodal AI trained on neuroscience research — delivering 17 neural metrics, 15 platform scores, and CMO-level strategic recommendations in under 2 minutes. Test at any production stage: concept, storyboard, rough cut, or final film. Built for brand teams and agencies worldwide.
             </p>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:34}}>
-              <button onClick={()=>setStage("form")} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:`0 16px 40px ${C.gold}24`,transition:"transform 0.12s ease"}}>
+              <button onClick={()=>setStage("form")} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.gold,color:C.ink,border:"none",padding:"15px 28px",borderRadius:10,fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:isDarkMode?`0 16px 40px ${C.gold}24`:elevationShadow,transition:"transform 0.12s ease"}}>
                 Start Analysis
               </button>
               <button onClick={()=>setShowPricing(true)} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{background:C.s1,color:C.text,border:`1px solid ${C.border}`,padding:"15px 24px",borderRadius:10,fontSize:15,fontWeight:800,cursor:"pointer",transition:"transform 0.12s ease"}}>
@@ -1337,7 +1436,7 @@ export default function App(){
             </div>
           </section>
 
-          <section style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:isMobile?22:28,boxShadow:`0 24px 80px ${C.shadow}`}}>
+          <section style={{background:C.s1,border:`1px solid ${C.border}`,borderRadius:16,padding:isMobile?22:28,boxShadow:isDarkMode?`0 24px 80px ${C.shadow}`:elevationShadow}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,borderBottom:`1px solid ${C.border}`,paddingBottom:18,marginBottom:20}}>
               <div>
                 <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:1.4,textTransform:"uppercase"}}>Live Output</div>
@@ -1390,13 +1489,13 @@ export default function App(){
     const formGrid2=isMobile?"1fr":"1fr 1fr";
     const formGrid3=isMobile?"1fr":isTablet?"1fr 1fr":"1fr 1fr 1fr";
     const fieldWrap={display:"grid",gap:8};
-    const panelStyle={background:`linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01)),${C.s1}`,border:`1px solid ${C.border}`,borderTop:"1px solid rgba(255,255,255,0.09)",borderRadius:20,boxShadow:`0 30px 90px ${C.shadow}`,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)"};
+    const panelStyle={background:`linear-gradient(180deg,${isDarkMode?"rgba(255,255,255,0.035)":"rgba(255,255,255,0.55)"},${isDarkMode?"rgba(255,255,255,0.01)":"rgba(255,255,255,0.22)"}),${C.s1}`,border:`1px solid ${C.border}`,borderTop:`1px solid ${isDarkMode?"rgba(255,255,255,0.09)":"rgba(255,255,255,0.8)"}`,borderRadius:20,boxShadow:isDarkMode?`0 30px 90px ${C.shadow}`:elevationShadow,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)"};
     const sectionSurface=(accent=C.gold)=>({
       ...panelStyle,
       padding:isMobile?20:30,
       border:`1px solid ${C.border}`,
       borderLeft:`3px solid ${accent}88`,
-      boxShadow:`0 28px 80px ${C.shadow}, inset 0 1px 0 rgba(255,255,255,0.035)`,
+      boxShadow:isDarkMode?`0 28px 80px ${C.shadow}, inset 0 1px 0 rgba(255,255,255,0.035)`:elevationShadow,
       position:"relative",
       overflow:"hidden"
     });
@@ -1409,23 +1508,26 @@ export default function App(){
         </div>
       </div>
     );
-    const inp={width:"100%",boxSizing:"border-box",height:56,padding:"0 18px",borderRadius:14,border:`1px solid ${C.border}`,borderTop:"1px solid rgba(255,255,255,0.08)",background:`linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01)),${C.s2}`,color:C.text,fontSize:15,outline:"none",fontFamily:"inherit",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.03)",transition:"border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease"};
+    const inp={width:"100%",boxSizing:"border-box",height:56,padding:"0 18px",borderRadius:14,border:`1px solid ${C.border}`,borderTop:`1px solid ${isDarkMode?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.85)"}`,background:`linear-gradient(180deg,${isDarkMode?"rgba(255,255,255,0.035)":"rgba(255,255,255,0.45)"},${isDarkMode?"rgba(255,255,255,0.01)":"rgba(255,255,255,0.12)"}),${C.s2}`,color:C.text,fontSize:15,outline:"none",fontFamily:"inherit",boxShadow:isDarkMode?"inset 0 1px 0 rgba(255,255,255,0.03)":"inset 0 1px 0 rgba(255,255,255,0.7)",transition:"border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease"};
     const lbl={fontSize:10,fontWeight:900,letterSpacing:2.4,color:C.dim,textTransform:"uppercase",marginBottom:0,display:"block",fontFamily:"'DM Mono',monospace"};
-    const selStyle={...inp,appearance:"none",backgroundImage:`linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d8b45a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,backgroundColor:C.s2,backgroundRepeat:"no-repeat",backgroundPosition:"right 16px center"};
+    const selStyle={...inp,appearance:"none",backgroundImage:`linear-gradient(180deg,${isDarkMode?"rgba(255,255,255,0.035)":"rgba(255,255,255,0.45)"},${isDarkMode?"rgba(255,255,255,0.01)":"rgba(255,255,255,0.12)"}),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d8b45a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,backgroundColor:C.s2,backgroundRepeat:"no-repeat",backgroundPosition:"right 16px center"};
     return(
       <div style={{minHeight:"100vh",background:`radial-gradient(circle at 18% 0%,${C.gold}12 0%,transparent 30%),radial-gradient(circle at 100% 15%,${C.purple}10 0%,transparent 26%),linear-gradient(180deg,${C.bg},${C.ink})`,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",position:"relative",overflow:"hidden"}}>
         <div aria-hidden="true" style={{position:"absolute",top:-220,right:-180,width:520,height:520,borderRadius:"50%",background:"radial-gradient(circle, rgba(216,180,90,0.08), transparent 66%)",pointerEvents:"none"}}/>
         <div aria-hidden="true" style={{position:"absolute",bottom:-260,left:-180,width:620,height:620,borderRadius:"50%",background:"radial-gradient(circle, rgba(45,212,191,0.055), transparent 64%)",pointerEvents:"none"}}/>
 
-        <div style={{padding:isMobile?"16px 18px":"18px 42px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,position:"sticky",top:0,zIndex:20,background:"rgba(5,5,7,0.82)",backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
+        <div style={{padding:isMobile?"16px 18px":"18px 42px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,position:"sticky",top:0,zIndex:20,background:formHeaderBg,backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
           <div onClick={()=>setStage("landing")} style={{display:"flex",alignItems:"center",gap:14,cursor:"pointer",minWidth:0}}>
             <div style={{display:"grid",gap:2}}>
               <span style={{fontSize:12,color:C.text,fontWeight:800}}>AdCritIQ<sup style={{fontSize:7,color:C.gold}}>TM</sup></span>
             </div>
           </div>
-          <button onClick={()=>setShowPricing(true)} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{padding:isMobile?"10px 13px":"11px 18px",borderRadius:999,border:`1px solid ${C.gold}55`,background:`${C.gold}12`,color:C.gold,fontSize:12,fontWeight:900,cursor:"pointer",whiteSpace:"nowrap",transition:"transform 0.12s ease",fontFamily:"'DM Sans',sans-serif"}}>
-            Buy Credits
-          </button>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {ThemeToggle}
+            <button onClick={()=>setShowPricing(true)} onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"} style={{padding:isMobile?"10px 13px":"11px 18px",borderRadius:999,border:`1px solid ${C.gold}55`,background:`${C.gold}12`,color:C.gold,fontSize:12,fontWeight:900,cursor:"pointer",whiteSpace:"nowrap",transition:"transform 0.12s ease",fontFamily:"'DM Sans',sans-serif"}}>
+              Buy Credits
+            </button>
+          </div>
         </div>
 
         <main style={{position:"relative",zIndex:1,maxWidth:1180,margin:"0 auto",padding:isMobile?"28px 18px 56px":"54px 32px 80px"}}>
@@ -1980,16 +2082,19 @@ export default function App(){
     return(
       <div style={{minHeight:"100vh",background:C.bg,display:"flex",fontFamily:"'Inter','DM Sans',sans-serif",color:C.text,animation:"fadeIn 0.5s ease both"}}>
         {scrolled&&(
-          <div style={{position:"fixed",top:0,left:miniLeft,right:0,zIndex:80,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,padding:isMobile?"10px 16px":"10px 28px",background:"rgba(7,7,15,0.82)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:`1px solid ${C.border}`,animation:"fadeIn 0.2s ease both"}}>
+          <div style={{position:"fixed",top:0,left:miniLeft,right:0,zIndex:80,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,padding:isMobile?"10px 16px":"10px 28px",background:miniHeaderBg,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:`1px solid ${C.border}`,animation:"fadeIn 0.2s ease both"}}>
             <span style={{fontWeight:700,color:C.text,fontSize:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               {form.brand||"AdCritIQ"}
               <span style={{color:C.dim,fontWeight:400,fontSize:11,marginLeft:10,fontFamily:"monospace"}}>
                 {form.industry||"Creative"} · {form.country||form.market||"India"}
               </span>
             </span>
-            <span style={{padding:"3px 12px",borderRadius:8,fontWeight:800,fontFamily:"monospace",color:ringColor,border:`1px solid ${ringColor}55`,background:`${ringColor}12`,flexShrink:0}}>
-              {r.overall_grade||grade(ringScore)}
-            </span>
+            <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+              {ThemeToggle}
+              <span style={{padding:"3px 12px",borderRadius:8,fontWeight:800,fontFamily:"monospace",color:ringColor,border:`1px solid ${ringColor}55`,background:`${ringColor}12`}}>
+                {r.overall_grade||grade(ringScore)}
+              </span>
+            </div>
           </div>
         )}
 
@@ -2058,7 +2163,7 @@ export default function App(){
           )}
           {compareReady ? (
             <>
-              <div style={{background:"rgba(16,16,20,0.94)",borderBottom:`1px solid ${C.border}`,padding:isMobile?"18px":"24px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
+              <div style={{background:resultsHeaderBg,borderBottom:`1px solid ${C.border}`,padding:isMobile?"18px":"24px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
                 <div style={{fontSize:11,color:C.gold,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",fontWeight:900,marginBottom:8}}>A/B Creative Comparison</div>
                 <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:16,flexDirection:isMobile?"column":"row"}}>
                   <div>
@@ -2160,7 +2265,7 @@ export default function App(){
                   <div style={{display:"grid",gap:10}}>
                     {comparePlatforms.map(p=>(
                       <div key={p.key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.2fr 80px 38px 80px 70px",gap:12,alignItems:"center",padding:"13px 16px",borderRadius:12,background:C.s1,border:`1px solid ${C.border}`}}>
-                        <div style={{display:"flex",alignItems:"center",minWidth:0}}><PlatformChip name={p.name}/><span style={{fontWeight:800,color:C.text,fontSize:13}}>{p.name}</span></div>
+                        <div style={{display:"flex",alignItems:"center",minWidth:0}}><PlatformChip name={p.name} C={C}/><span style={{fontWeight:800,color:C.text,fontSize:13}}>{p.name}</span></div>
                         <div style={{color:p.winner==="A"?C.gold:compareScoreColor(p.a),fontWeight:900,textAlign:isMobile?"left":"right"}}>{compareLabelA}: {p.a}</div>
                         <div style={{color:C.muted,textAlign:"center",fontFamily:"'DM Mono',monospace"}}>vs</div>
                         <div style={{color:p.winner==="B"?C.gold:compareScoreColor(p.b),fontWeight:900}}>{compareLabelB}: {p.b}</div>
@@ -2205,7 +2310,7 @@ export default function App(){
             <>
 
           {/* Top header bar */}
-          <div style={{background:"rgba(16,16,20,0.94)",borderBottom:`1px solid ${C.border}`,padding:isMobile?"16px 18px":"20px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
+          <div style={{background:resultsHeaderBg,borderBottom:`1px solid ${C.border}`,padding:isMobile?"16px 18px":"20px 36px",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(16px)"}}>
             <div style={{display:"flex",alignItems:isMobile?"stretch":"flex-start",justifyContent:"space-between",gap:16,flexDirection:isMobile?"column":"row"}}>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:11,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:5,fontFamily:"'DM Mono',monospace"}}>
@@ -2219,10 +2324,12 @@ export default function App(){
                     {stageLabel} · projected scores
                   </div>
                 )}
-                {r.headline_verdict&&<div style={{fontSize:13,color:"rgba(242,242,255,0.80)",marginTop:6,fontStyle:"italic",opacity:1}}>"{r.headline_verdict}"</div>}
+                {r.headline_verdict&&<div style={{fontSize:13,color:C.dim,marginTop:6,fontStyle:"italic",opacity:1}}>"{r.headline_verdict}"</div>}
               </div>
 
               {/* FIX 2: Grade badge with hover tooltip */}
+              <div style={{display:"flex",alignItems:"flex-start",gap:12,justifyContent:isMobile?"space-between":"flex-end"}}>
+              {ThemeToggle}
               {r.overall_grade&&(()=>{
                 const gc=r.overall_grade==="A+"||r.overall_grade==="A"||r.overall_grade==="A-"?C.green:r.overall_grade?.startsWith("B")?C.amber:r.overall_grade?.startsWith("C")?C.gold:C.red;
                 return(
@@ -2233,7 +2340,7 @@ export default function App(){
                     <div style={{display:"grid",justifyItems:"center",gap:6,cursor:"help"}}>
                       <div style={{position:"relative",width:88,height:88}}>
                         <svg width="88" height="88" style={{transform:"rotate(-90deg)"}}>
-                          <circle cx="44" cy="44" r="34" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="5"/>
+                          <circle cx="44" cy="44" r="34" fill="none" stroke={isDarkMode?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.08)"} strokeWidth="5"/>
                           <circle
                             cx="44"
                             cy="44"
@@ -2311,8 +2418,9 @@ export default function App(){
 	                    )}
 	                    {r.__saveError&&<div style={{fontSize:10,color:C.red,marginTop:6,maxWidth:140,lineHeight:1.4}}>{r.__saveError}</div>}
 	                  </div>
-	                );
-	              })()}
+                );
+              })()}
+              </div>
             </div>
           </div>
 
@@ -2660,7 +2768,7 @@ export default function App(){
                 <Card C={C} key={k} delay={Math.min(i*70,500)} style={{textAlign:"center",padding:24}}>
                   <div style={{fontSize:38,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:hex(v),lineHeight:1}}>{v}</div>
                   <div style={{fontSize:12,color:C.dim,marginTop:10,textTransform:"capitalize",lineHeight:1.3,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <PlatformChip name={k.replace(/_/g," ")}/>
+                    <PlatformChip name={k.replace(/_/g," ")} C={C}/>
                     <span>{k.replace(/_/g," ")}</span>
                   </div>
                   <div style={{marginTop:10,fontSize:11,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:hex(v)}}>{grade(v)}</div>
@@ -3182,7 +3290,7 @@ export default function App(){
                             style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"14px 16px",cursor:"pointer",background:open?C.s2:C.s1,borderLeft:`3px solid ${color||C.gold}`}}
                           >
                             <span style={{fontWeight:700,color:C.text,fontSize:14,display:"flex",alignItems:"center",minWidth:0}}>
-                              <PlatformChip name={platform}/>
+                              <PlatformChip name={platform} C={C}/>
                               <span>{platform}</span>
                             </span>
                             <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>

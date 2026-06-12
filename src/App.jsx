@@ -4351,19 +4351,62 @@ export default function App(){
                       <p style={{fontSize:13,color:C.dim,lineHeight:1.75}}>Actual reach, frequency, targeting quality, CPM/CPC, sales data, brand baseline survey data, competitor media weight, or real campaign delivery logs.</p>
                     </div>
                   </div>
+                  <div style={{padding:18,borderRadius:12,background:`${C.gold}0f`,border:`1px solid ${C.gold}33`,marginBottom:18}}>
+                    <div style={{fontSize:13,color:C.gold,fontWeight:900,marginBottom:8}}>CMO answer: what do these numbers mean?</div>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.75,margin:0}}>They are not exact percentage lifts. They are 0-100 creative-response probability scores that estimate whether delivered impressions are likely to become memory, preference, action, or waste. A score of 84 means strong readiness relative to the creative signals AdCritIQ can observe; it does not mean an 84% sales or brand-lift guarantee.</p>
+                  </div>
+                  <div style={{marginBottom:18}}>
+                    <div style={{fontSize:11,fontWeight:900,color:C.gold,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:12}}>How to read the scores</div>
+                    <div style={{display:"grid",gap:8}}>
+                      {[
+                        ["85-100","High probability / scale-ready","Creative signal is strong enough to support confident media scaling, subject to normal media hygiene.",C.green],
+                        ["70-84","Strong probability / media-ready","Good readiness with minor optimization. Suitable for launch or controlled scale.",C.cyan],
+                        ["55-69","Moderate probability / test before scaling","Directional promise, but one or two response drivers need improvement before major spend.",C.amber],
+                        ["40-54","At risk / creative fix recommended","Likely under-conversion of impressions into memory or action. Fix creative before scaling.",C.orange],
+                        ["0-39","High wastage risk / do not scale","Media exposure is likely to be wasted unless the creative is materially revised.",C.red],
+                      ].map(([band,meaning,interpretation,color])=>(
+                        <div key={band} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"100px 260px 1fr",gap:12,alignItems:"center",padding:"10px 12px",borderRadius:10,background:C.s2,border:`1px solid ${C.border}`}}>
+                          <div style={{fontSize:13,color:color,fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{band}</div>
+                          <div style={{fontSize:13,color:C.text,fontWeight:900}}>{meaning}</div>
+                          <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{interpretation}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <div style={{display:"grid",gap:10,marginBottom:18}}>
+                    <div style={{fontSize:11,fontWeight:900,color:C.gold,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:2}}>How each outcome score is calculated</div>
                     {[
-                      ["Spontaneous + Aided Awareness","Memory Encoding, Brand Recall, Attention-Brand Coupling, Brand Prominence, Sound-Off Survival"],
+                      ["Spontaneous Awareness","Memory Encoding, Brand Recall, Attention-Brand Coupling, Emotional Peak, Cultural Resonance"],
+                      ["Aided Awareness","Brand Recall, Brand Prominence, Memory Encoding, Sound-Off Survival, Average Platform Fit"],
                       ["Consideration Lift","Message Clarity, Emotional Coherence, Creative Efficiency, Trust / Prefrontal Activation, Brand Safety"],
                       ["Purchase Intent + Response","CTA Clarity, Product Desire / Nucleus Accumbens, Message Clarity, Brand Recall, Regulatory Compliance"],
-                      ["VTR / Completion","Hook Strength, Hold Rate, Sustained Attention Index, Attention Recovery Speed, inverse Ad Fatigue Risk"],
+                      ["VTR / Completion or View-Through Fit","For video/motion: Hook Strength, Hold Rate, Sustained Attention Index, Attention Recovery Speed, inverse Ad Fatigue Risk. For static/text: first-glance attention fit and message persistence replace completion language."],
+                      ["CTR / Response","Hook Strength, CTA Clarity, Message Clarity, Platform Fit, Share Intent, Creative Efficiency"],
                       ["Media Wastage Risk","Low memory, weak brand linkage, poor hook, platform mismatch, high fatigue, or weak CTA despite paid reach"],
+                      ["Creative Accountability vs Media Dependency","Creative accountability rises when core creative response signals are weak. Media dependency rises when creative is viable but platform fit, sequencing, or delivery assumptions matter more."],
                     ].map(([kpi,drivers])=>(
                       <div key={kpi} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"220px 1fr",gap:12,padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
                         <div style={{fontSize:13,color:C.text,fontWeight:900}}>{kpi}</div>
                         <div style={{fontSize:13,color:C.dim,lineHeight:1.65}}>{drivers}</div>
                       </div>
                     ))}
+                  </div>
+                  <div style={{padding:18,borderRadius:12,background:C.s2,border:`1px solid ${C.border}`,marginBottom:18}}>
+                    <div style={{fontSize:11,fontWeight:900,color:C.gold,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:12}}>Example interpretation</div>
+                    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,1fr)",gap:12}}>
+                      {[
+                        ["Awareness 78/84","Strong memory readiness","The creative is likely to be remembered and recognised if media delivers enough exposure.",C.green],
+                        ["Purchase Intent 58","At-risk conversion readiness","People may understand or remember the ad, but the benefit, CTA, or product desire signal needs strengthening.",C.amber],
+                        ["Media Wastage Risk 32","Low risk","The creative is not obviously wasting exposure; the main issue is optimization, not stopping all media.",C.green],
+                        ["Creative Accountability 78","Creative is the main lever","Success or failure is more likely to be driven by creative response than by media optimization alone.",C.cyan],
+                      ].map(([score,meaning,body,color])=>(
+                        <div key={score} style={{padding:14,borderRadius:10,background:`${color}0d`,border:`1px solid ${color}33`}}>
+                          <div style={{fontSize:13,color:color,fontWeight:900,marginBottom:6}}>{score}</div>
+                          <div style={{fontSize:12,color:C.text,fontWeight:900,marginBottom:6}}>{meaning}</div>
+                          <p style={{fontSize:12,color:C.dim,lineHeight:1.6,margin:0}}>{body}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:12,marginBottom:18}}>
                     {[

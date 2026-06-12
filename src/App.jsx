@@ -1665,13 +1665,14 @@ export default function App(){
               {sectionHead("02","Creative Format","Select the primary creative environment and add any strategic context.")}
               <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:16,padding:"16px 18px",marginBottom:20,background:`linear-gradient(135deg,${C.cyan}0d,${C.s2})`,border:`1px solid ${C.border}`,borderRadius:16,flexDirection:isMobile?"column":"row"}}>
                 <div>
-                  <div style={{fontSize:14,fontWeight:900,color:C.text}}>
+                  <div style={{fontSize:14,fontWeight:900,color:C.text,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                     {compareMode ? "⚖️ Comparing 2 Creatives" : "📁 Single Creative Analysis"}
+                    <span style={{fontSize:9,fontFamily:"monospace",color:C.amber,background:"rgba(245,158,11,0.1)",border:`1px solid ${C.amber}44`,padding:"1px 6px",borderRadius:4,letterSpacing:"0.08em"}}>
+                      ONE-TIME
+                    </span>
                   </div>
                   <div style={{fontSize:12,color:C.dim,marginTop:5,lineHeight:1.5}}>
-                    {compareMode
-                      ? "Upload two creatives for side-by-side neural comparison"
-                      : "Analyse one creative across 17 metrics and 15 platforms"}
+                    Instant side-by-side battle — score two creatives now and declare a winner. One-time comparison.
                   </div>
                 </div>
                 <div
@@ -1699,14 +1700,24 @@ export default function App(){
                   </div>
                 </div>
               </div>
+              <div style={{display:"flex",alignItems:"center",gap:10,margin:"8px 0",padding:"0 4px"}}>
+                <div style={{height:1,flex:1,background:C.border}}/>
+                <span style={{fontSize:9,color:C.muted,fontFamily:"monospace",letterSpacing:"0.1em",whiteSpace:"nowrap"}}>
+                  OR FOR ONGOING TRACKING
+                </span>
+                <div style={{height:1,flex:1,background:C.border}}/>
+              </div>
               <div style={{display:"grid",gap:12,marginBottom:20,padding:"15px 18px",background:isCompetitorAnalysis?`linear-gradient(135deg,${C.purple}18,${C.s2})`:C.s2,border:`1px solid ${isCompetitorAnalysis?C.purple+"66":C.border}`,borderRadius:16,boxShadow:isCompetitorAnalysis?`0 14px 34px ${C.purple}14`:"none"}}>
                 <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row"}}>
                   <div style={{minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:900,color:isCompetitorAnalysis?C.purple:C.text,letterSpacing:0.4}}>
+                    <div style={{fontSize:13,fontWeight:900,color:isCompetitorAnalysis?C.purple:C.text,letterSpacing:0.4,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                       🔍 Competitive Intelligence Mode
+                      <span style={{fontSize:9,fontFamily:"monospace",color:C.purple,background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.4)",padding:"1px 6px",borderRadius:4,letterSpacing:"0.08em"}}>
+                        BUILDS DASHBOARD
+                      </span>
                     </div>
                     <div style={{fontSize:12,color:C.dim,marginTop:5,lineHeight:1.55}}>
-                      Analysing a competitor's creative downloaded from Meta Ad Library, YouTube, or another public source.
+                      Track a competitor's creative over time — each upload adds to your Competitive Dashboard, building trend data across their campaigns.
                     </div>
                   </div>
                   <div
@@ -3222,9 +3233,9 @@ export default function App(){
                   <div style={{fontSize:14,color:C.dim,lineHeight:1.7,marginBottom:18}}>Build a competitive dashboard by tagging competitor creative uploads against your own brand.</div>
                   <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:12}}>
                     {[
-                      ["01","Download competitor ad","Use Meta Ad Library, YouTube, or another public source."],
-                      ["02","Toggle Competitive Mode","Enter your own brand in the competitor-of field."],
-                      ["03","Analyse and save","Saved competitor entries appear in this dashboard."],
+                      ["01","Download a competitor ad","Use Meta Ad Library, YouTube, or any public source to download one ad at a time."],
+                      ["02","Enable Competitive Intel Mode on upload","Toggle 'Competitive Intelligence Mode' — NOT 'Compare 2 Creatives'. Enter YOUR brand name in the competitor-of field."],
+                      ["03","Analyse, save, and repeat","Each saved analysis adds to this dashboard. After 3+ uploads, trend data appears."],
                     ].map(([num,title,body])=>(
                       <div key={num} style={{padding:16,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`}}>
                         <div style={{fontSize:11,color:C.purple,fontWeight:900,fontFamily:"'DM Mono',monospace",marginBottom:8}}>{num}</div>

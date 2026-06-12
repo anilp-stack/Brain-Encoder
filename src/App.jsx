@@ -2396,6 +2396,7 @@ export default function App(){
   // ANALYZING SCREEN
   // ============================================================
   if(stage==="analyzing"){
+    const analyzingCreativeFormat=productionStage==="concept"?"text":getCreativeFormat(form.type,file);
     const signalStages=[
       ["Ingest",5],
       ["Frame / Script Decode",18],
@@ -2418,13 +2419,13 @@ export default function App(){
       ?"Projecting concept strength before production spend."
       :productionStage==="storyboard"
         ?"Reading storyboard flow, frame sequence, brand role and narrative clarity."
-        :creativeFormat==="static_image"
+        :analyzingCreativeFormat==="static_image"
           ?"Reading visual hierarchy, stopping power, message clarity and recall cues."
-          :creativeFormat==="motion_static"
+          :analyzingCreativeFormat==="motion_static"
             ?"Reading first-frame strength, motion salience, loop clarity and fatigue risk."
-            :creativeFormat==="audio"
+            :analyzingCreativeFormat==="audio"
               ?"Reading transcript, sonic cues, voice clarity and response potential."
-              :creativeFormat==="text"
+              :analyzingCreativeFormat==="text"
                 ?"Reading proposition clarity, persuasion, memorability and CTA strength."
                 :"Reading motion, pacing, hook, hold and completion signals.";
     return(

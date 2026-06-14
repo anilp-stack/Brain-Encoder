@@ -788,6 +788,9 @@ export default function App(){
   const [certLoading, setCertLoading] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
   const [certVerifyData, setCertVerifyData] = useState(null);
+  const [neurIqContext, setNeurIqContext] = useState(null);
+  const [neurIqContextLoading, setNeurIqContextLoading] = useState(false);
+  const [neurIqContextKey, setNeurIqContextKey] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
       return localStorage.getItem("adcritiq_theme") !== "light";
@@ -1374,7 +1377,7 @@ export default function App(){
     setDemoLoading(true);
     setError(null);
     try{
-      const resp=await fetch("/api/get-analyses?limit=1&order=created_at.desc");
+      const resp=await fetch("/api/get-analyses?sample=true&limit=1");
       const data=await resp.json();
       if(!resp.ok||!data.success)throw new Error(data.error||"Could not load sample report.");
       const saved=(data.analyses||[])[0];
@@ -1467,7 +1470,13 @@ export default function App(){
   const loadRepository=async(filters={})=>{
     setRepoLoading(true);
     try{
+      const cleanToken=token.trim();
+      if(!cleanToken){
+        setSavedAnalyses([]);
+        return;
+      }
       const params=new URLSearchParams();
+      params.set("token",cleanToken);
       if(filters.brand)params.set("brand",filters.brand);
       if(filters.grade)params.set("grade",filters.grade);
       const resp=await fetch(`/api/get-analyses?${params.toString()}`);
@@ -1545,6 +1554,77 @@ export default function App(){
       return null;
     }finally{
       setCalibrationLoading(false);
+    }
+  };
+
+  const loadNeurIqContext=async()=>{
+    if(!results)return null;
+    const cleanToken=token.trim();
+    const brand=(form.brand||results?.brand||"").trim();
+    const savedId=results?.__savedAnalysisId||results?.id||"active";
+    const key=[cleanToken?"private":"report",brand,savedId].join("|");
+    if(neurIqContextKey===key&&neurIqContext)return neurIqContext;
+    setNeurIqContextLoading(true);
+    try{
+      let repositorySummary=[];
+      let calibrationContext=null;
+      let dnaTraits=null;
+      if(cleanToken){
+        const repoParams=new URLSearchParams({token:cleanToken,summary:"true",limit:"5"});
+        const calParams=new URLSearchParams({token:cleanToken,limit:"25"});
+        const dnaParams=brand?new URLSearchParams({brand,token:cleanToken}):null;
+        const [repoResp,calResp,dnaResp]=await Promise.all([
+          fetch(`/api/get-analyses?${repoParams.toString()}`),
+          fetch(`/api/get-outcome-calibrations?${calParams.toString()}`),
+          dnaParams?fetch(`/api/get-brand-dna?${dnaParams.toString()}`):Promise.resolve(null),
+        ]);
+        const repoData=await repoResp.json().catch(()=>({}));
+        const calData=await calResp.json().catch(()=>({}));
+        const dnaData=dnaResp?await dnaResp.json().catch(()=>({})):null;
+        if(repoResp.ok&&repoData.success){
+          repositorySummary=(repoData.analyses||[]).slice(0,5).map(a=>({
+            brand:a.brand||"",
+            campaign:a.campaign||"",
+            grade:a.overall_grade||"",
+            creative_type:a.creative_type||"",
+            created_at:a.created_at||"",
+            headline:a.headline_verdict||""
+          }));
+        }
+        if(calResp.ok&&calData.success){
+          calibrationContext={
+            count:calData.summary?.total_rows||0,
+            comparable_count:calData.summary?.comparable_rows||0,
+            average_accuracy:calData.summary?.average_accuracy??null,
+            confidence:calData.summary?.confidence||"none",
+            bias_label:calData.summary?.bias_label||"not available"
+          };
+        }
+        if(dnaResp?.ok&&dnaData?.success&&dnaData.ready){
+          dnaTraits={
+            emotional_signature:dnaData.traits?.emotional_signature??null,
+            memory_architecture:dnaData.traits?.memory_architecture??null,
+            attention_pattern:dnaData.traits?.attention_pattern??null,
+            cultural_rooting:dnaData.traits?.cultural_rooting??null
+          };
+        }
+      }
+      const context={
+        scope:cleanToken?"current_report_private_context":"current_report_only",
+        repository_summary:repositorySummary,
+        calibration_summary:calibrationContext,
+        brand_dna_traits:dnaTraits
+      };
+      setNeurIqContext(context);
+      setNeurIqContextKey(key);
+      return context;
+    }catch{
+      const fallback={scope:"current_report_only",repository_summary:[],calibration_summary:null,brand_dna_traits:null};
+      setNeurIqContext(fallback);
+      setNeurIqContextKey(key);
+      return fallback;
+    }finally{
+      setNeurIqContextLoading(false);
     }
   };
 
@@ -1677,6 +1757,9 @@ export default function App(){
 
   const setDashboardTab=(next)=>{
     setTab(next);
+    if(next==="neuriq"){
+      loadNeurIqContext();
+    }
     if(next==="repository"){
       loadRepository();
       if(!competitiveBrand){
@@ -5013,7 +5096,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
             </div>
           )}
 
-          {tab==="neuriq"&&results&&<NeurIQTab results={results} C={C}/>}
+          {tab==="neuriq"&&results&&<NeurIQTab results={results} C={C} privateContext={neurIqContext} contextLoading={neurIqContextLoading}/>}
 
           {/* ===== REPOSITORY ===== */}
           {tab==="repository"&&(<>
@@ -5421,6 +5504,12 @@ Verify at: ${certificateUrl(certData.cert_id)}
             ):repoLoading?(
               <Card C={C} style={{textAlign:"center"}}>
                 <div style={{fontSize:15,color:C.gold,fontWeight:700}}>Loading repository...</div>
+              </Card>
+            ):repoMode==="saved"&&!token.trim()?(
+              <Card C={C} style={{textAlign:"center",borderColor:C.gold+"33"}}>
+                <div style={{fontSize:28,marginBottom:10}}>🔐</div>
+                <div style={{fontSize:18,color:C.text,fontWeight:800,marginBottom:8}}>Enter your analysis token to view your private Repository.</div>
+                <div style={{fontSize:14,color:C.dim,lineHeight:1.7}}>Saved reports are now scoped to your access code. Other agencies, brands, and competitors cannot browse your analyses.</div>
               </Card>
             ):Object.keys(groupedByBrand).length===0?(
               <Card C={C} style={{textAlign:"center"}}>

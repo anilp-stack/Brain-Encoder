@@ -1,3 +1,10 @@
+import { createHash } from "crypto";
+
+const hashToken = (token) => {
+  const clean = String(token || "").trim();
+  return clean ? createHash("sha256").update(clean).digest("hex") : null;
+};
+
 const DNA_METRICS = [
   "viral_potential",
   "hook_strength",
@@ -69,11 +76,12 @@ const traitConsistency = (metricStdDev, metrics) => {
   return consistencyFromStdDev(groupStdDev);
 };
 
-const fetchRows = async ({ supabaseUrl, supabaseKey, brand }) => {
+const fetchRows = async ({ supabaseUrl, supabaseKey, brand, ownerTokenHash }) => {
   const query = new URLSearchParams();
   query.set("select", "full_result,creative_type,created_at");
   query.set("brand", `eq.${brand}`);
   query.set("is_competitor", "eq.false");
+  if (ownerTokenHash) query.set("owner_token_hash", `eq.${ownerTokenHash}`);
   query.set("order", "created_at.desc");
   query.set("limit", "1000");
 
@@ -115,11 +123,13 @@ export default async function handler(req, res) {
     if (!brand) {
       return res.status(400).json({ success: false, error: "brand query param is required." });
     }
+    const ownerTokenHash = hashToken(req.query?.token);
 
     const rows = await fetchRows({
       supabaseUrl: SUPABASE_URL,
       supabaseKey: SUPABASE_ANON_KEY,
-      brand
+      brand,
+      ownerTokenHash
     });
 
     const validRows = rows.map(extractMetricRow).filter(Boolean);

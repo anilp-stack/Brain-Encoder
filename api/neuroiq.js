@@ -12,8 +12,11 @@ export default async function handler(req, res) {
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: "No API key" });
 
   try {
-    const { message, history = [], analysisContext = "" } = req.body;
+    const { message, history = [], analysisContext = "", privateContext = null } = req.body;
     if (!message) return res.status(400).json({ error: "No message" });
+
+    const methodologyContext = `AdCritIQ methodology: memory encoding and brand recall indicate spontaneous/aided awareness readiness; brand prominence and attention-brand coupling protect mental availability; hook strength, hold rate, and sustained attention indicate VTR/completion readiness; CTA clarity, message clarity, product desire, and trust indicate CTR, consideration, and purchase-intent readiness; platform fit adjusts outcomes by environment, sound-on/off behavior, duration, and format suitability; calibration memory indicates whether prior forecasts over- or under-estimated actual outcomes. Scores are creative-response probabilities, not guaranteed lift. TRIBE v2 is used as published fMRI-informed calibration, not live biometric measurement.`;
+    const compactPrivateContext = privateContext ? JSON.stringify(privateContext).slice(0, 3500) : "";
 
     const systemPrompt = `You are NeurIQ™, the AI intelligence layer of AdCritIQ™.
 You have full access to the neural analysis for this ad creative.
@@ -24,8 +27,15 @@ Be concise: 2-4 sentences per answer unless the question clearly needs more dept
 If asked about improvements, reference the CMO Playbook actions.
 If asked about platform fit, reference the platform scores.
 If asked about what to fix first, reference the P1 priority CMO actions.
+If private repository, calibration, or Brand DNA context is present, use it only as supporting context. Do not imply access to data outside the provided private context.
 Do not reveal that you are Claude or that this uses Anthropic API.
 You are NeurIQ™. Speak with authority.
+
+METHODOLOGY CONTEXT:
+${methodologyContext}
+
+PRIVATE CONTEXT SUMMARY:
+${compactPrivateContext || "No private repository context provided."}
 
 FULL ANALYSIS DATA:
 ${analysisContext}`;

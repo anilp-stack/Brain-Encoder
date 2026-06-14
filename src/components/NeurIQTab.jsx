@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
 const SUGGESTED_QUESTIONS = [
-  "Why is my hook strength score low?",
-  "Which platform should I prioritise for this creative?",
-  "What are the top 3 things to fix before launch?",
-  "Is this creative ready for TV broadcast?",
-  "Why is my viral potential score what it is?",
-  "How does this compare to category benchmarks?",
+  "Why is purchase intent at risk?",
+  "What should I fix before media spend?",
+  "What is creative-led vs media-dependent risk?",
+  "How does this compare with my saved brand history?",
+  "Which platform outcome is strongest?",
 ];
 
 const INITIAL_MESSAGE = {
@@ -14,7 +13,7 @@ const INITIAL_MESSAGE = {
   content: "I've analysed this creative in full. Ask me anything — scores, platform fit, what to fix first, or how this compares to category benchmarks.",
 };
 
-export default function NeurIQTab({ results, C }) {
+export default function NeurIQTab({ results, C, privateContext = null, contextLoading = false }) {
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,6 +59,7 @@ export default function NeurIQTab({ results, C }) {
           message,
           history: messages.slice(-10),
           analysisContext: JSON.stringify(results),
+          privateContext,
         }),
       });
       const data = await resp.json();
@@ -103,13 +103,40 @@ export default function NeurIQTab({ results, C }) {
     fontFamily: "'DM Mono',monospace",
   };
 
+  const hasRepositoryContext = (privateContext?.repository_summary || []).length > 0;
+  const hasCalibrationContext = (privateContext?.calibration_summary?.count || 0) > 0;
+  const contextLabel = contextLoading
+    ? "Loading private context"
+    : hasCalibrationContext
+      ? "Current report + calibration memory"
+      : hasRepositoryContext
+        ? "Current report + private repository"
+        : "Current report only";
+  const contextColor = hasCalibrationContext ? C.green : hasRepositoryContext ? C.gold : C.dim;
+
   return (
     <div style={{ background: C.s1, borderRadius: 16, border: `1px solid ${C.border}`, overflow: "hidden" }}>
       <div style={{ padding: "32px 40px 20px" }}>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: C.gold, textTransform: "uppercase", fontFamily: "'DM Mono',monospace" }}>
           Powered by NeurIQ™
         </div>
-        <h2 style={{ fontSize: 28, fontWeight: 700, color: C.text, margin: "6px 0 4px", fontFamily: "'Playfair Display',serif" }}>NeurIQ™</h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <h2 style={{ fontSize: 28, fontWeight: 700, color: C.text, margin: "6px 0 4px", fontFamily: "'Playfair Display',serif" }}>NeurIQ™</h2>
+          <div style={{
+            fontSize: 10,
+            color: contextColor,
+            background: `${contextColor}12`,
+            border: `1px solid ${contextColor}44`,
+            borderRadius: 999,
+            padding: "5px 10px",
+            fontFamily: "'DM Mono',monospace",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            fontWeight: 800,
+          }}>
+            {contextLabel}
+          </div>
+        </div>
         <div style={{ fontSize: 14, color: C.dim }}>Ask your AI creative intelligence</div>
       </div>
 

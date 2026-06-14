@@ -2226,7 +2226,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
       </div>
     );
     const AudienceBackdrop=({opacity})=>(
-      <div aria-hidden="true" style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden",opacity:opacity ?? (isDarkMode?0.28:0.18)}}>
+      <div aria-hidden="true" style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden",opacity:opacity ?? (isDarkMode?0.38:0.28)}}>
         <svg width="100%" height="100%" viewBox="0 0 1400 780" preserveAspectRatio="none" style={{position:"absolute",inset:0}}>
           <defs>
             <linearGradient id="lpSignalGrad" x1="0" x2="1">
@@ -2235,7 +2235,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
               <stop offset="100%" stopColor={C.purple}/>
             </linearGradient>
           </defs>
-          <g fill="none" stroke="url(#lpSignalGrad)" strokeWidth="1.15" opacity="0.54">
+          <g fill="none" stroke="url(#lpSignalGrad)" strokeWidth="1.45" opacity={isDarkMode?0.62:0.48}>
             <path d="M95 184 C 248 122, 355 244, 506 175 S 795 88, 976 186 S 1225 262, 1336 168" strokeDasharray="8 12">
               <animate attributeName="stroke-dashoffset" from="120" to="0" dur="10s" repeatCount="indefinite"/>
             </path>
@@ -2243,7 +2243,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
               <animate attributeName="stroke-dashoffset" from="0" to="100" dur="13s" repeatCount="indefinite"/>
             </path>
           </g>
-          <g fill="none" stroke={C.gold} strokeWidth="1.5" opacity="0.56">
+          <g fill="none" stroke={C.gold} strokeWidth="1.8" opacity={isDarkMode?0.62:0.42}>
             <rect x="990" y="100" width="180" height="104" rx="12"/>
             <path d="M1015 227h130M1080 204v23"/>
             <path d="M1022 132h126M1022 154h84M1022 176h108"/>
@@ -2257,13 +2257,67 @@ Verify at: ${certificateUrl(certData.cert_id)}
             <path d="M438 590h132M438 615h88"/>
             <path d="M360 620c38-52 94-68 158-45M882 610c60-64 132-75 215-38" opacity="0.42"/>
           </g>
-          <g fill={C.cyan} opacity="0.28">
+          <g fill="none" stroke={C.cyan} strokeWidth="1.5" opacity={isDarkMode?0.35:0.22}>
+            <rect x="70" y="84" width="250" height="142" rx="18"/>
+            <path d="M100 124h105M100 154h155M100 184h78"/>
+            <path d="M708 88h260v118H708zM730 232h216M838 206v26"/>
+            <path d="M790 124h116M790 154h88M790 184h128"/>
+            <path d="M1160 310h112v188h-112zM1182 346h68M1182 376h46M1182 406h76M1216 472h1"/>
+          </g>
+          <g fill={C.cyan} opacity={isDarkMode?0.34:0.24}>
             <circle cx="1080" cy="151" r="6"/><circle cx="200" cy="548" r="5"/><circle cx="1160" cy="500" r="6"/><circle cx="505" cy="588" r="5"/>
           </g>
-          <g fill={C.gold} opacity="0.16">
+          <g fill={C.gold} opacity={isDarkMode?0.2:0.12}>
             <path d="M266 300h74v140h-74zM350 250h74v190h-74zM434 330h74v110h-74z"/>
           </g>
         </svg>
+      </div>
+    );
+    const lpImages={
+      boardroom:"https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80",
+      workshop:"https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1200&q=80",
+      leadership:"https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80",
+      enterprise:"https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=80",
+    };
+    const EditorialImagePanel=({src,label,style={},opacity=0.42})=>(
+      <div aria-hidden="true" style={{display:isMobile?"none":"block",position:"absolute",width:360,height:230,borderRadius:26,overflow:"hidden",background:`linear-gradient(135deg,${C.gold}18,${C.cyan}10), ${C.s2}`,border:`1px solid ${C.gold}26`,boxShadow:isDarkMode?`0 35px 90px rgba(0,0,0,0.36), 0 0 60px ${C.gold}12`:"0 26px 70px rgba(15,23,42,0.12)",opacity,pointerEvents:"none",...style}}>
+        <div style={{position:"absolute",inset:0,backgroundImage:`url("${src}")`,backgroundSize:"cover",backgroundPosition:"center",filter:isDarkMode?"saturate(0.78) contrast(1.08)":"saturate(0.72) contrast(1.02)",transform:"scale(1.04)"}}/>
+        <div style={{position:"absolute",inset:0,background:isDarkMode?"linear-gradient(135deg,rgba(5,5,10,0.78),rgba(5,5,10,0.28),rgba(245,166,35,0.16))":"linear-gradient(135deg,rgba(255,255,255,0.72),rgba(255,255,255,0.28),rgba(176,125,10,0.12))"}}/>
+        <div style={{position:"absolute",left:18,bottom:16,padding:"6px 9px",borderRadius:999,background:isDarkMode?"rgba(0,0,0,0.45)":"rgba(255,255,255,0.76)",border:`1px solid ${C.gold}33`,color:C.gold,fontSize:9,fontFamily:"'DM Mono',monospace",fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase"}}>{label}</div>
+      </div>
+    );
+    const MediaMotionStrip=({style={},opacity=0.22})=>(
+      <div aria-hidden="true" data-lp-motion="true" style={{display:isMobile?"none":"block",position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none",opacity,...style}}>
+        <div style={{position:"absolute",left:"-12%",right:"-12%",bottom:"8%",height:118,display:"flex",gap:18,alignItems:"center",animation:"lpMediaDrift 28s linear infinite"}}>
+          {[
+            ["CTV",C.cyan,140,82],["MOBILE",C.purple,72,112],["DOOH",C.gold,170,86],["OOH",C.amber,190,72],["SOCIAL",C.pink,82,116],["RETAIL",C.green,155,78],
+            ["CTV",C.cyan,140,82],["MOBILE",C.purple,72,112],["DOOH",C.gold,170,86],["OOH",C.amber,190,72],["SOCIAL",C.pink,82,116],["RETAIL",C.green,155,78],
+          ].map(([label,color,w,h],i)=>(
+            <div key={`${label}-${i}`} style={{width:w,height:h,borderRadius:label==="MOBILE"||label==="SOCIAL"?18:14,flex:"0 0 auto",background:`linear-gradient(145deg,${color}18,${C.s1} 58%,${C.bg})`,border:`1px solid ${color}45`,boxShadow:`0 18px 50px ${color}10`,padding:12,boxSizing:"border-box"}}>
+              <div style={{fontSize:8,color,fontFamily:"'DM Mono',monospace",fontWeight:900,letterSpacing:"0.11em",marginBottom:8}}>{label}</div>
+              <div style={{height:8,borderRadius:999,background:`${color}33`,marginBottom:8,width:"78%"}}/>
+              <div style={{height:8,borderRadius:999,background:`${color}22`,marginBottom:8,width:"55%"}}/>
+              <div style={{display:"flex",alignItems:"end",gap:4,height:label==="MOBILE"||label==="SOCIAL"?38:24}}>
+                {[44,72,58,86,63].map((bar,j)=><span key={j} style={{height:`${bar}%`,flex:1,borderRadius:4,background:color,opacity:0.25+j*0.08}}/>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+    const AdScreenMock=({label="Creative playing",accent=C.gold})=>(
+      <div data-lp-motion="true" style={{padding:16,borderRadius:20,background:isDarkMode?"#090912":C.s1,border:`1px solid ${accent}35`,boxShadow:isDarkMode?`0 24px 80px rgba(0,0,0,0.38), 0 0 36px ${accent}10`:elevationShadow,overflow:"hidden"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:12,fontFamily:"'DM Mono',monospace",fontSize:9,color:accent,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase"}}>
+          <span>{label}</span><span style={{color:C.green}}>● LIVE AD</span>
+        </div>
+        <div style={{height:156,borderRadius:16,background:`radial-gradient(circle at 28% 32%,${accent}44,transparent 24%),linear-gradient(145deg,#090912,#13131f)`,border:`1px solid ${accent}28`,position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",left:18,top:18,width:82,height:50,borderRadius:12,background:`${accent}28`,border:`1px solid ${accent}44`}}/>
+          <div style={{position:"absolute",right:18,top:18,width:64,height:64,borderRadius:"50%",background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`}}/>
+          <div style={{position:"absolute",left:18,right:18,bottom:18,height:42,borderRadius:12,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"end",gap:5,padding:8}}>
+            {[70,44,82,58,92,63,76,48,88,56].map((h,i)=><span key={i} style={{height:`${h}%`,flex:1,borderRadius:4,background:i%3===0?accent:i%3===1?C.cyan:C.pink,animation:`lpSignalPulse ${2+i*0.12}s ease-in-out infinite`,opacity:0.75}}/>)}
+          </div>
+          <div style={{position:"absolute",left:118,top:42,right:104,height:2,background:`linear-gradient(90deg,transparent,${accent},${C.cyan},transparent)`,animation:"lpSignalSweep 3.8s ease-in-out infinite"}}/>
+        </div>
       </div>
     );
     const HomeFloatButton=()=>(
@@ -2467,10 +2521,12 @@ Verify at: ${certificateUrl(certData.cert_id)}
         </div>
       );
     };
-    const FeatureBand=({id,label,title,body,points,accent=C.gold,visual,reverse=false,dark=false})=>(
+    const FeatureBand=({id,label,title,body,points,accent=C.gold,visual,reverse=false,dark=false,media=false,image=null})=>(
       <section id={id} style={{padding:bandPad,background:dark?`linear-gradient(135deg,${C.ink},${C.bg})`:C.bg,borderTop:`1px solid ${C.border}`,scrollMarginTop:120,position:"relative",overflow:"hidden"}}>
-        {dark&&<AudienceBackdrop/>}
-        <div style={{...bandInner,display:"grid",gridTemplateColumns:isMobile?"1fr":reverse?"0.94fr 1.06fr":"1.06fr 0.94fr",gap:isMobile?24:44,alignItems:"center"}}>
+        {dark&&<AudienceBackdrop opacity={isDarkMode?0.42:0.28}/>}
+        {media&&<MediaMotionStrip opacity={isDarkMode?0.16:0.12}/>}
+        {image}
+        <div style={{...bandInner,display:"grid",gridTemplateColumns:isMobile?"1fr":reverse?"0.94fr 1.06fr":"1.06fr 0.94fr",gap:isMobile?24:44,alignItems:"center",position:"relative",zIndex:1}}>
           <div style={{order:isMobile?0:reverse?2:0}}>
             {sectionLabel(label,accent)}
             <h2 style={{fontSize:isMobile?32:isTablet?42:54,lineHeight:1.04,letterSpacing:-0.4,margin:"0 0 16px",color:C.text,fontWeight:950}}>{title}</h2>
@@ -2500,7 +2556,16 @@ Verify at: ${certificateUrl(certData.cert_id)}
     ];
     return(
       <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter','DM Sans',sans-serif",display:"flex",flexDirection:"column",position:"relative",overflowX:"hidden"}}>
-        <style>{`html{scroll-behavior:smooth;} @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto;}}`}</style>
+        <style>{`
+          html{scroll-behavior:smooth;}
+          @keyframes lpMediaDrift{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-50%,0,0)}}
+          @keyframes lpSignalPulse{0%,100%{opacity:.52;transform:scaleY(.72)}50%{opacity:1;transform:scaleY(1)}}
+          @keyframes lpSignalSweep{0%,100%{transform:translateX(-18%);opacity:.35}50%{transform:translateX(18%);opacity:1}}
+          @media (prefers-reduced-motion: reduce){
+            html{scroll-behavior:auto;}
+            [data-lp-motion="true"],[data-lp-motion="true"] *{animation:none!important;}
+          }
+        `}</style>
         <div aria-hidden="true" style={{position:"absolute",top:"-20%",right:"-10%",width:600,height:600,borderRadius:"50%",background:"radial-gradient(circle, rgba(245,158,11,0.07) 0%, transparent 65%)",animation:"drift 14s ease-in-out infinite alternate",pointerEvents:"none"}}/>
         <div aria-hidden="true" style={{position:"absolute",bottom:"-30%",left:"-10%",width:700,height:700,borderRadius:"50%",background:"radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 65%)",animation:"drift 18s ease-in-out infinite alternate-reverse",pointerEvents:"none"}}/>
         <header style={{position:"sticky",top:0,zIndex:20,display:"grid",gap:14,padding:isMobile?"14px 16px":"18px 42px 16px",borderBottom:`1px solid ${C.border}`,background:headerBg,backdropFilter:"blur(18px)",boxShadow:isDarkMode?"0 18px 70px rgba(0,0,0,0.24)":"0 14px 36px rgba(15,23,42,0.08)"}}>
@@ -2541,6 +2606,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
         <main style={{flex:1,position:"relative",zIndex:1}}>
           <section id="lp-top" style={{scrollMarginTop:140,position:"relative",overflow:"hidden",padding:isMobile?"58px 20px 78px":isTablet?"74px 38px 96px":"84px 48px 120px",background:`radial-gradient(circle at 62% 22%,${C.gold}12,transparent 30%),radial-gradient(circle at 90% 62%,${C.cyan}0d,transparent 28%),linear-gradient(180deg,${C.bg},${C.ink})`,borderBottom:`1px solid ${C.border}`}}>
             <AudienceBackdrop/>
+            <MediaMotionStrip opacity={isDarkMode?0.18:0.13} style={{bottom:-12}}/>
             <div style={{...bandInner,display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"1fr":"minmax(470px,0.82fr) minmax(680px,1.18fr)",gap:isMobile?34:64,alignItems:"center",position:"relative",zIndex:1}}>
               <div style={{maxWidth:isMobile?"none":620}}>
                 {sectionLabel("Creative-to-Media Outcome Intelligence")}
@@ -2569,7 +2635,8 @@ Verify at: ${certificateUrl(certData.cert_id)}
           </section>
 
           <section id="lp-problem" style={{padding:bandPad,background:C.s1,borderBottom:`1px solid ${C.border}`,scrollMarginTop:120,position:"relative",overflow:"hidden"}}>
-            <AudienceBackdrop opacity={isDarkMode?0.16:0.12}/>
+            <AudienceBackdrop opacity={isDarkMode?0.28:0.22}/>
+            <EditorialImagePanel src={lpImages.boardroom} label="Boardroom review" opacity={isDarkMode?0.32:0.24} style={{right:-70,top:70,width:420,height:260}}/>
             <div style={{...bandInner,textAlign:"center",position:"relative",zIndex:1}}>
               {sectionLabel("The Real Problem",C.cyan)}
               <h2 style={{fontSize:isMobile?34:isTablet?48:64,lineHeight:1.03,letterSpacing:-0.8,margin:"0 auto 18px",maxWidth:920,fontWeight:950,color:C.text}}>
@@ -2589,7 +2656,8 @@ Verify at: ${certificateUrl(certData.cert_id)}
           </section>
 
           <section id="lp-how" style={{padding:bandPad,background:C.bg,borderBottom:`1px solid ${C.border}`,scrollMarginTop:120,position:"relative",overflow:"hidden"}}>
-            <AudienceBackdrop opacity={isDarkMode?0.12:0.09}/>
+            <AudienceBackdrop opacity={isDarkMode?0.24:0.18}/>
+            <EditorialImagePanel src={lpImages.workshop} label="Creative workshop" opacity={isDarkMode?0.28:0.2} style={{left:-95,bottom:42,width:360,height:230}}/>
             <div style={{...bandInner,textAlign:"center",position:"relative",zIndex:1}}>
               {sectionLabel("How It Works",C.gold)}
               <h2 style={{fontSize:isMobile?34:isTablet?46:58,lineHeight:1.05,margin:"0 0 14px",fontWeight:950,color:C.text}}>From idea to CMO-ready forecast.</h2>
@@ -2620,11 +2688,13 @@ Verify at: ${certificateUrl(certData.cert_id)}
             points={["Brand KPIs: awareness, consideration, purchase intent, memory efficiency.","Performance KPIs: VTR/completion, CTR/response, media wastage risk.","Platform outcome matrix shows where the creative is most ready to scale."]}
             accent={C.gold}
             dark
-            visual={<div style={{display:"grid",gap:14}}><MockOutcomePanel/><TeaserCard label="Platform Matrix" title="Where the same creative is strongest" body="Outcome probability shifts by platform environment, sound context, duration fit, and format suitability." color={C.cyan}><OutcomeChartMock/></TeaserCard><TeaserCard label="Explainability" title="Why this score?" body="Positive drivers, negative drivers, format-specific context, platform modifier, and one fix." color={C.purple}><FeatureSnapshot type="explain"/></TeaserCard></div>}
+            media
+            visual={<div style={{display:"grid",gap:14}}><AdScreenMock label="Creative input stream" accent={C.gold}/><MockOutcomePanel/><TeaserCard label="Platform Matrix" title="Where the same creative is strongest" body="Outcome probability shifts by platform environment, sound context, duration fit, and format suitability." color={C.cyan}><OutcomeChartMock/></TeaserCard><TeaserCard label="Explainability" title="Why this score?" body="Positive drivers, negative drivers, format-specific context, platform modifier, and one fix." color={C.purple}><FeatureSnapshot type="explain"/></TeaserCard></div>}
           />
 
           <section id="lp-platforms" style={{padding:bandPad,background:C.s1,borderTop:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,scrollMarginTop:120,position:"relative",overflow:"hidden"}}>
-            <AudienceBackdrop opacity={isDarkMode?0.18:0.13}/>
+            <AudienceBackdrop opacity={isDarkMode?0.3:0.22}/>
+            <MediaMotionStrip opacity={isDarkMode?0.16:0.12} style={{top:"auto",bottom:0,height:220}}/>
             <div style={{...bandInner,position:"relative",zIndex:1}}>
               <div style={{textAlign:"center",maxWidth:900,margin:"0 auto 38px"}}>
                 {sectionLabel("Platform Outcome Matrix",C.cyan)}
@@ -2636,6 +2706,11 @@ Verify at: ${certificateUrl(certData.cert_id)}
                 </p>
               </div>
               <PlatformScoresShowcase/>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"repeat(2,1fr)":"repeat(3,1fr)",gap:14,marginTop:18}}>
+                <AdScreenMock label="CTV / OTT ad playing" accent={C.cyan}/>
+                <AdScreenMock label="Mobile social cutdown" accent={C.purple}/>
+                <AdScreenMock label="DOOH creative loop" accent={C.amber}/>
+              </div>
               <div style={{display:"flex",justifyContent:"center",marginTop:30}}><PrimaryCta/></div>
             </div>
           </section>
@@ -2648,11 +2723,11 @@ Verify at: ${certificateUrl(certData.cert_id)}
             points={["Attention, memory encoding, brand recall, emotion, sound-off survival.","Deep diagnostics across attention, emotion, and sound.","Predictive neural markers, not live biometric measurement."]}
             accent={C.cyan}
             reverse
-            visual={<div style={{display:"grid",gap:14}}><NeuralSignalBrainPanel isDarkMode={isDarkMode}/><AttentionTimelineMock/><TeaserCard label="Deep Neuro" title="Sustained attention, peak-end emotion, STS sync" body="Deep diagnostics expose not only whether a creative scores well, but where the creative loses neurological efficiency." color={C.green}><FeatureSnapshot type="bars"/></TeaserCard></div>}
+            visual={<div style={{display:"grid",gap:14}}><AdScreenMock label="Creative signal input" accent={C.cyan}/><NeuralSignalBrainPanel isDarkMode={isDarkMode}/><AttentionTimelineMock/><TeaserCard label="Deep Neuro" title="Sustained attention, peak-end emotion, STS sync" body="Deep diagnostics expose not only whether a creative scores well, but where the creative loses neurological efficiency." color={C.green}><FeatureSnapshot type="bars"/></TeaserCard></div>}
           />
 
           <section id="lp-formats" style={{padding:bandPad,background:C.s1,borderTop:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,scrollMarginTop:120,position:"relative",overflow:"hidden"}}>
-            <AudienceBackdrop opacity={isDarkMode?0.13:0.1}/>
+            <AudienceBackdrop opacity={isDarkMode?0.25:0.18}/>
             <div style={{...bandInner,position:"relative",zIndex:1}}>
               <div style={{textAlign:"center",maxWidth:820,margin:"0 auto 36px"}}>
                 {sectionLabel("Format-Aware Analysis",C.purple)}
@@ -2670,6 +2745,11 @@ Verify at: ${certificateUrl(certData.cert_id)}
                   </div>
                 ))}
               </div>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"repeat(2,1fr)":"repeat(3,1fr)",gap:14,marginTop:18}}>
+                <AdScreenMock label="Video / film signal" accent={C.gold}/>
+                <AdScreenMock label="Static social preview" accent={C.cyan}/>
+                <AdScreenMock label="Audio waveform spot" accent={C.green}/>
+              </div>
               <div style={{textAlign:"center",marginTop:28}}><PrimaryCta/></div>
             </div>
           </section>
@@ -2682,6 +2762,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
             points={["Outcome Implication highlights the KPI most helped and most at risk.","Business Impact Lens protects the primary KPI before media scales.","NeurIQ answers follow-up questions against the active report and private context."]}
             accent={C.purple}
             dark
+            image={<EditorialImagePanel src={lpImages.leadership} label="CMO decision room" opacity={isDarkMode?0.22:0.16} style={{right:-80,top:64,width:390,height:260}}/>}
             visual={<div style={{display:"grid",gap:12}}>{["Prioritize brand linkage before scaling media.","Adapt platform versions for TikTok, Meta, CTV and DOOH.","Use confidence and explainability to choose human review vs scale."].map((x,i)=><div key={x} style={{padding:16,borderRadius:14,background:C.s1,border:`1px solid ${[C.gold,C.cyan,C.purple][i]}33`,fontSize:14,color:C.dim,lineHeight:1.6}}><b style={{color:[C.gold,C.cyan,C.purple][i],fontFamily:"'DM Mono',monospace"}}>0{i+1} </b>{x}</div>)}</div>}
           />
 
@@ -2723,7 +2804,8 @@ Verify at: ${certificateUrl(certData.cert_id)}
           />
 
           <section id="lp-trust" style={{padding:bandPad,background:C.s1,borderTop:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,scrollMarginTop:120,position:"relative",overflow:"hidden"}}>
-            <AudienceBackdrop opacity={isDarkMode?0.14:0.1}/>
+            <AudienceBackdrop opacity={isDarkMode?0.26:0.2}/>
+            <EditorialImagePanel src={lpImages.enterprise} label="Enterprise governance" opacity={isDarkMode?0.26:0.18} style={{left:-75,bottom:48,width:380,height:250}}/>
             <div style={{...bandInner,display:"grid",gridTemplateColumns:isMobile?"1fr":"0.85fr 1.15fr",gap:isMobile?24:44,alignItems:"center",position:"relative",zIndex:1}}>
               <div>
                 {sectionLabel("Trust + Governance",C.amber)}
@@ -2749,8 +2831,10 @@ Verify at: ${certificateUrl(certData.cert_id)}
             </div>
           </section>
 
-          <section style={{padding:isMobile?"68px 20px":"96px 48px",background:`linear-gradient(180deg,${C.bg},${C.ink})`,textAlign:"center",borderBottom:`1px solid ${C.border}`}}>
-            <div style={{...bandInner,maxWidth:860}}>
+          <section style={{padding:isMobile?"68px 20px":"96px 48px",background:`linear-gradient(180deg,${C.bg},${C.ink})`,textAlign:"center",borderBottom:`1px solid ${C.border}`,position:"relative",overflow:"hidden"}}>
+            <AudienceBackdrop opacity={isDarkMode?0.24:0.16}/>
+            <MediaMotionStrip opacity={isDarkMode?0.17:0.12} style={{top:"auto",bottom:0,height:220}}/>
+            <div style={{...bandInner,maxWidth:860,position:"relative",zIndex:1}}>
               {sectionLabel("Get Started",C.gold)}
               <h2 style={{fontSize:isMobile?36:isTablet?50:66,lineHeight:1.04,margin:"0 0 18px",fontWeight:950,color:C.text}}>Your next creative deserves a forecast before the budget moves.</h2>
               <p style={{fontSize:17,color:C.dim,lineHeight:1.7,margin:"0 auto 28px",maxWidth:680}}>Upload a creative, paste a concept, compare two versions, or open a sample report instantly.</p>

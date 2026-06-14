@@ -2999,6 +2999,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
     const showDeepSound=resultFormat!=="static_image"&&resultFormat!=="text"&&soundDeepRows.length>0;
     const outcomeForecast=r.outcome_forecast||null;
     const outcomeConfidence=r.outcome_confidence||{};
+    const outcomeExplainability=r.outcome_explainability||{};
     const platformOutcomeForecast=r.platform_outcome_forecast||{};
     const latestCalibration=calibrationSummary?.calibrations?.[0]||null;
     const latestCalibrationResult=latestCalibration?.calibration_result||null;
@@ -3128,6 +3129,133 @@ Verify at: ${certificateUrl(certData.cert_id)}
     ].filter(([,v])=>typeof v==="number").sort((a,b)=>b[1]-a[1])[0];
     const isCompletionOutcomeRelevant=resultFormat==="video"||resultFormat==="motion_static";
     const completionOutcomeLabel=isCompletionOutcomeRelevant?"VTR / Completion Potential":"View-Through Attention Fit";
+    const asDriverList=(value)=>{
+      if(Array.isArray(value))return value.filter(Boolean).map(String).slice(0,3);
+      if(typeof value==="string"&&value.trim())return [value.trim()];
+      return [];
+    };
+    const metricText=(label,value)=>typeof value==="number"?`${label} is ${Math.round(value)}/100`:null;
+    const formatDriverText=()=>{
+      if(resultStage==="concept")return "Concept mode relies on proposition clarity, brand fit, and likely audience response because no finished asset evidence exists yet.";
+      if(resultStage==="storyboard")return "Storyboard mode reads frame sequence, brand placement, message clarity, and likely attention flow before production.";
+      if(resultFormat==="static_image"){
+        const parts=[
+          metricText("stopping power",formatMetrics.stopping_power),
+          metricText("visual hierarchy",formatMetrics.visual_hierarchy),
+          metricText("brand prominence",formatMetrics.brand_prominence),
+          metricText("CTA clarity",formatMetrics.cta_clarity),
+        ].filter(Boolean);
+        return parts.length?`Static image read: ${parts.join(", ")}.`:"Static image read: first-glance stopping power, visual hierarchy, brand prominence, message clarity, and CTA clarity drive the forecast.";
+      }
+      if(resultFormat==="motion_static"){
+        const parts=[
+          metricText("first-frame strength",formatMetrics.first_frame_strength),
+          metricText("loop clarity",formatMetrics.loop_clarity),
+          metricText("motion salience",formatMetrics.motion_salience),
+          metricText("loop fatigue risk",formatMetrics.loop_fatigue),
+        ].filter(Boolean);
+        return parts.length?`Motion/GIF read: ${parts.join(", ")}.`:"Motion/GIF read: first frame, loop comprehension, motion salience, message persistence, and loop fatigue drive the forecast.";
+      }
+      if(resultFormat==="audio"){
+        const parts=[
+          metricText("voice clarity",formatMetrics.voice_clarity),
+          metricText("sonic branding",formatMetrics.sonic_branding),
+          metricText("CTA recall",formatMetrics.cta_recall),
+          metricText("real-world audibility",r?.deep_neuro?.sound_deep?.real_world_audibility),
+        ].filter(Boolean);
+        return parts.length?`Audio read: ${parts.join(", ")}.`:"Audio read: voice clarity, sonic branding, mnemonic strength, CTA recall, and real-world audibility drive the forecast.";
+      }
+      if(resultFormat==="text"){
+        const parts=[
+          metricText("headline strength",formatMetrics.headline_strength),
+          metricText("proposition clarity",formatMetrics.proposition_clarity),
+          metricText("CTA strength",formatMetrics.cta_strength),
+          metricText("readability",formatMetrics.readability),
+        ].filter(Boolean);
+        return parts.length?`Text/script read: ${parts.join(", ")}.`:"Text/script read: headline strength, proposition clarity, persuasion, memorability, CTA strength, readability, and claim risk drive the forecast.";
+      }
+      return `Video read: hook strength ${r.hook_strength||0}/100, hold rate ${r.hold_rate||0}/100, attention recovery, pacing, and brand presence during high-attention moments drive the forecast.`;
+    };
+    const platformModifierText=(key)=>{
+      const explicit=outcomeExplainability?.platform_modifiers;
+      if(explicit&&typeof explicit==="object"){
+        const named=bestOutcomePlatform?.key&&explicit[bestOutcomePlatform.key];
+        if(named)return named;
+      }
+      if(bestOutcomePlatform){
+        const risk=bestOutcomePlatform.data?.risk?` with ${bestOutcomePlatform.data.risk} risk`:"";
+        return `${bestOutcomePlatform.label} is currently the strongest context at ${Math.round(bestOutcomePlatform.score)} average readiness${risk}.`;
+      }
+      return "Platform modifier is directional because platform outcome rows are not available in this saved report.";
+    };
+    const fallbackImproveAction=(key)=>{
+      const map={
+        spontaneous_awareness_lift:"Bring the distinctive brand asset into the first high-attention moment and repeat it near the close.",
+        aided_awareness_lift:"Make the brand cue and product/category role unmistakable so recognition survives prompted recall.",
+        consideration_lift:"Sharpen the single proposition and remove competing claims that slow message decoding.",
+        purchase_intent_lift:"Strengthen the benefit-to-action bridge with a clearer offer, product payoff, or CTA.",
+        vtr_completion_potential:isCompletionOutcomeRelevant?"Re-edit the first two seconds and remove the weakest pacing drop before the product moment.":"Increase first-glance retention by simplifying the focal point and making the message instantly decodable.",
+        ctr_response_potential:"Move the CTA closer to the main benefit and make the next step visually or verbally explicit.",
+        brand_memory_efficiency:"Pair peak attention with brand presence so memory is encoded under the correct brand.",
+        media_wastage_risk:"Fix the weakest creative response driver before increasing media weight.",
+        creative_accountability:"Prioritize creative revision on the flagged memory, hook, or CTA dimension before blaming media optimization.",
+        media_dependency:"Keep the creative direction, but test platform mix, sequencing, frequency, and audience fit before broad scaling.",
+      };
+      return map[key]||"Revise the weakest creative driver before scaling spend.";
+    };
+    const fallbackExplainability=(key,label,value,invert=false)=>{
+      const positives=[];
+      const negatives=[];
+      if(r.brand_recall>=70)positives.push(`Brand recall is strong at ${r.brand_recall}/100, supporting attribution.`);
+      if(r.memory_encoding>=70)positives.push(`Memory encoding is strong at ${r.memory_encoding}/100, supporting long-term recall.`);
+      if(r.hook_strength>=70)positives.push(`Hook strength is strong at ${r.hook_strength}/100, supporting early attention.`);
+      if(r.creative_efficiency>=70)positives.push(`Creative efficiency is strong at ${r.creative_efficiency}/100, supporting faster message transfer.`);
+      if(bestOutcomePlatform)positives.push(`${bestOutcomePlatform.label} has the strongest platform readiness signal.`);
+      if(r.brand_recall<60)negatives.push(`Brand recall is only ${r.brand_recall||0}/100, weakening attribution.`);
+      if(r.memory_encoding<60)negatives.push(`Memory encoding is only ${r.memory_encoding||0}/100, limiting durable awareness.`);
+      if(r.hook_strength<60)negatives.push(`Hook strength is only ${r.hook_strength||0}/100, increasing early skip or ignore risk.`);
+      if(r.share_intent<55)negatives.push(`Share intent is ${r.share_intent||0}/100, limiting organic amplification.`);
+      if(typeof value==="number"){
+        const weak=invert?value>60:value<60;
+        if(weak&&!negatives.length)negatives.push(`${label} is constrained by mixed creative-response signals.`);
+      }
+      return {
+        positive_drivers:positives.slice(0,3),
+        negative_drivers:(negatives.length?negatives:[`${label} has no single dominant weakness; review the format and platform modifiers.`]).slice(0,3),
+        format_drivers:formatDriverText(),
+        platform_modifier:platformModifierText(key),
+        improve_action:fallbackImproveAction(key),
+      };
+    };
+    const getOutcomeExplainability=(key,label,value,invert=false)=>{
+      const explicit=outcomeExplainability?.[key];
+      const fallback=fallbackExplainability(key,label,value,invert);
+      if(explicit&&typeof explicit==="object"){
+        return {
+          positive_drivers:asDriverList(explicit.positive_drivers).length?asDriverList(explicit.positive_drivers):fallback.positive_drivers,
+          negative_drivers:asDriverList(explicit.negative_drivers).length?asDriverList(explicit.negative_drivers):fallback.negative_drivers,
+          format_drivers:explicit.format_drivers||fallback.format_drivers,
+          platform_modifier:explicit.platform_modifier||fallback.platform_modifier,
+          improve_action:explicit.improve_action||fallback.improve_action,
+        };
+      }
+      return fallback;
+    };
+    const explainabilityRows=outcomeForecast?[
+      ["spontaneous_awareness_lift","Spontaneous Awareness",outcomeForecast.spontaneous_awareness_lift,"Brand memory retrieval",false],
+      ["aided_awareness_lift","Aided Awareness",outcomeForecast.aided_awareness_lift,"Recognition when prompted",false],
+      ["consideration_lift","Consideration",outcomeForecast.consideration_lift,"Preference movement",false],
+      ["purchase_intent_lift","Purchase Intent",outcomeForecast.purchase_intent_lift,"Action readiness",false],
+      ["brand_memory_efficiency","Brand Memory Efficiency",outcomeForecast.brand_memory_efficiency,"Exposure to memory",false],
+      ["vtr_completion_potential",completionOutcomeLabel,outcomeForecast.vtr_completion_potential,isCompletionOutcomeRelevant?"Hook and hold response":"First-glance retention fit",false],
+      ["ctr_response_potential","CTR / Response Potential",outcomeForecast.ctr_response_potential,"Click or response readiness",false],
+      ["media_wastage_risk","Media Wastage Risk",outcomeForecast.media_wastage_risk,"Exposure unlikely to convert",true],
+      ["creative_accountability","Creative Accountability",outcomeForecast.creative_accountability,"Creative-led outcome risk",false],
+      ["media_dependency","Media Dependency",outcomeForecast.media_dependency,"Needs media optimization",false],
+    ].filter(([, ,value])=>typeof value==="number"): [];
+    const mostImportantFix=explainabilityRows
+      .map(([key,label,value,sub,invert])=>({key,label,value,sub,invert,readiness:invert?100-value:value,expl:getOutcomeExplainability(key,label,value,invert)}))
+      .sort((a,b)=>a.readiness-b.readiness)[0];
     const accountabilityDecision=outcomeForecast
       ? outcomeForecast.media_wastage_risk>=65
         ? "Protect media spend. Fix creative response before scaling budget."
@@ -4641,6 +4769,67 @@ Verify at: ${certificateUrl(certData.cert_id)}
                 </div>
 
                 <Card C={C} style={{padding:isMobile?20:26}}>
+                  <CardTitle C={C} label={C.cyan}>Forecast Explainability</CardTitle>
+                  <p style={{fontSize:13,color:C.dim,lineHeight:1.7,margin:"0 0 16px"}}>
+                    Each forecast is decomposed into positive drivers, negative drivers, format evidence, platform context, and the practical creative fix that would most likely improve the score.
+                  </p>
+                  {mostImportantFix&&(
+                    <div style={{padding:isMobile?16:18,borderRadius:14,background:`${C.gold}10`,border:`1px solid ${C.gold}44`,borderLeft:`4px solid ${C.gold}`,marginBottom:18}}>
+                      <div style={{fontSize:10,color:C.gold,fontWeight:900,letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:7}}>Most Important Fix</div>
+                      <div style={{display:"flex",justifyContent:"space-between",gap:14,alignItems:"flex-start",flexWrap:"wrap"}}>
+                        <div>
+                          <div style={{fontSize:18,color:C.text,fontWeight:900,marginBottom:6}}>{mostImportantFix.label}</div>
+                          <div style={{fontSize:13,color:C.dim,lineHeight:1.65}}>{mostImportantFix.expl.improve_action}</div>
+                        </div>
+                        <div style={{textAlign:isMobile?"left":"right"}}>
+                          <div style={{fontSize:26,color:outcomeScoreColor(mostImportantFix.value,mostImportantFix.invert),fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{mostImportantFix.value}</div>
+                          <div style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",textTransform:"uppercase",letterSpacing:"0.08em"}}>{outcomeBandLabel(mostImportantFix.value,mostImportantFix.invert)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,minmax(0,1fr))",gap:14}}>
+                    {explainabilityRows.map(([key,label,value,sub,invert])=>{
+                      const conf=getOutcomeConfidence(key,label,value,invert);
+                      const exp=getOutcomeExplainability(key,label,value,invert);
+                      const Row=({title,items,color,plain=false})=>(
+                        <div style={{padding:"10px 0",borderTop:`1px solid ${C.border}`}}>
+                          <div style={{fontSize:9,color,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:6}}>{title}</div>
+                          {plain?(
+                            <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{items}</div>
+                          ):(
+                            <ul style={{margin:"0 0 0 16px",padding:0,color:C.dim,fontSize:12,lineHeight:1.65}}>
+                              {(items.length?items:["No dominant driver available in this saved report."]).map((item,idx)=><li key={idx}>{item}</li>)}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                      return(
+                        <div key={key} style={{padding:16,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`,boxShadow:isDarkMode?"0 14px 40px rgba(0,0,0,0.18)":"0 8px 24px rgba(0,0,0,0.05)"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10}}>
+                            <div>
+                              <div style={{fontSize:12,color:C.text,fontWeight:900,letterSpacing:"0.04em",textTransform:"uppercase"}}>{label}</div>
+                              <div style={{fontSize:11,color:C.dim,marginTop:3}}>{sub}</div>
+                            </div>
+                            <div style={{textAlign:"right",flexShrink:0}}>
+                              <div style={{fontSize:24,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{value}</div>
+                              <div style={{marginTop:8}}><ConfidenceChip level={conf.level}/></div>
+                            </div>
+                          </div>
+                          <Row title="Positive drivers" items={exp.positive_drivers} color={C.green}/>
+                          <Row title="Negative drivers" items={exp.negative_drivers} color={C.red}/>
+                          <Row title="Format-specific drivers" items={exp.format_drivers} color={C.cyan} plain/>
+                          <Row title="Platform modifier" items={exp.platform_modifier} color={C.purple} plain/>
+                          <div style={{marginTop:10,padding:"10px 12px",borderRadius:10,background:`${C.gold}10`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.6}}>
+                            <b style={{color:C.gold}}>What would improve it:</b> {exp.improve_action}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                <Card C={C} style={{padding:isMobile?20:26}}>
                   <CardTitle C={C} label={C.gold}>Accountability Split</CardTitle>
                   <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.3fr 0.7fr",gap:22,alignItems:"center"}}>
                     <div>
@@ -5490,6 +5679,22 @@ Verify at: ${certificateUrl(certData.cert_id)}
                     </div>
                     <div style={{marginTop:14,padding:"10px 12px",borderRadius:9,background:C.s2,border:`1px solid ${C.border}`,fontSize:12,color:C.dim,lineHeight:1.65}}>
                       Low confidence does not mean the creative is bad. It means the forecast should not be overinterpreted without human review, campaign calibration, or additional creative evidence.
+                    </div>
+                  </div>
+                  <div style={{padding:18,borderRadius:12,background:`${C.purple}0f`,border:`1px solid ${C.purple}33`,marginBottom:18}}>
+                    <div style={{fontSize:11,fontWeight:900,color:C.purple,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:12}}>Forecast explainability layer</div>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.75,margin:"0 0 14px"}}>Explainability is diagnostic, not a causal proof claim. It answers why a KPI was scored that way by selecting the strongest visible drivers from creative signals, format-specific metrics, platform fit, and private calibration memory when available.</p>
+                    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
+                      {[
+                        ["Drivers","Positive and negative drivers are selected from scored evidence such as memory encoding, brand recall, hook strength, CTA clarity, message clarity, platform readiness, and format metrics.",C.green],
+                        ["Modifiers","Format drivers prevent wrong-language diagnosis: static images use visual hierarchy and stopping power, video uses hook/hold/pacing, audio uses voice/sonic recall, and text uses clarity and persuasion.",C.cyan],
+                        ["Actions","The recommended fix is a creative-revision guide for human teams. It does not replace creative judgment, brand strategy, legal review, or campaign measurement.",C.gold],
+                      ].map(([title,body,color])=>(
+                        <div key={title} style={{padding:14,borderRadius:10,background:C.s2,border:`1px solid ${color}33`}}>
+                          <div style={{fontSize:12,color:color,fontWeight:900,marginBottom:7}}>{title}</div>
+                          <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{body}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div style={{padding:"12px 14px",borderRadius:10,background:`${C.gold}0f`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.75}}>

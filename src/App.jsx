@@ -2963,7 +2963,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
     const stageLabel={concept:"CONCEPT",storyboard:"STORYBOARD",roughcut:"ROUGH CUT",final:"FINAL"}[resultStage]||String(resultStage).toUpperCase();
     const savedAnalysisId=r.__savedAnalysisId||r.id||null;
     const certEligibility=computeCertificationEligibility(r);
-    const canShowCertCta=!isDemoMode&&!isSharedMode&&savedAnalysisId&&certEligibility.eligible&&(certData===null||certData?.certified===true);
+    const canShowCertBlock=!isDemoMode&&!isSharedMode&&savedAnalysisId;
     const impactLabel=formatImpactLabel(resultFormat);
     const formatMetrics=r.format_metrics||{};
     const staticAttentionMetrics=[
@@ -3270,6 +3270,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
           const headline=analysisHeadline(a);
           const isCertified=a.is_certified===true||a.full_result?.is_certified===true;
           const certId=a.cert_id||a.full_result?.cert_id;
+          const rowCertEligibility=computeCertificationEligibility(a.full_result);
           return(
             <div key={a.id||idx} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",background:idx%2===0?C.s1:C.s2,borderTop:idx>0?`1px solid ${C.border}`:"none",flexWrap:isMobile?"wrap":"nowrap"}}>
               <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",minWidth:80,flexShrink:0}}>
@@ -3289,6 +3290,11 @@ Verify at: ${certificateUrl(certData.cert_id)}
               {isCertified&&certId&&(
                 <button onClick={()=>openCertificateFromId(certId)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:C.ink,background:C.gold,border:`1px solid ${C.gold}`,padding:"3px 7px",borderRadius:999,flexShrink:0,textTransform:"uppercase",fontWeight:900,cursor:"pointer"}}>
                   🏅 Certified
+                </button>
+              )}
+              {!isCertified&&rowCertEligibility.eligible&&(
+                <button title="Load this report to issue an AdCritIQ certificate" onClick={()=>repoLoadAnalysis(a)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:C.gold,background:`${C.gold}14`,border:`1px solid ${C.gold}55`,padding:"3px 7px",borderRadius:999,flexShrink:0,textTransform:"uppercase",fontWeight:900,cursor:"pointer"}}>
+                  🏅 Eligible
                 </button>
               )}
               <span style={{fontSize:11,color:C.dim,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:isMobile?"normal":"nowrap",fontStyle:"italic",minWidth:0}}>
@@ -3766,7 +3772,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
                 )}
               </Card>
             )}
-            {canShowCertCta&&(
+            {canShowCertBlock&&(
               <Card C={C} style={{marginBottom:isMobile?18:24,padding:isMobile?16:18,background:"rgba(245,166,35,0.05)",border:`1px solid ${C.gold}33`,borderLeft:`3px solid ${C.gold}`,borderRadius:8}}>
                 {certData?.certified||r.is_certified?(
                   <div style={{display:"flex",alignItems:isMobile?"stretch":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row"}}>
@@ -3779,7 +3785,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
                       <button onClick={()=>copyCertificateLink(certData?.cert_id||r.cert_id)} style={{padding:"9px 12px",borderRadius:8,border:`1px solid ${C.green}55`,background:`${C.green}12`,color:C.green,fontWeight:900,cursor:"pointer"}}>{shareCopied?"Copied!":"Copy Verification Link"}</button>
                     </div>
                   </div>
-                ):(
+                ):certEligibility.eligible?(
                   <>
                     <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:12,flexDirection:isMobile?"column":"row",marginBottom:10}}>
                       <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>🏅 This Creative Qualifies For Certification</div>
@@ -3791,6 +3797,27 @@ Verify at: ${certificateUrl(certData.cert_id)}
                     <button onClick={issueCertificate} disabled={certLoading} style={{width:isMobile?"100%":"auto",padding:"11px 16px",borderRadius:10,border:"none",background:C.gold,color:C.ink,fontWeight:900,cursor:certLoading?"wait":"pointer",fontFamily:"'DM Sans',sans-serif"}}>
                       {certLoading?"Issuing Certificate...":"🏅 Issue AdCritIQ™ Certificate"}
                     </button>
+                  </>
+                ):(
+                  <>
+                    <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:12,flexDirection:isMobile?"column":"row",marginBottom:10}}>
+                      <div style={{fontSize:11,color:C.amber,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>🏅 Certification Status · Not Yet Eligible</div>
+                      <div style={{fontSize:10,color:C.amber,background:`${C.amber}16`,border:`1px solid ${C.amber}44`,borderRadius:999,padding:"5px 9px",fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.06em"}}>
+                        {certEligibility.weighted_score}/100
+                      </div>
+                    </div>
+                    <div style={{fontSize:13,color:C.dim,lineHeight:1.65,marginBottom:10}}>
+                      This saved analysis has been checked against AdCritIQ™ certification thresholds but does not currently qualify.
+                    </div>
+                    {certEligibility.failed_criteria?.length>0&&(
+                      <div style={{display:"grid",gap:6}}>
+                        {certEligibility.failed_criteria.slice(0,4).map(item=>(
+                          <div key={item} style={{fontSize:12,color:C.dim,lineHeight:1.5}}>
+                            <span style={{color:C.amber,fontWeight:900,marginRight:7}}>•</span>{item}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </>
                 )}
               </Card>

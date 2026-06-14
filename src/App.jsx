@@ -747,6 +747,29 @@ export default function App(){
   const [repoDnaLoading, setRepoDnaLoading] = useState(false);
   const [repoDnaBrand, setRepoDnaBrand] = useState("");
   const [dnaMatchData, setDnaMatchData] = useState(null);
+  const [calibrationData, setCalibrationData] = useState(null);
+  const [calibrationLoading, setCalibrationLoading] = useState(false);
+  const [calibrationSaving, setCalibrationSaving] = useState(false);
+  const [calibrationSummary, setCalibrationSummary] = useState(null);
+  const [calibrationForm, setCalibrationForm] = useState({
+    analysis_id:"",
+    platform:"youtube",
+    campaign_start_date:"",
+    campaign_end_date:"",
+    actual_vtr:"",
+    actual_ctr:"",
+    actual_completion_rate:"",
+    actual_brand_lift:"",
+    actual_aided_awareness_lift:"",
+    actual_spontaneous_awareness_lift:"",
+    actual_consideration_lift:"",
+    actual_purchase_intent_lift:"",
+    actual_sales_proxy:"",
+    actual_store_visits:"",
+    actual_roas:"",
+    target_roas:"",
+    notes:"",
+  });
   const [certData, setCertData] = useState(null);
   const [certLoading, setCertLoading] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
@@ -894,6 +917,32 @@ export default function App(){
       }
     })();
   },[]);
+
+  useEffect(()=>{
+    const savedId=results?.__savedAnalysisId||results?.id;
+    if(!savedId||!token.trim()||stage!=="results"){
+      setCalibrationSummary(null);
+      return;
+    }
+    let cancelled=false;
+    (async()=>{
+      try{
+        const params=new URLSearchParams();
+        params.set("token",token.trim());
+        params.set("analysis_id",savedId);
+        const resp=await fetch(`/api/get-outcome-calibrations?${params.toString()}`);
+        const data=await resp.json();
+        if(!cancelled&&resp.ok&&data.success!==false&&Array.isArray(data.calibrations)&&data.calibrations.length){
+          setCalibrationSummary(data);
+        }else if(!cancelled){
+          setCalibrationSummary(null);
+        }
+      }catch{
+        if(!cancelled)setCalibrationSummary(null);
+      }
+    })();
+    return()=>{cancelled=true;};
+  },[results?.__savedAnalysisId,results?.id,token,stage]);
 
   const handleFile=(e)=>{
     const f=e.target.files[0];if(!f)return;
@@ -1049,6 +1098,7 @@ export default function App(){
         frames:frameData.frames,
         metadata:{
           ...form,
+          token:token.trim(),
           production_stage:productionStage,
           frame_count:productionStage==="storyboard"?storyboardFiles.length:undefined,
           script_text:(form.script||"").slice(0,8000),
@@ -1176,6 +1226,7 @@ export default function App(){
             frames:framesB.frames,
             metadata:{
               brand:compareType==="brands"?(formB.brand||labelB):form.brand,
+              token:token.trim(),
               client:compareType==="brands"?formB.client:form.client,
               campaign:compareType==="brands"?formB.campaign:form.campaign,
               agency:form.agency,
@@ -1273,6 +1324,7 @@ export default function App(){
           industry:form.industry,
           market:form.market,
           country:form.country,
+          token:token.trim(),
           is_competitor:fullResult.is_competitor===true||isCompetitorAnalysis,
           competitor_of:fullResult.competitor_of||(isCompetitorAnalysis?competitorOf.trim():null),
           creative_type:fullResult.creative_format||getCreativeFormat(form.type,file),
@@ -1294,6 +1346,7 @@ export default function App(){
       const data=await resp.json();
       if(!resp.ok||!data.success)throw new Error(data.error||"Save failed");
       setResults(p=>({...p,__saveStatus:"saved",__saveError:"",__savedAnalysisId:data.id}));
+      if(data.id)setCalibrationForm(prev=>({...prev,analysis_id:data.id}));
       setTimeout(()=>setResults(p=>{
         if(!p||p.__saveStatus!=="saved")return p;
         const next={...p};delete next.__saveStatus;return next;
@@ -1454,6 +1507,76 @@ export default function App(){
     }
   };
 
+  const loadOutcomeCalibrations=async(filters={})=>{
+    if(!token.trim()){
+      setCalibrationData(null);
+      return null;
+    }
+    setCalibrationLoading(true);
+    try{
+      const params=new URLSearchParams();
+      params.set("token",token.trim());
+      if(filters.brand)params.set("brand",filters.brand);
+      if(filters.analysis_id)params.set("analysis_id",filters.analysis_id);
+      if(filters.platform)params.set("platform",filters.platform);
+      if(filters.creative_type)params.set("creative_type",filters.creative_type);
+      if(filters.industry)params.set("industry",filters.industry);
+      const resp=await fetch(`/api/get-outcome-calibrations?${params.toString()}`);
+      const data=await resp.json();
+      if(!resp.ok||data.success===false)throw new Error(data.error||"Failed to load calibrations");
+      setCalibrationData(data);
+      return data;
+    }catch(e){
+      alert("Outcome calibration load failed: "+e.message);
+      return null;
+    }finally{
+      setCalibrationLoading(false);
+    }
+  };
+
+  const saveOutcomeCalibration=async()=>{
+    if(!token.trim()){
+      alert("Enter your analysis token above to access your private calibration data.");
+      return;
+    }
+    const analysisId=(calibrationForm.analysis_id||results?.__savedAnalysisId||"").trim();
+    if(!analysisId){
+      alert("Select or enter a saved analysis ID before saving calibration.");
+      return;
+    }
+    if(!calibrationForm.platform){
+      alert("Select a platform before saving calibration.");
+      return;
+    }
+    setCalibrationSaving(true);
+    try{
+      const resp=await fetch("/api/save-outcome-calibration",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          ...calibrationForm,
+          analysis_id:analysisId,
+          token:token.trim(),
+          brand:form.brand||results?.brand||"",
+          campaign:form.campaign||"",
+          industry:form.industry||"",
+          country:form.country||"",
+          market:form.market||"",
+          creative_type:results?.creative_format||form.type||"",
+        })
+      });
+      const data=await resp.json();
+      if(!resp.ok||data.success===false)throw new Error(data.error||"Failed to save calibration");
+      setCalibrationForm(prev=>({...prev,analysis_id:analysisId}));
+      await loadOutcomeCalibrations({analysis_id:analysisId});
+      alert("Outcome calibration saved.");
+    }catch(e){
+      alert("Outcome calibration save failed: "+e.message);
+    }finally{
+      setCalibrationSaving(false);
+    }
+  };
+
   const certificateUrl=(certId)=>`https://adcritiq.com/?cert=${encodeURIComponent(certId||"")}`;
 
   const copyCertificateLink=async(certId)=>{
@@ -1551,6 +1674,7 @@ export default function App(){
     setStage("form");
     setResults(null);
     setDnaMatchData(null);
+    setCalibrationSummary(null);
     setCertData(null);
     setShowCertModal(false);
     setFile(null);
@@ -2875,6 +2999,9 @@ Verify at: ${certificateUrl(certData.cert_id)}
     const showDeepSound=resultFormat!=="static_image"&&resultFormat!=="text"&&soundDeepRows.length>0;
     const outcomeForecast=r.outcome_forecast||null;
     const platformOutcomeForecast=r.platform_outcome_forecast||{};
+    const latestCalibration=calibrationSummary?.calibrations?.[0]||null;
+    const latestCalibrationResult=latestCalibration?.calibration_result||null;
+    const latestCalibrationComparisons=latestCalibrationResult?.comparisons||[];
     const outcomeScoreColor=(v,invert=false)=>{
       if(typeof v!=="number")return C.dim;
       if(invert)return v<=35?C.green:v<=60?C.amber:C.red;
@@ -3001,6 +3128,20 @@ Verify at: ${certificateUrl(certData.cert_id)}
     const repoInputStyle={background:C.s2,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 12px",color:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif",outline:"none",boxSizing:"border-box"};
     const repoSelectStyle={...repoInputStyle,appearance:"auto",WebkitAppearance:"auto",MozAppearance:"auto"};
     const repoMiniButton={background:"transparent",border:`1px solid ${C.border2}`,borderRadius:5,padding:"4px 10px",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",cursor:"pointer",letterSpacing:"0.06em"};
+    const calibrationRows=calibrationData?.calibrations||[];
+    const calibrationAgg=calibrationData?.summary||{};
+    const calibrationInput=(key,label,placeholder="",type="number")=>(
+      <label style={{display:"grid",gap:6,fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",fontFamily:"'DM Mono',monospace"}}>
+        {label}
+        <input
+          type={type}
+          value={calibrationForm[key]}
+          onChange={e=>setCalibrationForm(prev=>({...prev,[key]:e.target.value}))}
+          placeholder={placeholder}
+          style={repoInputStyle}
+        />
+      </label>
+    );
     const isCompetitorEntry=(a)=>a?.is_competitor===true||a?.full_result?.is_competitor===true;
     const analysisFormat=(a)=>a?.creative_type||a?.full_result?.creative_format||a?.full_result?.creative_subtype||"video";
     const analysisStage=(a)=>a?.production_stage||a?.full_result?.production_stage||"final";
@@ -3050,6 +3191,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
       });
       setCertData(a.is_certified&&a.cert_id?{certified:true,cert_id:a.cert_id,cert_issued_at:a.cert_issued_at,brand:a.brand,campaign:a.campaign,industry:a.industry,creative_type:analysisFormat(a),grade:analysisGrade(a),key_scores:Object.fromEntries(CERT_SCORE_KEYS.map(([,key])=>[key,Math.round(a.full_result?.[key]||0)]))}:null);
       setDnaMatchData(null);
+      setCalibrationForm(prev=>({...prev,analysis_id:a.id||prev.analysis_id}));
       setTab("summary");
     };
     const renderAnalysisRows=(items,brand,options={})=>(
@@ -4319,6 +4461,36 @@ Verify at: ${certificateUrl(certData.cert_id)}
                 )}
               </Card>
 
+              {latestCalibrationResult&&(
+                <Card C={C} style={{padding:isMobile?20:24,borderColor:C.gold+"44",background:`linear-gradient(180deg,${C.gold}0d,${C.s1})`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:isMobile?"flex-start":"center",gap:14,flexDirection:isMobile?"column":"row",marginBottom:16}}>
+                    <div>
+                      <div style={{fontSize:10,color:C.gold,fontWeight:900,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:6}}>Predicted vs Actual</div>
+                      <div style={{fontSize:20,color:C.text,fontWeight:900}}>Outcome Calibration Result</div>
+                      <div style={{fontSize:12,color:C.dim,marginTop:5}}>Platform: {String(latestCalibration.platform||"").replace(/_/g," ").toUpperCase()} · Confidence: {latestCalibrationResult.confidence}</div>
+                    </div>
+                    <div style={{textAlign:isMobile?"left":"right"}}>
+                      <div style={{fontSize:36,color:outcomeScoreColor(latestCalibrationResult.weighted_accuracy),fontWeight:900,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{latestCalibrationResult.weighted_accuracy??"—"}</div>
+                      <div style={{fontSize:10,color:C.dim,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>Accuracy Score</div>
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
+                    {latestCalibrationComparisons.slice(0,3).map(row=>(
+                      <div key={row.label} style={{padding:12,borderRadius:10,background:C.s2,border:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:12,color:C.text,fontWeight:900,marginBottom:8}}>{row.label}</div>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.dim,lineHeight:1.8}}>
+                          <span>Predicted</span><b style={{color:C.gold}}>{row.predicted}</b>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.dim,lineHeight:1.8}}>
+                          <span>Actual norm</span><b style={{color:C.cyan}}>{row.normalized_actual}</b>
+                        </div>
+                        <div style={{marginTop:8,fontSize:10,color:row.verdict==="overestimated"?C.red:row.verdict==="underestimated"?C.amber:C.green,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>{row.verdict}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
               {outcomeForecast&&(<>
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14}}>
                   {[
@@ -4431,12 +4603,13 @@ Verify at: ${certificateUrl(certData.cert_id)}
           {tab==="repository"&&(<>
             <Card C={C} style={{marginBottom:20}}>
               <div style={{display:"flex",alignItems:isMobile?"stretch":"center",justifyContent:"space-between",gap:14,flexDirection:isMobile?"column":"row",marginBottom:18}}>
-                <CardTitle C={C} label={C.gold}>{repoMode==="competitive"?"Competitive Creative Intelligence":repoMode==="dna"?"Brand Creative DNA":"Saved Analysis Repository"}</CardTitle>
+                <CardTitle C={C} label={C.gold}>{repoMode==="competitive"?"Competitive Creative Intelligence":repoMode==="dna"?"Brand Creative DNA":repoMode==="calibration"?"Outcome Calibration Engine":"Saved Analysis Repository"}</CardTitle>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                   {[
                     ["saved","Saved Reports"],
                     ["competitive","🔍 Competitive Intel"],
                     ["dna","🧬 Brand DNA"],
+                    ["calibration","📈 Outcome Calibration"],
                   ].map(([id,label])=>(
                     <button key={id} onClick={()=>{
                       setRepoMode(id);
@@ -4447,6 +4620,10 @@ Verify at: ${certificateUrl(certData.cert_id)}
                       }
                       if(id==="dna"){
                         setRepoDnaBrand(repoDnaBrand||form.brand||"");
+                      }
+                      if(id==="calibration"&&token.trim()){
+                        setCalibrationForm(prev=>({...prev,analysis_id:prev.analysis_id||results?.__savedAnalysisId||""}));
+                        loadOutcomeCalibrations();
                       }
                     }} style={{padding:"9px 12px",borderRadius:10,border:`1px solid ${repoMode===id?C.gold+"66":C.border}`,background:repoMode===id?`${C.gold}16`:C.s2,color:repoMode===id?C.gold:C.dim,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
                       {label}
@@ -4500,7 +4677,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
                     Load Competitive Dashboard
                   </button>
                 </div>
-              ):(
+              ):repoMode==="dna"?(
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(240px,0.45fr) auto",gap:12,alignItems:"end"}}>
                   <label style={{display:"grid",gap:6,fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'DM Mono',monospace"}}>
                     Your Brand
@@ -4513,9 +4690,122 @@ Verify at: ${certificateUrl(certData.cert_id)}
                     Load Brand DNA
                   </button>
                 </div>
+              ):(
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr auto",gap:12,alignItems:"end"}}>
+                  <div style={{padding:"12px 14px",borderRadius:12,background:`${C.gold}0d`,border:`1px solid ${C.gold}30`,fontSize:12,color:C.dim,lineHeight:1.65}}>
+                    <b style={{color:C.gold}}>Private calibration:</b> Campaign actuals are scoped to your analysis token and are not visible to other agencies, brands, or competitors.
+                  </div>
+                  <button onClick={()=>loadOutcomeCalibrations()}
+                    disabled={!token.trim()||calibrationLoading}
+                    style={{padding:"12px 18px",borderRadius:10,border:`1px solid ${C.gold}55`,background:token.trim()?`${C.gold}16`:C.s2,color:token.trim()?C.gold:C.muted,fontWeight:900,cursor:token.trim()?"pointer":"not-allowed",fontFamily:"'DM Sans',sans-serif"}}>
+                    {calibrationLoading?"Loading...":"Load Private Calibrations"}
+                  </button>
+                </div>
               )}
             </Card>
-            {repoMode==="dna"?(
+            {repoMode==="calibration"?(
+              !token.trim()?(
+                <Card C={C} style={{padding:28,textAlign:"center",borderColor:C.gold+"33"}}>
+                  <div style={{fontSize:28,marginBottom:10}}>🔐</div>
+                  <div style={{fontSize:18,color:C.text,fontWeight:900,marginBottom:8}}>Enter your analysis token above to access your private calibration data.</div>
+                  <div style={{fontSize:14,color:C.dim,lineHeight:1.7}}>Outcome actuals are commercially sensitive. AdCritIQ™ only loads calibration rows that match your private token hash.</div>
+                </Card>
+              ):(
+                <div style={{display:"grid",gap:18}}>
+                  <Card C={C} style={{padding:24}}>
+                    <CardTitle C={C} label={C.gold}>Add Actual Campaign Outcomes</CardTitle>
+                    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,1fr)",gap:12,marginBottom:16}}>
+                      {calibrationInput("analysis_id","Saved Analysis ID","Auto-fills after save","text")}
+                      <label style={{display:"grid",gap:6,fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",fontFamily:"'DM Mono',monospace"}}>
+                        Platform
+                        <select value={calibrationForm.platform} onChange={e=>setCalibrationForm(prev=>({...prev,platform:e.target.value}))} style={repoSelectStyle}>
+                          {["youtube","meta","instagram","tiktok","tv","ctv_ott","dooh","programmatic_display","linkedin"].map(p=><option key={p} value={p}>{p.replace(/_/g," ").toUpperCase()}</option>)}
+                        </select>
+                      </label>
+                      {calibrationInput("campaign_start_date","Start Date","","date")}
+                      {calibrationInput("campaign_end_date","End Date","","date")}
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isTablet?"repeat(2,1fr)":"repeat(4,1fr)",gap:12,marginBottom:16}}>
+                      {calibrationInput("actual_vtr","VTR %","e.g. 62")}
+                      {calibrationInput("actual_ctr","CTR %","e.g. 1.2")}
+                      {calibrationInput("actual_completion_rate","Completion %","e.g. 74")}
+                      {calibrationInput("actual_brand_lift","Brand Lift pp","e.g. 4.5")}
+                      {calibrationInput("actual_aided_awareness_lift","Aided Awareness pp","e.g. 5")}
+                      {calibrationInput("actual_spontaneous_awareness_lift","Spont. Awareness pp","e.g. 2.5")}
+                      {calibrationInput("actual_consideration_lift","Consideration pp","e.g. 3")}
+                      {calibrationInput("actual_purchase_intent_lift","Purchase Intent pp","e.g. 2")}
+                      {calibrationInput("actual_sales_proxy","Sales Proxy","optional")}
+                      {calibrationInput("actual_store_visits","Store Visits","optional")}
+                      {calibrationInput("actual_roas","ROAS","optional")}
+                      {calibrationInput("target_roas","Target ROAS","optional")}
+                    </div>
+                    <label style={{display:"grid",gap:6,fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",fontFamily:"'DM Mono',monospace",marginBottom:16}}>
+                      Notes
+                      <textarea value={calibrationForm.notes} onChange={e=>setCalibrationForm(prev=>({...prev,notes:e.target.value}))} placeholder="Campaign context, media caveats, test cell details..." style={{...repoInputStyle,minHeight:84,resize:"vertical"}}/>
+                    </label>
+                    <button onClick={saveOutcomeCalibration} disabled={calibrationSaving} style={{padding:"12px 18px",borderRadius:10,border:"none",background:C.gold,color:C.ink,fontWeight:900,cursor:calibrationSaving?"wait":"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                      {calibrationSaving?"Saving Calibration...":"Save Outcome Calibration"}
+                    </button>
+                  </Card>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,1fr)",gap:14}}>
+                    {[
+                      ["Calibrated Rows",calibrationAgg.total_rows??0,C.gold],
+                      ["Avg Accuracy",calibrationAgg.average_accuracy??"—",outcomeScoreColor(calibrationAgg.average_accuracy)],
+                      ["Confidence",calibrationAgg.confidence||"none",C.cyan],
+                      ["Bias",calibrationAgg.bias_label||"not available",calibrationAgg.average_bias>10?C.red:calibrationAgg.average_bias<-10?C.amber:C.green],
+                    ].map(([label,value,color])=>(
+                      <Card C={C} key={label} style={{padding:18}}>
+                        <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:8}}>{label}</div>
+                        <div style={{fontSize:24,color,fontWeight:900,textTransform:typeof value==="string"?"uppercase":"none",fontFamily:"'DM Mono',monospace"}}>{value}</div>
+                      </Card>
+                    ))}
+                  </div>
+                  <Card C={C} style={{padding:22}}>
+                    <CardTitle C={C} label={C.cyan}>KPI Accuracy Breakdown</CardTitle>
+                    {calibrationAgg.kpi_accuracy?.length?(
+                      <div style={{display:"grid",gap:10}}>
+                        {calibrationAgg.kpi_accuracy.map(row=>(
+                          <div key={row.label} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 120px 120px",gap:12,alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
+                            <div style={{fontSize:13,color:C.text,fontWeight:900}}>{row.label}</div>
+                            <div style={{fontSize:12,color:outcomeScoreColor(row.average_accuracy),fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{row.average_accuracy}% accuracy</div>
+                            <div style={{fontSize:12,color:C.dim,fontFamily:"'DM Mono',monospace"}}>{row.count} sample{row.count===1?"":"s"}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ):(
+                      <div style={{fontSize:13,color:C.dim,lineHeight:1.7}}>No comparable KPI rows yet. Add at least one actual KPI that maps to an Outcome Forecast score.</div>
+                    )}
+                  </Card>
+                  <Card C={C} style={{padding:22}}>
+                    <CardTitle C={C} label={C.gold}>Recent Private Calibrations</CardTitle>
+                    {calibrationRows.length?(
+                      <div style={{display:"grid",gap:10}}>
+                        {calibrationRows.slice(0,10).map(row=>{
+                          const result=row.calibration_result||{};
+                          return(
+                            <div key={row.id} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"140px 1fr 110px 130px",gap:12,alignItems:"center",padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                              <div style={{fontSize:11,color:C.dim,fontFamily:"'DM Mono',monospace"}}>{row.created_at?new Date(row.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—"}</div>
+                              <div>
+                                <div style={{fontSize:13,color:C.text,fontWeight:900}}>{row.brand||"Unknown Brand"} · {String(row.platform||"").replace(/_/g," ").toUpperCase()}</div>
+                                <div style={{fontSize:11,color:C.dim,marginTop:3}}>{row.campaign||"Campaign actuals"} · {row.creative_type||"format unknown"}</div>
+                              </div>
+                              <div style={{fontSize:18,color:outcomeScoreColor(result.weighted_accuracy),fontWeight:900,fontFamily:"'DM Mono',monospace"}}>{result.weighted_accuracy??"—"}</div>
+                              <div style={{fontSize:10,color:result.verdict==="overestimated"?C.red:result.verdict==="underestimated"?C.amber:C.green,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>{result.verdict||"not comparable"}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ):(
+                      <div style={{fontSize:13,color:C.dim,lineHeight:1.7}}>No private calibration rows loaded yet. Save actual campaign outcomes to begin building your evidence base.</div>
+                    )}
+                  </Card>
+                  <Card C={C} style={{padding:18,borderColor:C.gold+"33",background:`${C.gold}0d`}}>
+                    <div style={{fontSize:13,color:C.text,fontWeight:900,marginBottom:6}}>Engine learning status</div>
+                    <div style={{fontSize:12,color:C.dim,lineHeight:1.7}}>Future forecasts use private calibration memory only when enough matching rows exist: 3+ brand/platform rows or 5+ industry/format/platform rows. Until then, the module records evidence without changing predictions.</div>
+                  </Card>
+                </div>
+              )
+            ):repoMode==="dna"?(
               repoDnaLoading?(
                 <Card C={C} style={{textAlign:"center"}}>
                   <div style={{fontSize:15,color:C.gold,fontWeight:800}}>Loading Brand DNA...</div>
@@ -4853,6 +5143,41 @@ Verify at: ${certificateUrl(certData.cert_id)}
                         <p style={{fontSize:12,color:C.dim,lineHeight:1.7}}>{desc}</p>
                       </div>
                     ))}
+                  </div>
+                </Card>
+                </MethSection>
+                <MethSection sectionKey="grading_outcome_calibration" title="Outcome Calibration Engine">
+                <Card C={C}>
+                  <CardTitle C={C} label={C.gold}>Outcome Calibration Engine</CardTitle>
+                  <p style={{fontSize:14,color:C.dim,lineHeight:1.85,marginBottom:18}}>Outcome Calibration compares AdCritIQ™ forecast scores with actual post-campaign outcomes entered by the brand or agency. This creates an evidence loop: the platform can identify whether it predicted correctly, overestimated, or underestimated creative response for a specific brand, category, format, and platform.</p>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:12,marginBottom:18}}>
+                    {[
+                      ["Private by token","Actual campaign KPIs are scoped to the user's analysis token hash. Other agencies or brands cannot load those calibration rows.",C.gold],
+                      ["Predictive, not biometric","Calibration validates forecast accuracy against campaign outcomes. It does not claim live brain measurement or guaranteed sales lift.",C.cyan],
+                      ["Learning threshold","Future forecasts use calibration memory only after enough private rows exist: 3+ brand/platform or 5+ category-format/platform.",C.green],
+                    ].map(([title,body,color])=>(
+                      <div key={title} style={{padding:16,borderRadius:12,background:`${color}0f`,border:`1px solid ${color}33`}}>
+                        <div style={{fontSize:13,color:color,fontWeight:900,marginBottom:8}}>{title}</div>
+                        <p style={{fontSize:12,color:C.dim,lineHeight:1.65,margin:0}}>{body}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{background:C.s2,borderRadius:12,padding:18,border:`1px solid ${C.border}`,marginBottom:18}}>
+                    <div style={{fontSize:11,fontWeight:900,color:C.gold,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:10}}>Prediction Accuracy Logic</div>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.75,margin:"0 0 12px"}}>Each actual KPI is normalized to a 0-100 score, then compared with the matching forecast score. Accuracy is calculated as <b style={{color:C.text}}>100 - absolute prediction error</b>. Missing actuals are excluded from both numerator and denominator.</p>
+                    <div style={{fontSize:13,color:C.dim,lineHeight:1.8}}>
+                      Brand outcome KPIs such as awareness, consideration, and purchase intent carry weight <b style={{color:C.gold}}>1.25</b>. Performance KPIs such as VTR, completion, and CTR carry weight <b style={{color:C.cyan}}>1.0</b>. The denominator is the sum of weights only for KPIs where both predicted and actual values exist.
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14}}>
+                    <div style={{padding:16,borderRadius:12,background:`${C.purple}0f`,border:`1px solid ${C.purple}33`}}>
+                      <div style={{fontSize:13,color:C.purple,fontWeight:900,marginBottom:8}}>What feeds back into the engine</div>
+                      <p style={{fontSize:12,color:C.dim,lineHeight:1.65,margin:0}}>Aggregated private calibration patterns such as average forecast accuracy and over/under-estimation bias by brand, category, creative format, and platform. These become prompt calibration memory only when row thresholds are met.</p>
+                    </div>
+                    <div style={{padding:16,borderRadius:12,background:`${C.amber}0f`,border:`1px solid ${C.amber}33`}}>
+                      <div style={{fontSize:13,color:C.amber,fontWeight:900,marginBottom:8}}>What is not claimed</div>
+                      <p style={{fontSize:12,color:C.dim,lineHeight:1.65,margin:0}}>The engine does not ingest full media plans by default, does not replace campaign measurement, does not promise exact ROI, and does not retrain a hidden model on client data.</p>
+                    </div>
                   </div>
                 </Card>
                 </MethSection>

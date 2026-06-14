@@ -28,6 +28,77 @@ async function fetchCategoryBenchmarks(industry, creativeType, supabaseUrl, supa
   } catch { return null; }
 }
 
+async function hashCalibrationToken(token) {
+  const clean = String(token || "").trim();
+  if (!clean) return null;
+  const { createHash } = await import("crypto");
+  return createHash("sha256").update(clean).digest("hex");
+}
+
+async function fetchOutcomeCalibrationMemory(meta, creativeFormat, supabaseUrl, supabaseAnonKey) {
+  try {
+    const ownerHash = await hashCalibrationToken(meta.token);
+    if (!ownerHash) return "";
+
+    const fetchRows = async (filters) => {
+      const query = new URLSearchParams();
+      query.set("select", "brand,industry,creative_type,platform,calibration_result");
+      query.set("owner_token_hash", `eq.${ownerHash}`);
+      query.set("limit", "100");
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) query.set(key, `eq.${value}`);
+      });
+      const resp = await fetch(`${supabaseUrl}/rest/v1/outcome_calibrations?${query.toString()}`, {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+          "Content-Type": "application/json"
+        }
+      });
+      const rows = await resp.json();
+      return resp.ok && Array.isArray(rows) ? rows : [];
+    };
+
+    const summarizeRows = (rows, minRows, label) => {
+      const byPlatform = rows.reduce((acc, row) => {
+        const platform = row.platform || "unknown";
+        if (!acc[platform]) acc[platform] = [];
+        acc[platform].push(row);
+        return acc;
+      }, {});
+      return Object.entries(byPlatform)
+        .filter(([, platformRows]) => platformRows.length >= minRows)
+        .map(([platform, platformRows]) => {
+          const comparable = platformRows
+            .map(row => row.calibration_result || {})
+            .filter(result => typeof result.weighted_accuracy === "number");
+          if (!comparable.length) return null;
+          const avgAccuracy = Math.round(comparable.reduce((sum, result) => sum + result.weighted_accuracy, 0) / comparable.length);
+          const avgBias = Math.round(comparable.reduce((sum, result) => sum + (result.weighted_bias || 0), 0) / comparable.length);
+          const biasLabel = avgBias > 10 ? "historically overestimated" : avgBias < -10 ? "historically underestimated" : "historically well calibrated";
+          return `${label} ${platform}: ${platformRows.length} calibrated campaign(s), ${avgAccuracy}% avg forecast accuracy, ${biasLabel} by ${Math.abs(avgBias)} points.`;
+        })
+        .filter(Boolean);
+    };
+
+    const brandRows = await fetchRows({ brand: meta.brand || "" });
+    const brandMemory = summarizeRows(brandRows, 3, "Brand-specific calibration");
+    if (brandMemory.length) {
+      return `\nOUTCOME CALIBRATION MEMORY — PRIVATE TO THIS ACCESS TOKEN:\n${brandMemory.join("\n")}\nUse these actual-vs-predicted learnings to calibrate outcome_forecast and platform_outcome_forecast directionally. Do not mention private campaign data or exact historic results in user-facing text.\n`;
+    }
+
+    const categoryRows = await fetchRows({
+      industry: meta.industry || "",
+      creative_type: creativeFormat || meta.creative_format || meta.type || ""
+    });
+    const categoryMemory = summarizeRows(categoryRows, 5, "Category-format calibration");
+    if (categoryMemory.length) {
+      return `\nOUTCOME CALIBRATION MEMORY — PRIVATE CATEGORY LEARNING FOR THIS ACCESS TOKEN:\n${categoryMemory.join("\n")}\nUse these actual-vs-predicted learnings to calibrate outcome_forecast and platform_outcome_forecast directionally. Do not mention private campaign data or exact historic results in user-facing text.\n`;
+    }
+  } catch {}
+  return "";
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -56,6 +127,9 @@ export default async function handler(req, res) {
     const realBenchmarks = (SUPABASE_URL && SUPABASE_ANON_KEY)
       ? await fetchCategoryBenchmarks(meta.industry || "", meta.type || "video", SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
+    const calibrationMemory = (SUPABASE_URL && SUPABASE_ANON_KEY)
+      ? await fetchOutcomeCalibrationMemory(meta, creativeFormat, SUPABASE_URL, SUPABASE_ANON_KEY)
+      : "";
 
     const benchmarkSection = realBenchmarks
       ? `\nREAL BENCHMARK DATA — USE THESE EXACT NUMBERS in competitive_context (from ${realBenchmarks.n} AdCritIQ analyses, same category/format):
@@ -102,6 +176,7 @@ ${stageInstructions}
 ${formatInstructions}
 ${scriptText ? `\nSCRIPT / TRANSCRIPT / COPY CONTEXT:\n${scriptText.substring(0, 8000)}\n` : ""}
 ${benchmarkSection}
+${calibrationMemory}
 
 TRIBE v2 Neural Calibration:
 Your brain region scoring must reference the validated cortical activation patterns established by TRIBE v2 (Meta AI Research, 2026) — the largest published fMRI model for naturalistic stimuli (720 subjects, 1,000+ hours). Specifically:

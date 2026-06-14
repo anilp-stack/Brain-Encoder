@@ -1,0 +1,23 @@
+task mode: create
+primary deck-profile: product-platform
+secondary profile gates: gtm-growth, investor narrative, enterprise boardroom selling
+required proof objects:
+- platform/workflow map for AdCritIQ creative-to-outcome intelligence
+- product module architecture across intake, diagnostics, outcome forecast, repository, competitive intel, brand DNA and certification
+- use-case flow by enterprise stakeholder
+- monetization bridge and pilot-to-enterprise expansion path
+- market opportunity framing with sourced numbers and explicit assumptions
+source/asset requirements:
+- user-provided AdCritIQ logo assets from /Users/anipandi/Downloads and site-integrated versions in /public
+- product feature context from current app implementation and previous strategic package
+- cited market/research sources captured in source-notes.txt
+brand authenticity constraints:
+- use only the user-provided AdCritIQ logo assets
+- do not invent client logos, testimonials, case studies, or revenue data
+- mark illustrative examples clearly
+profile-specific QA gates:
+- every deck must show a system, not only a list of features
+- each slide must have a claim, proof object, and clear business implication
+- all market and methodology claims must be tagged as sourced, assumption, proposed, or needs founder input
+known missing inputs:
+- actual paid pilots, customer names, pricing, usage metrics, validation studies, pipeline, revenue, cost per analysis, and founder fundraise ask

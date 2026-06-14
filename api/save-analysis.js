@@ -1,5 +1,12 @@
 export const config = { maxDuration: 30 };
 
+import { createHash } from "crypto";
+
+const hashToken = (token) => {
+  const clean = String(token || "").trim();
+  return clean ? createHash("sha256").update(clean).digest("hex") : null;
+};
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -18,6 +25,7 @@ export default async function handler(req, res) {
     }
 
     const body = req.body || {};
+    const ownerTokenHash = hashToken(body.token);
     const payload = {
       brand: body.brand || "",
       client: body.client || "",
@@ -41,7 +49,8 @@ export default async function handler(req, res) {
       share_intent: body.share_intent ?? null,
       creative_efficiency: body.creative_efficiency ?? null,
       cultural_resonance: body.cultural_resonance ?? null,
-      full_result: body.full_result || {}
+      full_result: body.full_result || {},
+      ...(ownerTokenHash ? { owner_token_hash: ownerTokenHash } : {})
     };
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/analyses`, {

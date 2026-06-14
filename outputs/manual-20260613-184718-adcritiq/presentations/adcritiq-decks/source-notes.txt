@@ -1,0 +1,19 @@
+Identity assets:
+- AdCritIQ dark logo: /Users/anipandi/Documents/Brain Encoder/public/adcritiq-logo-dark.png, supplied by user and integrated into site.
+- AdCritIQ light logo: /Users/anipandi/Documents/Brain Encoder/public/adcritiq-logo-light.png, supplied by user and integrated into site.
+
+Product source:
+- Current local AdCritIQ app code and conversation context.
+- Public website was requested as primary source, but browsing tools could not fetch the site content in the prior research pass. Product facts are therefore based on the built app context and must be verified against the live site before external use.
+
+Research/source references used in decks:
+- GroupM / Axios report: global ad revenue projected around $1.04T in 2024.
+- PwC / TVTechnology summary: global E&M revenue projected to $3.5T by 2029; advertising major growth driver.
+- Meta AI TRIBE v2 publication page: foundation model of vision, audition and language for in-silico neuroscience.
+- LAMBDA long-term ad memorability paper: multimodal ad memorability research across 2,205 ads and 276 brands.
+- Advertising effectiveness frameworks referenced as methodology context: Ehrenberg-Bass / Byron Sharp, Kahneman, Damasio, Nelson-Field, Binet & Field.
+
+Claims intentionally marked:
+- [ASSUMPTION] revenue models, TAM/SAM/SOM estimates, pilot pricing, ARR goals, enterprise conversion.
+- [NEEDS FOUNDER INPUT] current customers, real case studies, paid pilots, usage data, validation data, exact formulas.
+- [PROPOSED] methodology structures where exact proprietary calculation was not provided.

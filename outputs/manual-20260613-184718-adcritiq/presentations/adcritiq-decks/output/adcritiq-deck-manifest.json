@@ -1,0 +1,32 @@
+[
+  {
+    "name": "AdCritIQ Investor Deck",
+    "outPath": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/output/adcritiq-investor-deck.pptx",
+    "slideCount": 15,
+    "contactSheet": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/preview/adcritiq-investor-deck/adcritiq-investor-deck-contact-sheet.png"
+  },
+  {
+    "name": "AdCritIQ Product Master Deck",
+    "outPath": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/output/adcritiq-product-master-deck.pptx",
+    "slideCount": 33,
+    "contactSheet": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/preview/adcritiq-product-master-deck/adcritiq-product-master-deck-contact-sheet.png"
+  },
+  {
+    "name": "AdCritIQ GTM Strategy Deck",
+    "outPath": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/output/adcritiq-gtm-strategy-deck.pptx",
+    "slideCount": 15,
+    "contactSheet": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/preview/adcritiq-gtm-strategy-deck/adcritiq-gtm-strategy-deck-contact-sheet.png"
+  },
+  {
+    "name": "AdCritIQ Quick Pitch Deck",
+    "outPath": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/output/adcritiq-quick-pitch-deck.pptx",
+    "slideCount": 9,
+    "contactSheet": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/preview/adcritiq-quick-pitch-deck/adcritiq-quick-pitch-deck-contact-sheet.png"
+  },
+  {
+    "name": "AdCritIQ Methodology Evidence Deck",
+    "outPath": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/output/adcritiq-methodology-evidence-deck.pptx",
+    "slideCount": 12,
+    "contactSheet": "/Users/anipandi/Documents/Brain Encoder/outputs/manual-20260613-184718-adcritiq/presentations/adcritiq-decks/preview/adcritiq-methodology-evidence-deck/adcritiq-methodology-evidence-deck-contact-sheet.png"
+  }
+]

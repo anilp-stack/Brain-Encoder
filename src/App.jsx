@@ -2998,6 +2998,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
     ].filter(([, ,value])=>typeof value==="number");
     const showDeepSound=resultFormat!=="static_image"&&resultFormat!=="text"&&soundDeepRows.length>0;
     const outcomeForecast=r.outcome_forecast||null;
+    const outcomeConfidence=r.outcome_confidence||{};
     const platformOutcomeForecast=r.platform_outcome_forecast||{};
     const latestCalibration=calibrationSummary?.calibrations?.[0]||null;
     const latestCalibrationResult=latestCalibration?.calibration_result||null;
@@ -3011,6 +3012,72 @@ Verify at: ${certificateUrl(certData.cert_id)}
       if(typeof v!=="number")return "Not available";
       if(invert)return v<=35?"Low risk":v<=60?"Moderate risk":"Likely media waste";
       return v>=75?"High probability":v>=60?"Moderate probability":v>=45?"At risk":"Creative-led risk";
+    };
+    const normalizeConfidenceLevel=(level)=>{
+      const key=String(level||"").toLowerCase().replace(/\s+/g,"_").replace(/-/g,"_");
+      return ["high","medium","low","data_limited","needs_human_review"].includes(key)?key:null;
+    };
+    const confidenceMeta=(level)=>{
+      const key=normalizeConfidenceLevel(level)||"medium";
+      return {
+        high:{label:"High confidence",color:C.green},
+        medium:{label:"Medium confidence",color:C.gold},
+        low:{label:"Low confidence",color:C.amber},
+        data_limited:{label:"Data-limited",color:C.dim},
+        needs_human_review:{label:"Needs human review",color:C.red},
+      }[key];
+    };
+    const isHumanReviewRisk=()=>(
+      (typeof r.brand_safety==="number"&&r.brand_safety<55)||
+      (typeof r.regulatory_compliance==="number"&&r.regulatory_compliance<55)||
+      r?.privacy_and_data_audit?.dpdp_compliance_risk==="high"
+    );
+    const hasFormatEvidence=()=>{
+      if(resultStage==="concept"||resultStage==="storyboard")return false;
+      if(resultFormat==="static_image")return ["stopping_power","visual_hierarchy","brand_prominence","message_clarity"].some(k=>typeof formatMetrics?.[k]==="number");
+      if(resultFormat==="motion_static")return ["first_frame_strength","loop_clarity","motion_salience"].some(k=>typeof formatMetrics?.[k]==="number");
+      if(resultFormat==="audio")return ["voice_clarity","sonic_branding","cta_recall"].some(k=>typeof formatMetrics?.[k]==="number");
+      if(resultFormat==="text")return ["headline_strength","proposition_clarity","cta_strength"].some(k=>typeof formatMetrics?.[k]==="number");
+      return Array.isArray(r.attention_curve)&&r.attention_curve.length>=5;
+    };
+    const fallbackConfidence=(key,label,value,invert=false)=>{
+      if(!outcomeForecast)return {level:"data_limited",reason:"Outcome forecast evidence is not available for this saved report."};
+      if(isHumanReviewRisk())return {level:"needs_human_review",reason:"Brand safety, compliance, or privacy risk requires expert review before using this forecast to scale."};
+      if(!hasFormatEvidence())return {level:"data_limited",reason:"The input has limited format-specific evidence, so treat this forecast as directional."};
+      const platformAvg=bestOutcomePlatform?.score||0;
+      if(key==="purchase_intent_lift"&&typeof value==="number"&&value<60&&platformAvg>=70){
+        return {level:"medium",reason:"CTA and action-readiness signals are weaker, but platform fit is strong enough for controlled testing."};
+      }
+      if(key==="vtr_completion_potential"&&!isCompletionOutcomeRelevant){
+        return {level:"data_limited",reason:"This format does not produce true VTR or completion evidence; the score is a view-through attention proxy."};
+      }
+      if(typeof value!=="number")return {level:"data_limited",reason:`${label} has insufficient scored evidence in this report.`};
+      const strong=invert?value<=35:value>=75;
+      const weak=invert?value>=65:value<45;
+      if(strong)return {level:"high",reason:"Multiple creative signals support this forecast direction."};
+      if(weak)return {level:"low",reason:"The supporting creative signals are weak or mixed, so validate before scaling spend."};
+      return {level:"medium",reason:"Enough signals support a directional read, but one or more drivers should be monitored or calibrated."};
+    };
+    const getOutcomeConfidence=(key,label,value,invert=false)=>{
+      const explicit=outcomeConfidence?.[key];
+      if(explicit&&normalizeConfidenceLevel(explicit.level)){
+        return {level:normalizeConfidenceLevel(explicit.level),reason:explicit.reason||fallbackConfidence(key,label,value,invert).reason};
+      }
+      return fallbackConfidence(key,label,value,invert);
+    };
+    const overallOutcomeConfidence=()=>{
+      const explicit=normalizeConfidenceLevel(outcomeConfidence?.overall_confidence);
+      if(explicit)return {level:explicit,reason:outcomeConfidence.overall_reason||"Forecast confidence reflects signal agreement, format evidence, platform fit, and calibration availability."};
+      if(latestCalibrationResult?.confidence&&latestCalibrationResult.confidence!=="none"){
+        return {level:normalizeConfidenceLevel(latestCalibrationResult.confidence)||"medium",reason:"Private actual-vs-predicted calibration data is available for this token."};
+      }
+      if(isHumanReviewRisk())return {level:"needs_human_review",reason:"Compliance, brand safety, or privacy risk means this forecast should be reviewed before scale decisions."};
+      if(!hasFormatEvidence())return {level:"data_limited",reason:"This forecast is directional because format-specific evidence is limited or pre-production."};
+      return {level:"medium",reason:"The forecast has enough diagnostic support for planning, but should be calibrated with actual campaign outcomes."};
+    };
+    const ConfidenceChip=({level})=>{
+      const meta=confidenceMeta(level);
+      return <span style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 8px",borderRadius:999,background:`${meta.color}14`,border:`1px solid ${meta.color}44`,color:meta.color,fontSize:9,fontWeight:900,textTransform:"uppercase",letterSpacing:"0.07em",fontFamily:"'DM Mono',monospace",whiteSpace:"nowrap"}}>{meta.label}</span>;
     };
     const readableOutcomeKey=(key)=>({
       memory:"Memory Encoding",
@@ -3044,6 +3111,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
       if(!best||score>best.score)return {...row,score};
       return best;
     },null);
+    const forecastConfidence=overallOutcomeConfidence();
     const lowestBrandKpi=[
       ["Spontaneous Awareness",outcomeForecast?.spontaneous_awareness_lift],
       ["Aided Awareness",outcomeForecast?.aided_awareness_lift],
@@ -4450,9 +4518,18 @@ Verify at: ${certificateUrl(certData.cert_id)}
                   )}
                 </div>
                 {outcomeForecast?(
-                  <div style={{padding:16,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`,fontSize:14,color:C.dim,lineHeight:1.75}}>
-                    <span style={{color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",marginRight:8}}>Forecast note</span>
-                    {outcomeForecast.forecast_note||"Fresh outcome probabilities are available for this creative."}
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.25fr 0.75fr",gap:14}}>
+                    <div style={{padding:16,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`,fontSize:14,color:C.dim,lineHeight:1.75}}>
+                      <span style={{color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",marginRight:8}}>Forecast note</span>
+                      {outcomeForecast.forecast_note||"Fresh outcome probabilities are available for this creative."}
+                    </div>
+                    <div style={{padding:16,borderRadius:14,background:`${confidenceMeta(forecastConfidence.level).color}0f`,border:`1px solid ${confidenceMeta(forecastConfidence.level).color}44`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",gap:10,alignItems:"center",marginBottom:10}}>
+                        <div style={{fontSize:10,color:C.dim,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>Forecast Confidence</div>
+                        <ConfidenceChip level={forecastConfidence.level}/>
+                      </div>
+                      <div style={{fontSize:12,color:C.dim,lineHeight:1.65}}>{forecastConfidence.reason}</div>
+                    </div>
                   </div>
                 ):(
                   <div style={{padding:18,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`,fontSize:14,color:C.dim,lineHeight:1.75}}>
@@ -4494,36 +4571,46 @@ Verify at: ${certificateUrl(certData.cert_id)}
               {outcomeForecast&&(<>
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14}}>
                   {[
-                    ["Spontaneous Awareness",outcomeForecast.spontaneous_awareness_lift,"Brand memory retrieval",false],
-                    ["Aided Awareness",outcomeForecast.aided_awareness_lift,"Recognition when prompted",false],
-                    ["Consideration",outcomeForecast.consideration_lift,"Preference movement",false],
-                    ["Purchase Intent",outcomeForecast.purchase_intent_lift,"Action readiness",false],
-                    ["Brand Memory Efficiency",outcomeForecast.brand_memory_efficiency,"Exposure to memory",false],
-                  ].map(([label,value,sub,invert])=>(
-                    <Card C={C} key={label} style={{padding:18}}>
-                      <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
-                      <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
-                      <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
-                      <div style={{marginTop:12,fontSize:10,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace"}}>{outcomeBandLabel(value,invert)}</div>
-                    </Card>
-                  ))}
+                    ["spontaneous_awareness_lift","Spontaneous Awareness",outcomeForecast.spontaneous_awareness_lift,"Brand memory retrieval",false],
+                    ["aided_awareness_lift","Aided Awareness",outcomeForecast.aided_awareness_lift,"Recognition when prompted",false],
+                    ["consideration_lift","Consideration",outcomeForecast.consideration_lift,"Preference movement",false],
+                    ["purchase_intent_lift","Purchase Intent",outcomeForecast.purchase_intent_lift,"Action readiness",false],
+                    ["brand_memory_efficiency","Brand Memory Efficiency",outcomeForecast.brand_memory_efficiency,"Exposure to memory",false],
+                  ].map(([key,label,value,sub,invert])=>{
+                    const conf=getOutcomeConfidence(key,label,value,invert);
+                    return(
+                      <Card C={C} key={label} style={{padding:18}}>
+                        <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
+                        <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
+                        <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
+                        <div style={{marginTop:12,fontSize:10,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace"}}>{outcomeBandLabel(value,invert)}</div>
+                        <div style={{marginTop:12}}><ConfidenceChip level={conf.level}/></div>
+                        <div style={{marginTop:8,fontSize:11,color:C.dim,lineHeight:1.5}}>{conf.reason}</div>
+                      </Card>
+                    );
+                  })}
                 </div>
 
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14}}>
                   {[
-                    [completionOutcomeLabel,outcomeForecast.vtr_completion_potential,isCompletionOutcomeRelevant?"Hook and hold response":"First-glance retention fit",false],
-                    ["CTR / Response Potential",outcomeForecast.ctr_response_potential,"Click or response readiness",false],
-                    ["Media Wastage Risk",outcomeForecast.media_wastage_risk,"Exposure unlikely to convert",true],
-                    ["Creative Accountability",outcomeForecast.creative_accountability,"Creative-led outcome risk",false],
-                    ["Media Dependency",outcomeForecast.media_dependency,"Needs media optimization",false],
-                  ].map(([label,value,sub,invert])=>(
-                    <Card C={C} key={label} style={{padding:18}}>
-                      <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
-                      <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
-                      <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
-                      <div style={{marginTop:12,fontSize:10,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace"}}>{outcomeBandLabel(value,invert)}</div>
-                    </Card>
-                  ))}
+                    ["vtr_completion_potential",completionOutcomeLabel,outcomeForecast.vtr_completion_potential,isCompletionOutcomeRelevant?"Hook and hold response":"First-glance retention fit",false],
+                    ["ctr_response_potential","CTR / Response Potential",outcomeForecast.ctr_response_potential,"Click or response readiness",false],
+                    ["media_wastage_risk","Media Wastage Risk",outcomeForecast.media_wastage_risk,"Exposure unlikely to convert",true],
+                    ["creative_accountability","Creative Accountability",outcomeForecast.creative_accountability,"Creative-led outcome risk",false],
+                    ["media_dependency","Media Dependency",outcomeForecast.media_dependency,"Needs media optimization",false],
+                  ].map(([key,label,value,sub,invert])=>{
+                    const conf=getOutcomeConfidence(key,label,value,invert);
+                    return(
+                      <Card C={C} key={label} style={{padding:18}}>
+                        <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
+                        <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
+                        <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
+                        <div style={{marginTop:12,fontSize:10,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace"}}>{outcomeBandLabel(value,invert)}</div>
+                        <div style={{marginTop:12}}><ConfidenceChip level={conf.level}/></div>
+                        <div style={{marginTop:8,fontSize:11,color:C.dim,lineHeight:1.5}}>{conf.reason}</div>
+                      </Card>
+                    );
+                  })}
                 </div>
 
                 <Card C={C} style={{padding:isMobile?20:26}}>
@@ -4567,8 +4654,10 @@ Verify at: ${certificateUrl(certData.cert_id)}
                         const brand=row.data.brand_lift;
                         const perf=row.data.performance_lift;
                         const riskColor=row.data.risk==="low"?C.green:row.data.risk==="medium"?C.amber:C.red;
+                        const platformLevel=normalizeConfidenceLevel(row.data.confidence)||fallbackConfidence(`platform_${row.key}`,row.label,Math.round(((brand||0)+(perf||0))/2)).level;
+                        const platformReason=row.data.confidence_reason||fallbackConfidence(`platform_${row.key}`,row.label,Math.round(((brand||0)+(perf||0))/2)).reason;
                         return(
-                          <div key={row.key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"170px 1fr 1fr 90px 1.6fr",gap:12,alignItems:"center",padding:"13px 0",borderBottom:`1px solid ${C.border}`}}>
+                          <div key={row.key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"150px 1fr 1fr 90px 145px 1.5fr",gap:12,alignItems:"center",padding:"13px 0",borderBottom:`1px solid ${C.border}`}}>
                             <div style={{fontSize:14,color:C.text,fontWeight:900}}>{row.label}</div>
                             <div>
                               <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginBottom:4}}><span>Brand lift readiness</span><b style={{color:outcomeScoreColor(brand)}}>{brand??"—"}</b></div>
@@ -4579,7 +4668,8 @@ Verify at: ${certificateUrl(certData.cert_id)}
                               <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(100,Math.max(0,perf||0))}%`,background:outcomeScoreColor(perf),borderRadius:999}}/></div>
                             </div>
                             <div style={{justifySelf:isMobile?"start":"center",padding:"4px 9px",borderRadius:999,background:`${riskColor}16`,border:`1px solid ${riskColor}44`,color:riskColor,fontSize:10,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>{row.data.risk||"—"}</div>
-                            <div style={{fontSize:12,color:C.dim,lineHeight:1.55}}>{row.data.note}</div>
+                            <div><ConfidenceChip level={platformLevel}/></div>
+                            <div style={{fontSize:12,color:C.dim,lineHeight:1.55}}>{row.data.note}{platformReason&&<div style={{marginTop:5,fontSize:11,color:C.muted,lineHeight:1.45}}>Confidence: {platformReason}</div>}</div>
                           </div>
                         );
                       })}
@@ -5353,6 +5443,27 @@ Verify at: ${certificateUrl(certData.cert_id)}
                         <p style={{fontSize:12,color:C.dim,lineHeight:1.65,margin:0}}>{body}</p>
                       </div>
                     ))}
+                  </div>
+                  <div style={{padding:18,borderRadius:12,background:`${C.cyan}0f`,border:`1px solid ${C.cyan}33`,marginBottom:18}}>
+                    <div style={{fontSize:11,fontWeight:900,color:C.cyan,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:12}}>Forecast confidence bands</div>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.75,margin:"0 0 14px"}}>Confidence bands explain how much weight a boardroom should place on a forecast. They are directional reliability labels, not statistical confidence intervals, guaranteed lift, or live biometric certainty.</p>
+                    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,1fr)",gap:8}}>
+                      {[
+                        ["High confidence","Multiple signals agree and format evidence is complete.",C.green],
+                        ["Medium confidence","Enough evidence exists, but one or two drivers remain uncertain.",C.gold],
+                        ["Low confidence","Signals are mixed or the forecast depends heavily on media execution.",C.amber],
+                        ["Data-limited","The creative input lacks enough format-specific evidence for a strong read.",C.dim],
+                        ["Needs human review","Claims, compliance, brand safety, or cultural risk require expert judgement.",C.red],
+                      ].map(([label,body,color])=>(
+                        <div key={label} style={{padding:12,borderRadius:10,background:C.s2,border:`1px solid ${color}33`}}>
+                          <div style={{fontSize:11,color:color,fontWeight:900,marginBottom:7,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",letterSpacing:"0.08em"}}>{label}</div>
+                          <div style={{fontSize:11,color:C.dim,lineHeight:1.55}}>{body}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{marginTop:14,padding:"10px 12px",borderRadius:9,background:C.s2,border:`1px solid ${C.border}`,fontSize:12,color:C.dim,lineHeight:1.65}}>
+                      Low confidence does not mean the creative is bad. It means the forecast should not be overinterpreted without human review, campaign calibration, or additional creative evidence.
+                    </div>
                   </div>
                   <div style={{padding:"12px 14px",borderRadius:10,background:`${C.gold}0f`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.75}}>
                     <b style={{color:C.gold}}>Important:</b> These forecasts are calibrated AI predictions based on published advertising science and neural-response research. They are not measured biometric results, media delivery data, or guaranteed business outcomes.

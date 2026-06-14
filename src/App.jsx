@@ -130,23 +130,34 @@ const certNum = (result, key) => {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 };
 
+const parseSavedResult = (value) => {
+  if (!value) return {};
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+};
+
 const computeCertificationEligibility = (result) => {
-  if (!result) return { eligible: false, weighted_score: 0, failed_criteria: [] };
+  const cleanResult = parseSavedResult(result);
+  if (!cleanResult) return { eligible: false, weighted_score: 0, failed_criteria: [] };
   const weighted_score =
-    (certNum(result, "memory_encoding") || 0) * 0.20 +
-    (certNum(result, "brand_recall") || 0) * 0.20 +
-    (certNum(result, "hook_strength") || 0) * 0.15 +
-    (certNum(result, "hold_rate") || 0) * 0.15 +
-    (certNum(result, "emotional_peak") || 0) * 0.10 +
-    (certNum(result, "creative_efficiency") || 0) * 0.10 +
-    (certNum(result, "cultural_resonance") || 0) * 0.10;
+    (certNum(cleanResult, "memory_encoding") || 0) * 0.20 +
+    (certNum(cleanResult, "brand_recall") || 0) * 0.20 +
+    (certNum(cleanResult, "hook_strength") || 0) * 0.15 +
+    (certNum(cleanResult, "hold_rate") || 0) * 0.15 +
+    (certNum(cleanResult, "emotional_peak") || 0) * 0.10 +
+    (certNum(cleanResult, "creative_efficiency") || 0) * 0.10 +
+    (certNum(cleanResult, "cultural_resonance") || 0) * 0.10;
   const checks = [
     ["Overall weighted score", Math.round(weighted_score), 75],
-    ["Brand Recall", certNum(result, "brand_recall"), 65],
-    ["Memory Encoding", certNum(result, "memory_encoding"), 60],
-    ["Hook Strength", certNum(result, "hook_strength"), 65],
-    ["Brand Safety", certNum(result, "brand_safety"), 85],
-    ["Regulatory Compliance", certNum(result, "regulatory_compliance"), 85],
+    ["Brand Recall", certNum(cleanResult, "brand_recall"), 65],
+    ["Memory Encoding", certNum(cleanResult, "memory_encoding"), 60],
+    ["Hook Strength", certNum(cleanResult, "hook_strength"), 65],
+    ["Brand Safety", certNum(cleanResult, "brand_safety"), 85],
+    ["Regulatory Compliance", certNum(cleanResult, "regulatory_compliance"), 85],
   ];
   const failed_criteria = checks
     .filter(([, value, min]) => typeof value !== "number" || value < min)
@@ -751,6 +762,9 @@ export default function App(){
   const [calibrationLoading, setCalibrationLoading] = useState(false);
   const [calibrationSaving, setCalibrationSaving] = useState(false);
   const [calibrationSummary, setCalibrationSummary] = useState(null);
+  const [expandedOutcomeKpis, setExpandedOutcomeKpis] = useState({});
+  const [expandedOutcomeConfidence, setExpandedOutcomeConfidence] = useState({});
+  const [expandedPlatformOutcomes, setExpandedPlatformOutcomes] = useState({});
   const [calibrationForm, setCalibrationForm] = useState({
     analysis_id:"",
     platform:"youtube",
@@ -1629,6 +1643,17 @@ export default function App(){
       setCertData(data);
       if(data.certified){
         setResults(p=>p?({...p,is_certified:true,cert_id:data.cert_id,cert_issued_at:data.cert_issued_at}):p);
+        setSavedAnalyses(prev=>prev.map(a=>{
+          if(a.id!==analysisId)return a;
+          const fullResult=parseSavedResult(a.full_result);
+          return {
+            ...a,
+            is_certified:true,
+            cert_id:data.cert_id,
+            cert_issued_at:data.cert_issued_at,
+            full_result:{...fullResult,is_certified:true,cert_id:data.cert_id,cert_issued_at:data.cert_issued_at}
+          };
+        }));
         setShowCertModal(true);
       }
     }catch(e){
@@ -1711,6 +1736,9 @@ export default function App(){
     setRepoDnaData(null);
     setRepoDnaLoading(false);
     setRepoDnaBrand("");
+    setExpandedOutcomeKpis({});
+    setExpandedOutcomeConfidence({});
+    setExpandedPlatformOutcomes({});
     localStorage.removeItem("adcritiq_token");
   };
 
@@ -2963,7 +2991,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
     const stageLabel={concept:"CONCEPT",storyboard:"STORYBOARD",roughcut:"ROUGH CUT",final:"FINAL"}[resultStage]||String(resultStage).toUpperCase();
     const savedAnalysisId=r.__savedAnalysisId||r.id||null;
     const certEligibility=computeCertificationEligibility(r);
-    const canShowCertBlock=!isDemoMode&&!isSharedMode&&savedAnalysisId;
+    const canShowCertBlock=!isDemoMode&&!isSharedMode;
     const impactLabel=formatImpactLabel(resultFormat);
     const formatMetrics=r.format_metrics||{};
     const staticAttentionMetrics=[
@@ -3076,9 +3104,9 @@ Verify at: ${certificateUrl(certData.cert_id)}
       if(!hasFormatEvidence())return {level:"data_limited",reason:"This forecast is directional because format-specific evidence is limited or pre-production."};
       return {level:"medium",reason:"The forecast has enough diagnostic support for planning, but should be calibrated with actual campaign outcomes."};
     };
-    const ConfidenceChip=({level})=>{
+    const ConfidenceChip=({level,subtle=false,onClick=null})=>{
       const meta=confidenceMeta(level);
-      return <span style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 8px",borderRadius:999,background:`${meta.color}14`,border:`1px solid ${meta.color}44`,color:meta.color,fontSize:9,fontWeight:900,textTransform:"uppercase",letterSpacing:"0.07em",fontFamily:"'DM Mono',monospace",whiteSpace:"nowrap"}}>{meta.label}</span>;
+      return <span onClick={onClick||undefined} style={{display:"inline-flex",alignItems:"center",gap:5,padding:subtle?"3px 7px":"4px 8px",borderRadius:999,background:subtle?C.s2:`${meta.color}14`,border:`1px solid ${subtle?C.border:meta.color+"44"}`,color:subtle?C.dim:meta.color,fontSize:9,fontWeight:900,textTransform:"uppercase",letterSpacing:"0.07em",fontFamily:"'DM Mono',monospace",whiteSpace:"nowrap",cursor:onClick?"pointer":"default",opacity:subtle?0.86:1}}>{meta.label}{onClick&&<span style={{fontSize:8,color:subtle?C.muted:meta.color}}>⌄</span>}</span>;
     };
     const readableOutcomeKey=(key)=>({
       memory:"Memory Encoding",
@@ -3253,9 +3281,36 @@ Verify at: ${certificateUrl(certData.cert_id)}
       ["creative_accountability","Creative Accountability",outcomeForecast.creative_accountability,"Creative-led outcome risk",false],
       ["media_dependency","Media Dependency",outcomeForecast.media_dependency,"Needs media optimization",false],
     ].filter(([, ,value])=>typeof value==="number"): [];
+    const brandOutcomeRows=explainabilityRows.slice(0,5);
+    const performanceOutcomeRows=explainabilityRows.slice(5);
+    const toggleOutcomeKpi=(key)=>setExpandedOutcomeKpis(prev=>({...prev,[key]:!prev[key]}));
+    const toggleOutcomeConfidence=(key)=>setExpandedOutcomeConfidence(prev=>({...prev,[key]:!prev[key]}));
+    const togglePlatformOutcome=(key)=>setExpandedPlatformOutcomes(prev=>({...prev,[key]:!prev[key]}));
     const mostImportantFix=explainabilityRows
       .map(([key,label,value,sub,invert])=>({key,label,value,sub,invert,readiness:invert?100-value:value,expl:getOutcomeExplainability(key,label,value,invert)}))
       .sort((a,b)=>a.readiness-b.readiness)[0];
+    const outcomeCardRow=([key,label,value,sub,invert])=>{
+      const conf=getOutcomeConfidence(key,label,value,invert);
+      return (
+        <Card C={C} key={key} style={{padding:16}}>
+          <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
+          <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:8}}>
+            <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
+            <div style={{fontSize:9,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace",textAlign:"right"}}>{outcomeBandLabel(value,invert)}</div>
+          </div>
+          <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
+          <div style={{height:5,borderRadius:999,background:C.s3,overflow:"hidden",marginTop:12}}>
+            <div style={{height:"100%",width:`${Math.min(100,Math.max(0,invert?100-value:value||0))}%`,background:outcomeScoreColor(value,invert),borderRadius:999}}/>
+          </div>
+          <div style={{marginTop:10}}>
+            <ConfidenceChip level={conf.level} subtle onClick={(e)=>{e.stopPropagation();toggleOutcomeConfidence(key);}}/>
+          </div>
+          {expandedOutcomeConfidence[key]&&(
+            <div style={{marginTop:8,fontSize:11,color:C.dim,lineHeight:1.5,padding:"8px 10px",borderRadius:8,background:C.s2,border:`1px solid ${C.border}`}}>{conf.reason}</div>
+          )}
+        </Card>
+      );
+    };
     const accountabilityDecision=outcomeForecast
       ? outcomeForecast.media_wastage_risk>=65
         ? "Protect media spend. Fix creative response before scaling budget."
@@ -3338,11 +3393,36 @@ Verify at: ${certificateUrl(certData.cert_id)}
         />
       </label>
     );
-    const isCompetitorEntry=(a)=>a?.is_competitor===true||a?.full_result?.is_competitor===true;
-    const analysisFormat=(a)=>a?.creative_type||a?.full_result?.creative_format||a?.full_result?.creative_subtype||"video";
-    const analysisStage=(a)=>a?.production_stage||a?.full_result?.production_stage||"final";
-    const analysisGrade=(a)=>a?.overall_grade||a?.full_result?.overall_grade||"—";
-    const analysisHeadline=(a)=>a?.headline_verdict||a?.full_result?.headline_verdict||"";
+    const analysisResult=(a)=>parseSavedResult(a?.full_result);
+    const isCompetitorEntry=(a)=>a?.is_competitor===true||analysisResult(a)?.is_competitor===true;
+    const analysisFormat=(a)=>{
+      const full=analysisResult(a);
+      return a?.creative_type||full.creative_format||full.creative_subtype||"video";
+    };
+    const analysisStage=(a)=>a?.production_stage||analysisResult(a)?.production_stage||"final";
+    const analysisGrade=(a)=>a?.overall_grade||analysisResult(a)?.overall_grade||"—";
+    const analysisHeadline=(a)=>a?.headline_verdict||analysisResult(a)?.headline_verdict||"";
+    const analysisCertState=(a)=>{
+      const full=analysisResult(a);
+      const isCertified=a?.is_certified===true||full?.is_certified===true;
+      const certId=a?.cert_id||full?.cert_id;
+      const eligibility=computeCertificationEligibility(full);
+      return {full,isCertified,certId,eligibility};
+    };
+    const certificationPillStyle=(color,solid=false)=>({
+      fontSize:9,
+      fontFamily:"'DM Mono',monospace",
+      color:solid?C.ink:color,
+      background:solid?color:`${color}14`,
+      border:`1px solid ${solid?color:color+"55"}`,
+      padding:"3px 7px",
+      borderRadius:999,
+      flexShrink:0,
+      textTransform:"uppercase",
+      fontWeight:900,
+      cursor:solid?"pointer":"default",
+      whiteSpace:"nowrap"
+    });
     const gradeToNum=(g)=>{
       const map={"A+":100,A:93,"A-":88,"B+":83,B:78,"B-":73,"C+":68,C:63,"C-":58,D:50,F:30};
       return map[g]||0;
@@ -3370,22 +3450,24 @@ Verify at: ${certificateUrl(certData.cert_id)}
     const groupedByBrand=groupAnalysesByBrand(filteredRepoAnalyses);
     const competitiveRows=(savedAnalyses||[]).filter(a=>{
       if(!isCompetitorEntry(a))return false;
-      const target=String(a.competitor_of||a.full_result?.competitor_of||"").toLowerCase();
+      const target=String(a.competitor_of||analysisResult(a)?.competitor_of||"").toLowerCase();
       return !competitiveBrand||target===competitiveBrand.toLowerCase();
     });
     const groupedCompetitorAnalyses=groupAnalysesByBrand(competitiveRows);
     const repoLoadAnalysis=(a)=>{
       const isComp=isCompetitorEntry(a);
+      const full=analysisResult(a);
+      const {isCertified,certId}=analysisCertState(a);
       setResults({
-        ...a.full_result,
+        ...full,
         __savedAnalysisId:a.id,
         is_competitor:isComp,
-        competitor_of:a.competitor_of||a.full_result?.competitor_of,
-        is_certified:a.is_certified===true||a.full_result?.is_certified===true,
-        cert_id:a.cert_id||a.full_result?.cert_id,
-        cert_issued_at:a.cert_issued_at||a.full_result?.cert_issued_at,
+        competitor_of:a.competitor_of||full.competitor_of,
+        is_certified:isCertified,
+        cert_id:certId,
+        cert_issued_at:a.cert_issued_at||full.cert_issued_at,
       });
-      setCertData(a.is_certified&&a.cert_id?{certified:true,cert_id:a.cert_id,cert_issued_at:a.cert_issued_at,brand:a.brand,campaign:a.campaign,industry:a.industry,creative_type:analysisFormat(a),grade:analysisGrade(a),key_scores:Object.fromEntries(CERT_SCORE_KEYS.map(([,key])=>[key,Math.round(a.full_result?.[key]||0)]))}:null);
+      setCertData(isCertified&&certId?{certified:true,cert_id:certId,cert_issued_at:a.cert_issued_at||full.cert_issued_at,brand:a.brand,campaign:a.campaign,industry:a.industry,creative_type:analysisFormat(a),grade:analysisGrade(a),key_scores:Object.fromEntries(CERT_SCORE_KEYS.map(([,key])=>[key,Math.round(full?.[key]||0)]))}:null);
       setDnaMatchData(null);
       setCalibrationForm(prev=>({...prev,analysis_id:a.id||prev.analysis_id}));
       setTab("summary");
@@ -3396,9 +3478,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
           const fmt=analysisFormat(a);
           const stage=analysisStage(a);
           const headline=analysisHeadline(a);
-          const isCertified=a.is_certified===true||a.full_result?.is_certified===true;
-          const certId=a.cert_id||a.full_result?.cert_id;
-          const rowCertEligibility=computeCertificationEligibility(a.full_result);
+          const {isCertified,certId,eligibility:rowCertEligibility}=analysisCertState(a);
           return(
             <div key={a.id||idx} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",background:idx%2===0?C.s1:C.s2,borderTop:idx>0?`1px solid ${C.border}`:"none",flexWrap:isMobile?"wrap":"nowrap"}}>
               <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",minWidth:80,flexShrink:0}}>
@@ -3416,14 +3496,19 @@ Verify at: ${certificateUrl(certData.cert_id)}
                 {analysisGrade(a)}
               </span>
               {isCertified&&certId&&(
-                <button onClick={()=>openCertificateFromId(certId)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:C.ink,background:C.gold,border:`1px solid ${C.gold}`,padding:"3px 7px",borderRadius:999,flexShrink:0,textTransform:"uppercase",fontWeight:900,cursor:"pointer"}}>
+                <button onClick={()=>openCertificateFromId(certId)} style={certificationPillStyle(C.gold,true)}>
                   🏅 Certified
                 </button>
               )}
               {!isCertified&&rowCertEligibility.eligible&&(
-                <button title="Load this report to issue an AdCritIQ certificate" onClick={()=>repoLoadAnalysis(a)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:C.gold,background:`${C.gold}14`,border:`1px solid ${C.gold}55`,padding:"3px 7px",borderRadius:999,flexShrink:0,textTransform:"uppercase",fontWeight:900,cursor:"pointer"}}>
+                <button title="Load this report to issue an AdCritIQ certificate" onClick={()=>repoLoadAnalysis(a)} style={{...certificationPillStyle(C.gold),cursor:"pointer"}}>
                   🏅 Eligible
                 </button>
+              )}
+              {!isCertified&&!rowCertEligibility.eligible&&(
+                <span title={`Certification readiness ${rowCertEligibility.weighted_score}/100`} style={certificationPillStyle(C.dim)}>
+                  Cert {rowCertEligibility.weighted_score}/100
+                </span>
               )}
               <span style={{fontSize:11,color:C.dim,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:isMobile?"normal":"nowrap",fontStyle:"italic",minWidth:0}}>
                 {headline?`"${headline.slice(0,80)}${headline.length>80?"...":""}"`:"—"}
@@ -3916,20 +4001,30 @@ Verify at: ${certificateUrl(certData.cert_id)}
                 ):certEligibility.eligible?(
                   <>
                     <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:12,flexDirection:isMobile?"column":"row",marginBottom:10}}>
-                      <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>🏅 This Creative Qualifies For Certification</div>
+                      <div style={{fontSize:11,color:C.gold,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>🏅 {savedAnalysisId?"This Creative Qualifies For Certification":"Qualifies After Saving"}</div>
                       <div style={{fontSize:10,color:C.ink,background:C.gold,borderRadius:999,padding:"5px 9px",fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.06em"}}>
                         {certEligibility.weighted_score}/100 · ELIGIBLE
                       </div>
                     </div>
-                    <div style={{fontSize:13,color:C.dim,lineHeight:1.65,marginBottom:12}}>This creative meets all AdCritIQ™ certification criteria. Issue a verified badge to share with your brand and agency.</div>
-                    <button onClick={issueCertificate} disabled={certLoading} style={{width:isMobile?"100%":"auto",padding:"11px 16px",borderRadius:10,border:"none",background:C.gold,color:C.ink,fontWeight:900,cursor:certLoading?"wait":"pointer",fontFamily:"'DM Sans',sans-serif"}}>
-                      {certLoading?"Issuing Certificate...":"🏅 Issue AdCritIQ™ Certificate"}
-                    </button>
+                    <div style={{fontSize:13,color:C.dim,lineHeight:1.65,marginBottom:12}}>
+                      {savedAnalysisId
+                        ?"This creative meets all AdCritIQ™ certification criteria. Issue a verified badge to share with your brand and agency."
+                        :"This creative meets AdCritIQ™ certification criteria. Save it to Repository first, then issue the verified certificate."}
+                    </div>
+                    {savedAnalysisId?(
+                      <button onClick={issueCertificate} disabled={certLoading} style={{width:isMobile?"100%":"auto",padding:"11px 16px",borderRadius:10,border:"none",background:C.gold,color:C.ink,fontWeight:900,cursor:certLoading?"wait":"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                        {certLoading?"Issuing Certificate...":"🏅 Issue AdCritIQ™ Certificate"}
+                      </button>
+                    ):(
+                      <div style={{padding:"10px 12px",borderRadius:10,background:C.s2,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.55}}>
+                        Use the <b style={{color:C.gold}}>Save to Repository</b> button beside the grade ring to unlock certificate issuing.
+                      </div>
+                    )}
                   </>
                 ):(
                   <>
                     <div style={{display:"flex",alignItems:isMobile?"flex-start":"center",justifyContent:"space-between",gap:12,flexDirection:isMobile?"column":"row",marginBottom:10}}>
-                      <div style={{fontSize:11,color:C.amber,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>🏅 Certification Status · Not Yet Eligible</div>
+                      <div style={{fontSize:11,color:C.amber,fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.12em",textTransform:"uppercase"}}>🏅 Certification Readiness · Not Yet Eligible</div>
                       <div style={{fontSize:10,color:C.amber,background:`${C.amber}16`,border:`1px solid ${C.amber}44`,borderRadius:999,padding:"5px 9px",fontWeight:900,fontFamily:"'DM Mono',monospace",letterSpacing:"0.06em"}}>
                         {certEligibility.weighted_score}/100
                       </div>
@@ -4724,54 +4819,44 @@ Verify at: ${certificateUrl(certData.cert_id)}
               )}
 
               {outcomeForecast&&(<>
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14}}>
-                  {[
-                    ["spontaneous_awareness_lift","Spontaneous Awareness",outcomeForecast.spontaneous_awareness_lift,"Brand memory retrieval",false],
-                    ["aided_awareness_lift","Aided Awareness",outcomeForecast.aided_awareness_lift,"Recognition when prompted",false],
-                    ["consideration_lift","Consideration",outcomeForecast.consideration_lift,"Preference movement",false],
-                    ["purchase_intent_lift","Purchase Intent",outcomeForecast.purchase_intent_lift,"Action readiness",false],
-                    ["brand_memory_efficiency","Brand Memory Efficiency",outcomeForecast.brand_memory_efficiency,"Exposure to memory",false],
-                  ].map(([key,label,value,sub,invert])=>{
-                    const conf=getOutcomeConfidence(key,label,value,invert);
-                    return(
-                      <Card C={C} key={label} style={{padding:18}}>
-                        <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
-                        <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
-                        <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
-                        <div style={{marginTop:12,fontSize:10,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace"}}>{outcomeBandLabel(value,invert)}</div>
-                        <div style={{marginTop:12}}><ConfidenceChip level={conf.level}/></div>
-                        <div style={{marginTop:8,fontSize:11,color:C.dim,lineHeight:1.5}}>{conf.reason}</div>
-                      </Card>
-                    );
-                  })}
-                </div>
+                <Card C={C} style={{padding:isMobile?20:26,borderColor:C.gold+"33",background:`linear-gradient(135deg,${C.gold}0d,${C.s1})`}}>
+                  <CardTitle C={C} label={C.gold}>Executive Decision Summary</CardTitle>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,minmax(0,1fr))",gap:14,marginBottom:16}}>
+                    {[
+                      ["Best platform",bestOutcomePlatform?.label||"Pending",bestOutcomePlatform?.score?Math.round(bestOutcomePlatform.score):null,C.cyan],
+                      ["Top upside",highestBrandKpi?.[0]||"Pending",highestBrandKpi?.[1]??null,C.green],
+                      ["Top risk",lowestBrandKpi?.[0]||"Pending",lowestBrandKpi?.[1]??null,C.amber],
+                      ["Accountability",outcomeForecast.creative_accountability>=outcomeForecast.media_dependency?"Creative-led":"Media-dependent",Math.max(outcomeForecast.creative_accountability||0,outcomeForecast.media_dependency||0),C.gold],
+                    ].map(([label,value,score,color])=>(
+                      <div key={label} style={{padding:14,borderRadius:12,background:C.s2,border:`1px solid ${color}33`}}>
+                        <div style={{fontSize:9,color:C.muted,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:7}}>{label}</div>
+                        <div style={{fontSize:16,color:C.text,fontWeight:900,lineHeight:1.25}}>{value}</div>
+                        {typeof score==="number"&&<div style={{fontSize:18,color:color,fontWeight:900,fontFamily:"'DM Mono',monospace",marginTop:8}}>{score}</div>}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{padding:14,borderRadius:12,background:C.s2,border:`1px solid ${C.border}`,fontSize:13,color:C.dim,lineHeight:1.7}}>
+                    <b style={{color:C.gold}}>CMO decision:</b> {accountabilityDecision}
+                  </div>
+                </Card>
 
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14}}>
-                  {[
-                    ["vtr_completion_potential",completionOutcomeLabel,outcomeForecast.vtr_completion_potential,isCompletionOutcomeRelevant?"Hook and hold response":"First-glance retention fit",false],
-                    ["ctr_response_potential","CTR / Response Potential",outcomeForecast.ctr_response_potential,"Click or response readiness",false],
-                    ["media_wastage_risk","Media Wastage Risk",outcomeForecast.media_wastage_risk,"Exposure unlikely to convert",true],
-                    ["creative_accountability","Creative Accountability",outcomeForecast.creative_accountability,"Creative-led outcome risk",false],
-                    ["media_dependency","Media Dependency",outcomeForecast.media_dependency,"Needs media optimization",false],
-                  ].map(([key,label,value,sub,invert])=>{
-                    const conf=getOutcomeConfidence(key,label,value,invert);
-                    return(
-                      <Card C={C} key={label} style={{padding:18}}>
-                        <div style={{fontSize:10,color:C.muted,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",minHeight:28}}>{label}</div>
-                        <div style={{fontSize:34,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",margin:"10px 0 4px"}}>{typeof value==="number"?value:"—"}</div>
-                        <div style={{fontSize:12,color:C.dim,lineHeight:1.45}}>{sub}</div>
-                        <div style={{marginTop:12,fontSize:10,color:outcomeScoreColor(value,invert),fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'DM Mono',monospace"}}>{outcomeBandLabel(value,invert)}</div>
-                        <div style={{marginTop:12}}><ConfidenceChip level={conf.level}/></div>
-                        <div style={{marginTop:8,fontSize:11,color:C.dim,lineHeight:1.5}}>{conf.reason}</div>
-                      </Card>
-                    );
-                  })}
-                </div>
+                <Card C={C} style={{padding:isMobile?20:26}}>
+                  <CardTitle C={C} label={C.green}>Outcome Scoreboard</CardTitle>
+                  <div style={{fontSize:12,color:C.dim,lineHeight:1.65,marginBottom:14}}>Compact view first. Click confidence chips only when you need reliability detail.</div>
+                  <div style={{fontSize:10,color:C.gold,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:10}}>Brand Outcomes</div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14,marginBottom:18}}>
+                    {brandOutcomeRows.map(outcomeCardRow)}
+                  </div>
+                  <div style={{fontSize:10,color:C.cyan,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:10}}>Performance & Accountability</div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(5,minmax(0,1fr))",gap:14}}>
+                    {performanceOutcomeRows.map(outcomeCardRow)}
+                  </div>
+                </Card>
 
                 <Card C={C} style={{padding:isMobile?20:26}}>
                   <CardTitle C={C} label={C.cyan}>Forecast Explainability</CardTitle>
                   <p style={{fontSize:13,color:C.dim,lineHeight:1.7,margin:"0 0 16px"}}>
-                    Each forecast is decomposed into positive drivers, negative drivers, format evidence, platform context, and the practical creative fix that would most likely improve the score.
+                    The default view shows only the recommended action. Open a KPI when you need the positive, negative, format, platform, and confidence evidence behind the forecast.
                   </p>
                   {mostImportantFix&&(
                     <div style={{padding:isMobile?16:18,borderRadius:14,background:`${C.gold}10`,border:`1px solid ${C.gold}44`,borderLeft:`4px solid ${C.gold}`,marginBottom:18}}>
@@ -4788,41 +4873,54 @@ Verify at: ${certificateUrl(certData.cert_id)}
                       </div>
                     </div>
                   )}
-                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,minmax(0,1fr))",gap:14}}>
+                  <div style={{display:"grid",gap:10}}>
                     {explainabilityRows.map(([key,label,value,sub,invert])=>{
                       const conf=getOutcomeConfidence(key,label,value,invert);
                       const exp=getOutcomeExplainability(key,label,value,invert);
-                      const Row=({title,items,color,plain=false})=>(
+                      const open=!!expandedOutcomeKpis[key];
+                      const section=(title,content,color,plain=false)=>(
                         <div style={{padding:"10px 0",borderTop:`1px solid ${C.border}`}}>
                           <div style={{fontSize:9,color,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:6}}>{title}</div>
                           {plain?(
-                            <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{items}</div>
+                            <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>{content}</div>
                           ):(
                             <ul style={{margin:"0 0 0 16px",padding:0,color:C.dim,fontSize:12,lineHeight:1.65}}>
-                              {(items.length?items:["No dominant driver available in this saved report."]).map((item,idx)=><li key={idx}>{item}</li>)}
+                              {(content.length?content:["No dominant driver available in this saved report."]).map((item,idx)=><li key={idx}>{item}</li>)}
                             </ul>
                           )}
                         </div>
                       );
                       return(
-                        <div key={key} style={{padding:16,borderRadius:14,background:C.s2,border:`1px solid ${C.border}`,boxShadow:isDarkMode?"0 14px 40px rgba(0,0,0,0.18)":"0 8px 24px rgba(0,0,0,0.05)"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10}}>
+                        <div key={key} style={{border:`1px solid ${open?C.cyan+"55":C.border}`,borderRadius:14,background:open?`${C.cyan}08`:C.s2,overflow:"hidden",transition:"all 0.16s ease"}}>
+                          <div onClick={()=>toggleOutcomeKpi(key)} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.15fr 80px 170px 28px",gap:12,alignItems:"center",padding:isMobile?14:"14px 16px",cursor:"pointer",userSelect:"none"}}>
                             <div>
-                              <div style={{fontSize:12,color:C.text,fontWeight:900,letterSpacing:"0.04em",textTransform:"uppercase"}}>{label}</div>
-                              <div style={{fontSize:11,color:C.dim,marginTop:3}}>{sub}</div>
+                              <div style={{fontSize:13,color:C.text,fontWeight:900,letterSpacing:"0.04em",textTransform:"uppercase"}}>{label}</div>
+                              <div style={{fontSize:12,color:C.dim,lineHeight:1.5,marginTop:4}}>{exp.improve_action}</div>
                             </div>
-                            <div style={{textAlign:"right",flexShrink:0}}>
-                              <div style={{fontSize:24,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{value}</div>
-                              <div style={{marginTop:8}}><ConfidenceChip level={conf.level}/></div>
+                            <div style={{fontSize:24,color:outcomeScoreColor(value,invert),fontWeight:900,fontFamily:"'DM Mono',monospace",lineHeight:1}}>{value}</div>
+                            <div onClick={e=>{e.stopPropagation();toggleOutcomeConfidence(key);}}><ConfidenceChip level={conf.level} subtle onClick={null}/></div>
+                            <div style={{fontSize:13,color:open?C.cyan:C.dim,transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.16s ease",textAlign:"center"}}>▼</div>
+                          </div>
+                          {(open||expandedOutcomeConfidence[key])&&(
+                            <div style={{padding:"0 16px 16px"}}>
+                              {expandedOutcomeConfidence[key]&&!open&&(
+                                <div style={{padding:"10px 12px",borderRadius:10,background:C.s1,border:`1px solid ${C.border}`,fontSize:12,color:C.dim,lineHeight:1.6,marginBottom:10}}>
+                                  <b style={{color:C.gold}}>Confidence:</b> {conf.reason}
+                                </div>
+                              )}
+                              {open&&(
+                                <div style={{padding:14,borderRadius:12,background:C.s1,border:`1px solid ${C.border}`}}>
+                                  {section("Positive drivers",exp.positive_drivers,C.green)}
+                                  {section("Negative drivers",exp.negative_drivers,C.red)}
+                                  {section("Format-specific drivers",exp.format_drivers,C.cyan,true)}
+                                  {section("Platform modifier",exp.platform_modifier,C.purple,true)}
+                                  <div style={{padding:"10px 12px",borderRadius:10,background:`${C.gold}10`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.6,marginTop:10}}>
+                                    <b style={{color:C.gold}}>Confidence:</b> {conf.reason}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          <Row title="Positive drivers" items={exp.positive_drivers} color={C.green}/>
-                          <Row title="Negative drivers" items={exp.negative_drivers} color={C.red}/>
-                          <Row title="Format-specific drivers" items={exp.format_drivers} color={C.cyan} plain/>
-                          <Row title="Platform modifier" items={exp.platform_modifier} color={C.purple} plain/>
-                          <div style={{marginTop:10,padding:"10px 12px",borderRadius:10,background:`${C.gold}10`,border:`1px solid ${C.gold}33`,fontSize:12,color:C.dim,lineHeight:1.6}}>
-                            <b style={{color:C.gold}}>What would improve it:</b> {exp.improve_action}
-                          </div>
+                          )}
                         </div>
                       );
                     })}
@@ -4864,28 +4962,40 @@ Verify at: ${certificateUrl(certData.cert_id)}
 
                 <Card C={C} style={{padding:isMobile?20:26}}>
                   <CardTitle C={C} label={C.cyan}>Platform Outcome Matrix</CardTitle>
+                  <div style={{fontSize:12,color:C.dim,lineHeight:1.65,marginBottom:14}}>Rows stay compact by default. Open a platform to read fit notes and confidence rationale.</div>
                   {platformOutcomeRows.length?(
-                    <div style={{display:"grid",gap:10}}>
+                    <div style={{display:"grid",gap:8}}>
                       {platformOutcomeRows.map(row=>{
                         const brand=row.data.brand_lift;
                         const perf=row.data.performance_lift;
                         const riskColor=row.data.risk==="low"?C.green:row.data.risk==="medium"?C.amber:C.red;
                         const platformLevel=normalizeConfidenceLevel(row.data.confidence)||fallbackConfidence(`platform_${row.key}`,row.label,Math.round(((brand||0)+(perf||0))/2)).level;
                         const platformReason=row.data.confidence_reason||fallbackConfidence(`platform_${row.key}`,row.label,Math.round(((brand||0)+(perf||0))/2)).reason;
+                        const open=!!expandedPlatformOutcomes[row.key];
                         return(
-                          <div key={row.key} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"150px 1fr 1fr 90px 145px 1.5fr",gap:12,alignItems:"center",padding:"13px 0",borderBottom:`1px solid ${C.border}`}}>
-                            <div style={{fontSize:14,color:C.text,fontWeight:900}}>{row.label}</div>
-                            <div>
-                              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginBottom:4}}><span>Brand lift readiness</span><b style={{color:outcomeScoreColor(brand)}}>{brand??"—"}</b></div>
-                              <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(100,Math.max(0,brand||0))}%`,background:outcomeScoreColor(brand),borderRadius:999}}/></div>
+                          <div key={row.key} style={{border:`1px solid ${open?C.cyan+"55":C.border}`,borderRadius:12,background:open?`${C.cyan}08`:C.s2,overflow:"hidden"}}>
+                            <div onClick={()=>togglePlatformOutcome(row.key)} style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"150px 1fr 1fr 90px 145px 24px",gap:12,alignItems:"center",padding:"13px 14px",cursor:"pointer",userSelect:"none"}}>
+                              <div style={{fontSize:14,color:C.text,fontWeight:900}}>{row.label}</div>
+                              <div>
+                                <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginBottom:4}}><span>Brand readiness</span><b style={{color:outcomeScoreColor(brand)}}>{brand??"—"}</b></div>
+                                <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(100,Math.max(0,brand||0))}%`,background:outcomeScoreColor(brand),borderRadius:999}}/></div>
+                              </div>
+                              <div>
+                                <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginBottom:4}}><span>Performance</span><b style={{color:outcomeScoreColor(perf)}}>{perf??"—"}</b></div>
+                                <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(100,Math.max(0,perf||0))}%`,background:outcomeScoreColor(perf),borderRadius:999}}/></div>
+                              </div>
+                              <div style={{justifySelf:isMobile?"start":"center",padding:"4px 9px",borderRadius:999,background:`${riskColor}16`,border:`1px solid ${riskColor}44`,color:riskColor,fontSize:10,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>{row.data.risk||"—"}</div>
+                              <ConfidenceChip level={platformLevel} subtle onClick={null}/>
+                              <div style={{fontSize:12,color:open?C.cyan:C.dim,transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.16s ease",textAlign:"center"}}>▼</div>
                             </div>
-                            <div>
-                              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",marginBottom:4}}><span>Performance readiness</span><b style={{color:outcomeScoreColor(perf)}}>{perf??"—"}</b></div>
-                              <div style={{height:6,borderRadius:999,background:C.s3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(100,Math.max(0,perf||0))}%`,background:outcomeScoreColor(perf),borderRadius:999}}/></div>
-                            </div>
-                            <div style={{justifySelf:isMobile?"start":"center",padding:"4px 9px",borderRadius:999,background:`${riskColor}16`,border:`1px solid ${riskColor}44`,color:riskColor,fontSize:10,fontWeight:900,textTransform:"uppercase",fontFamily:"'DM Mono',monospace"}}>{row.data.risk||"—"}</div>
-                            <div><ConfidenceChip level={platformLevel}/></div>
-                            <div style={{fontSize:12,color:C.dim,lineHeight:1.55}}>{row.data.note}{platformReason&&<div style={{marginTop:5,fontSize:11,color:C.muted,lineHeight:1.45}}>Confidence: {platformReason}</div>}</div>
+                            {open&&(
+                              <div style={{padding:"0 14px 14px"}}>
+                                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12,padding:14,borderRadius:10,background:C.s1,border:`1px solid ${C.border}`}}>
+                                  <div style={{fontSize:12,color:C.dim,lineHeight:1.65}}><b style={{color:C.cyan}}>Platform note:</b> {row.data.note||"No platform note available."}</div>
+                                  <div style={{fontSize:12,color:C.dim,lineHeight:1.65}}><b style={{color:C.gold}}>Confidence:</b> {platformReason}</div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -5285,7 +5395,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
                         </div>
                         {Object.entries(groupedCompetitorAnalyses).map(([brand,items])=>{
                           const isExpanded=expandedCompetitorBrands[brand];
-                          const avg=Math.round(items.reduce((sum,a)=>sum+(a.hook_strength||a.full_result?.hook_strength||gradeToNum(analysisGrade(a))),0)/Math.max(items.length,1));
+                          const avg=Math.round(items.reduce((sum,a)=>sum+(a.hook_strength||analysisResult(a)?.hook_strength||gradeToNum(analysisGrade(a))),0)/Math.max(items.length,1));
                           return(
                             <div key={brand} style={{marginBottom:8}}>
                               <div onClick={()=>setExpandedCompetitorBrands(prev=>({...prev,[brand]:!prev[brand]}))} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:isExpanded?`${C.purple}12`:C.s2,border:`1px solid ${isExpanded?C.purple+"44":C.border}`,borderRadius:isExpanded?"8px 8px 0 0":8,cursor:"pointer",userSelect:"none",transition:"all 0.15s ease"}}>
@@ -5330,6 +5440,12 @@ Verify at: ${certificateUrl(certData.cert_id)}
                 {Object.entries(groupedByBrand).map(([brand,items])=>{
                   const isExpanded=expandedRepoBrands[brand];
                   const latestGrade=analysisGrade(items[0]);
+                  const certStats=items.reduce((acc,item)=>{
+                    const state=analysisCertState(item);
+                    if(state.isCertified)acc.certified+=1;
+                    else if(state.eligibility.eligible)acc.eligible+=1;
+                    return acc;
+                  },{certified:0,eligible:0});
                   return(
                     <div key={brand} style={{marginBottom:8}}>
                       <div onClick={()=>setExpandedRepoBrands(prev=>({...prev,[brand]:!prev[brand]}))} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:isExpanded?"rgba(245,158,11,0.06)":C.s2,border:`1px solid ${isExpanded?C.gold+"44":C.border}`,borderRadius:isExpanded?"8px 8px 0 0":8,cursor:"pointer",userSelect:"none",transition:"all 0.15s ease"}}>
@@ -5337,6 +5453,11 @@ Verify at: ${certificateUrl(certData.cert_id)}
                           <span style={{fontSize:14,fontWeight:800,color:C.text}}>{brand}</span>
                           <span style={{fontSize:10,color:C.muted,fontFamily:"'DM Mono',monospace",background:C.s3,padding:"2px 8px",borderRadius:10}}>{items.length} {items.length===1?"analysis":"analyses"}</span>
                           <span style={{fontSize:11,fontWeight:900,color:C.gold,background:"rgba(245,158,11,0.1)",border:`1px solid ${C.gold}44`,padding:"2px 8px",borderRadius:6}}>Latest: {latestGrade}</span>
+                          {(certStats.certified>0||certStats.eligible>0)&&(
+                            <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:C.gold,background:`${C.gold}10`,border:`1px solid ${C.gold}33`,padding:"2px 8px",borderRadius:10}}>
+                              {certStats.certified} certified · {certStats.eligible} eligible
+                            </span>
+                          )}
                         </div>
                         <span style={{fontSize:10,color:C.dim,fontFamily:"'DM Mono',monospace",display:"inline-block",transition:"transform 0.15s ease",transform:isExpanded?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
                       </div>
@@ -5684,6 +5805,7 @@ Verify at: ${certificateUrl(certData.cert_id)}
                   <div style={{padding:18,borderRadius:12,background:`${C.purple}0f`,border:`1px solid ${C.purple}33`,marginBottom:18}}>
                     <div style={{fontSize:11,fontWeight:900,color:C.purple,letterSpacing:2,textTransform:"uppercase",fontFamily:"'DM Mono',monospace",marginBottom:12}}>Forecast explainability layer</div>
                     <p style={{fontSize:13,color:C.dim,lineHeight:1.75,margin:"0 0 14px"}}>Explainability is diagnostic, not a causal proof claim. It answers why a KPI was scored that way by selecting the strongest visible drivers from creative signals, format-specific metrics, platform fit, and private calibration memory when available.</p>
+                    <p style={{fontSize:13,color:C.dim,lineHeight:1.75,margin:"0 0 14px"}}>For dashboard readability, detailed drivers are collapsed by default. Expanding a KPI reveals the same driver logic: positive evidence, negative evidence, format-specific interpretation, platform modifier, confidence rationale, and the recommended creative fix.</p>
                     <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
                       {[
                         ["Drivers","Positive and negative drivers are selected from scored evidence such as memory encoding, brand recall, hook strength, CTA clarity, message clarity, platform readiness, and format metrics.",C.green],
